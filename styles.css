@@ -539,29 +539,43 @@ th {
     background: var(--secondary);
 }
 
-/* Gantt Chart Specialized Layout */
+.gantt-container-wrapper {
+    padding: 0;
+    overflow: hidden;
+}
+
+.gantt-chart {
+    overflow-x: auto;
+    width: 100%;
+}
+
 .gantt-table {
     display: grid;
     grid-template-columns: 200px 1fr;
-    min-width: 1400px;
-    /* Label 200px + Grid 1200px */
+    min-width: 1320px;
+    /* 200px + 28 * 40px */
 }
 
 .gantt-header-col {
     background: var(--bg-sidebar);
     padding: 12px;
-    /* Consistent with gantt-label */
+    padding-top: 25px;
+    /* Extra space for labels */
+    display: flex;
+    align-items: flex-end;
     border-bottom: 2px solid var(--border);
     position: sticky;
     left: 0;
-    z-index: 10;
-    /* Ensure it stays above grid content */
+    z-index: 30;
 }
 
 .gantt-timeline-col {
     display: grid;
     grid-template-columns: repeat(28, 40px);
     border-bottom: 2px solid var(--border);
+    padding-top: 25px;
+    /* Match header-col */
+    background: var(--bg-sidebar);
 }
 
 .gantt-tick {
@@ -584,7 +598,7 @@ th {
     border-right: 1px solid var(--border);
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: 30;
     font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
@@ -769,9 +783,11 @@ th {
 
 /* Event Status Markers in Gantt */
 .event-row-label {
-    background: rgba(14, 165, 233, 0.05) !important;
+    background: #1a1f29 !important;
+    /* Solid background */
     font-weight: 600 !important;
     color: var(--accent) !important;
+    z-index: 30;
 }
 
 .event-row-grid {
@@ -876,7 +892,8 @@ th {
 
 .semester-label {
     position: absolute;
-    top: -14px;
+    top: -18px;
+    /* Adjusted to stay within the new padding area */
     left: 50%;
     transform: translateX(-50%);
     font-size: 8px;
@@ -900,10 +917,13 @@ th {
 /* Deliverables Sub-rows Styling */
 /* Category Headers and Labels */
 .category-header-label {
-    background: rgba(255, 255, 255, 0.03);
+    background: #232a37;
+    /* Solid slightly lighter than bg-card */
     border-top: 1px solid var(--border);
     font-size: 0.85rem;
     padding-top: 12px !important;
+    z-index: 31;
+    /* Above normal labels */
 }
 
 .category-header-grid {
@@ -916,7 +936,8 @@ th {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--text-dim) !important;
-    background: rgba(255, 255, 255, 0.02) !important;
+    background: var(--bg-sidebar) !important;
+    /* Solid background */
 }
 
 
