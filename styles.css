@@ -606,6 +606,41 @@ th {
 }
 
 /* Member Checkbox Group */
+/* Member Checkbox Group & Bulk Actions */
+.bulk-assignee-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-bulk {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-bulk:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--secondary);
+}
+
+.btn-bulk-clear {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-bulk-clear:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
 .checkbox-group-container {
     max-height: 150px;
     overflow-y: auto;
@@ -669,6 +704,18 @@ th {
     color: white;
     white-space: nowrap;
     overflow: hidden;
+}
+
+.gantt-task-bar.is-completed {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+    text-decoration: none;
+    background-image: repeating-linear-gradient(45deg,
+            rgba(0, 0, 0, 0.1),
+            rgba(0, 0, 0, 0.1) 10px,
+            transparent 10px,
+            transparent 20px);
+    border: 1px dashed rgba(255, 255, 255, 0.4);
 }
 
 .gantt-task-bar:hover {

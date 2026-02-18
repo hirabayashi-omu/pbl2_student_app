@@ -1,0 +1,279 @@
+:root {
+    --mm-bg-color: #0f172a;
+    --mm-bg-grid: #1e293b;
+    --mm-text-color: #f8fafc;
+    --mm-primary-color: #3b82f6;
+    --mm-accent-color: #8b5cf6;
+    --mm-node-bg: rgba(30, 41, 59, 0.7);
+    --mm-node-border: rgba(148, 163, 184, 0.2);
+    --mm-node-selected: #3b82f6;
+    --mm-glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --mm-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+}
+
+#view-mindmap {
+    padding: 0 !important;
+    height: calc(100vh - var(--topbar-height));
+    overflow: hidden;
+    position: relative;
+    background-color: var(--mm-bg-color);
+    display: none;
+}
+
+#view-mindmap.active {
+    display: flex !important;
+    flex-direction: column;
+}
+
+.mindmap-app-body {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    color: var(--mm-text-color);
+}
+
+/* Nodes */
+.node {
+    position: absolute;
+    padding: 8px 20px;
+    border-radius: 8px;
+    background: var(--mm-node-bg);
+    border: var(--mm-glass-border);
+    color: var(--mm-text-color);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 120px;
+    max-width: 300px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--mm-shadow);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: auto;
+    animation: mmFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes mmFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.node:hover {
+    background: rgba(51, 65, 85, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.node.selected {
+    border-color: var(--mm-primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), var(--mm-shadow);
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.node.root {
+    font-size: 18px;
+    font-weight: 600;
+    padding: 16px 32px;
+    min-width: 180px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Toolbar */
+#mindmap-toolbar {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(16px);
+    padding: 8px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: var(--mm-glass-border);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+#mindmap-toolbar .actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#mindmap-toolbar button {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: #cbd5e1;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#mindmap-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+#mindmap-toolbar .divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Canvas Wrapper */
+#mindmap-canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+#mm-canvas-container {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-image: radial-gradient(var(--mm-bg-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+    cursor: grab;
+    transform-origin: 0 0;
+}
+
+#mm-canvas-container:active {
+    cursor: grabbing;
+}
+
+#mm-grid-layer,
+#mm-connections-layer,
+#mm-foreground-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 10000px;
+    height: 10000px;
+    pointer-events: none;
+}
+
+#mm-nodes-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    transform-origin: 0 0;
+    pointer-events: none;
+}
+
+/* Controls */
+#mindmap-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(16px);
+    border-radius: 8px;
+    padding: 4px;
+    border: var(--mm-glass-border);
+    gap: 4px;
+}
+
+#mm-zoom-level {
+    font-size: 11px;
+    min-width: 35px;
+    text-align: center;
+}
+
+#mm-center-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(16px);
+    border: var(--mm-glass-border);
+    cursor: pointer;
+    color: white;
+}
+
+/* SVG Connections */
+path.connection {
+    fill: none;
+    stroke: #475569;
+    stroke-width: 2px;
+}
+
+.handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #cbd5e1;
+    border: 2px solid var(--mm-bg-color);
+    border-radius: 50%;
+    top: 50%;
+    transform: translate(0, -50%);
+    opacity: 0;
+    transition: all 0.2s;
+    cursor: crosshair;
+    z-index: 10;
+}
+
+.node:hover .handle,
+.node.selected .handle {
+    opacity: 1;
+}
+
+.handle.in {
+    left: -5px;
+}
+
+.handle.out {
+    right: -5px;
+}
+
+.image-frame {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    pointer-events: auto;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.image-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

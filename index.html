@@ -6,12 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>応用専門PBL2 プロジェクト管理ツール</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mindmap.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="dark-theme">
@@ -36,6 +38,9 @@
                 </button>
                 <button class="nav-item" data-view="data">
                     <i data-lucide="database"></i> <span>データ管理</span>
+                </button>
+                <button class="nav-item" data-view="mindmap">
+                    <i data-lucide="network"></i> <span>思考整理 (Mind Map)</span>
                 </button>
             </nav>
             <div class="sidebar-footer">
@@ -275,12 +280,96 @@
                         <i data-lucide="upload"></i> JSONを読み込む
                     </button>
                 </div>
+
                 <div class="data-actions card mt-2 danger-zone">
                     <h2 class="text-danger">初期化</h2>
                     <p>すべてのデータを削除して初期状態に戻します。</p>
                     <button class="btn btn-danger" id="btn-reset-data">
                         <i data-lucide="trash-2"></i> データをリセット
                     </button>
+                </div>
+            </section>
+
+            <section id="view-mindmap" class="view">
+                <div class="mindmap-app-body">
+                    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8"
+                                orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+                            </marker>
+                            <marker id="arrow-relation" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8"
+                                markerHeight="8" orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa" />
+                            </marker>
+                            <marker id="arrow-drag" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8"
+                                markerHeight="8" orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24" />
+                            </marker>
+                            <marker id="arrow-selected" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8"
+                                markerHeight="8" orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b5cf6" />
+                            </marker>
+                            <marker id="arrow-print" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8"
+                                markerHeight="8" orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+                    <div id="mindmap-toolbar">
+                        <div class="actions">
+                            <button id="mm-undo-btn" title="元に戻す (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                            <button id="mm-redo-btn" title="やり直し (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                            <div class="divider"></div>
+                            <button id="mm-add-child-btn" title="子ノード追加 (Tab)"><i
+                                    class="fas fa-level-down-alt"></i><span class="btn-text"> 子</span></button>
+                            <button id="mm-add-sibling-btn" title="兄弟ノード追加 (Enter)"><i class="fas fa-plus"></i><span
+                                    class="btn-text"> 兄弟</span></button>
+                            <button id="mm-add-image-btn" title="画像フレーム追加"><i class="fas fa-image"></i><span
+                                    class="btn-text">
+                                    画像</span></button>
+                            <button id="mm-delete-btn" title="削除 (Del)"><i class="fas fa-trash"></i><span
+                                    class="btn-text">
+                                    削除</span></button>
+                            <div class="divider"></div>
+                            <button id="mm-move-up-btn" title="上に移動 (Alt+Up)"><i class="fas fa-arrow-up"></i></button>
+                            <button id="mm-move-down-btn" title="下に移動 (Alt+Down)"><i
+                                    class="fas fa-arrow-down"></i></button>
+                            <div class="divider"></div>
+                            <button id="mm-clear-all-btn" title="すべてクリア" style="color: #ef4444;"><i
+                                    class="fas fa-bomb"></i><span class="btn-text"> クリア</span></button>
+                            <button id="mm-export-btn" title="JSON保存"><i class="fas fa-download"></i><span
+                                    class="btn-text">
+                                    保存</span></button>
+                            <button id="mm-import-btn-trigger" title="JSON読み込み"><i class="fas fa-upload"></i><span
+                                    class="btn-text"> 読込</span></button>
+                            <button id="mm-export-pdf-btn" title="PDF出力"><i class="fas fa-file-pdf"></i><span
+                                    class="btn-text">
+                                    PDF</span></button>
+                            <input type="file" id="mm-import-input" accept=".json" style="display: none;">
+                            <input type="file" id="mm-image-upload-input" accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div id="mindmap-canvas-wrapper">
+                        <div id="mm-canvas-container">
+                            <svg id="mm-grid-layer"></svg>
+                            <div id="mm-images-layer"></div>
+                            <svg id="mm-connections-layer"></svg>
+                            <div id="mm-nodes-layer"></div>
+                            <svg id="mm-foreground-layer"></svg>
+                        </div>
+                    </div>
+
+                    <div id="mindmap-controls">
+                        <button id="mm-center-btn" title="中央にリセット"><i class="fas fa-compress-arrows-alt"></i></button>
+                        <div class="zoom-controls">
+                            <button id="mm-zoom-out"><i class="fas fa-minus"></i></button>
+                            <span id="mm-zoom-level">100%</span>
+                            <button id="mm-zoom-in"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -291,7 +380,7 @@
         <div class="modal-content">
             <h2 id="task-modal-title">タスク追加</h2>
             <div class="form-group">
-                <label>タスク名</label>
+                <label>タスク名 (その期間で達成したい目標)</label>
                 <input type="text" id="task-name">
             </div>
             <div class="form-group">
@@ -313,9 +402,23 @@
             </div>
             <div class="form-group">
                 <label>担当者 (複数選択可)</label>
-                <div id="task-assignees-container" class="checkbox-group-container">
+                <div class="bulk-assignee-btns">
+                    <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('all')">全員</button>
+                    <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('マーケティング')">マーケ</button>
+                    <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('エンジニアリング')">エンジ</button>
+                    <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('プロモーション')">プロモ</button>
+                    <button type="button" class="btn-bulk btn-bulk-clear"
+                        onclick="bulkSelectAssignees('none')">解除</button>
+                </div>
+                <div id="task-assignees-container" class="checkbox-group-container" style="margin-top: 5px;">
                     <!-- Checkboxes will be rendered here -->
                 </div>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label class="checkbox-item" style="padding: 0; background: transparent;">
+                    <input type="checkbox" id="task-completed">
+                    <span style="font-size: 0.95rem; font-weight: 600;">このタスクを「済」にする</span>
+                </label>
             </div>
             <div class="modal-btns">
                 <button class="btn btn-secondary" id="btn-close-modal">キャンセル</button>
@@ -324,6 +427,7 @@
         </div>
     </div>
 
+    <script src="mindmap.js"></script>
     <script src="app.js"></script>
 </body>
 

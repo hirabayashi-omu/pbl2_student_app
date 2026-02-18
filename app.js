@@ -225,10 +225,14 @@ function switchView(viewId) {
         gantt: 'プロジェクト管理 (ガントチャート)',
         reports: '報告書・レポート作成',
         members: 'メンバー・テーマ設定',
-        data: 'データ管理'
+        data: 'データ管理',
+        mindmap: '思考整理 (Mind Map)'
     };
     document.getElementById('view-title').textContent = titles[viewId] || 'PBL2 Manager';
 
+    if (viewId === 'mindmap' && typeof MindMapModule !== 'undefined') {
+        MindMapModule.init();
+    }
     if (viewId === 'gantt') renderGantt();
     if (viewId === 'members') renderMemberList();
     if (viewId === 'reports') {
