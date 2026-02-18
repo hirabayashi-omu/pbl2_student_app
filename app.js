@@ -656,11 +656,19 @@ function renderGantt() {
             bar.style.left = `${left}px`;
             bar.style.width = `${width}px`;
 
+            if (task.completed) {
+                bar.classList.add('is-completed');
+            }
+
             const getLastName = (fullName) => fullName ? fullName.split(' ')[0] : '';
             const displayAssignees = Array.isArray(task.assignees)
                 ? task.assignees.map(getLastName).join(', ')
                 : getLastName(task.assignee);
-            bar.textContent = displayAssignees;
+
+            bar.innerHTML = task.completed
+                ? `<i data-lucide="check-circle-2" style="width:14px; height:14px; margin-right:4px;"></i> ${displayAssignees}`
+                : displayAssignees;
+
             bar.onclick = () => openTaskModal(taskIndex);
 
             gridCell.appendChild(bar);
@@ -685,6 +693,7 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
     const startInput = document.getElementById('task-start');
     const endInput = document.getElementById('task-end');
     const assigneesContainer = document.getElementById('task-assignees-container');
+    const completedInput = document.getElementById('task-completed');
 
     let task = index !== -1 ? state.tasks[index] : null;
     const currentAssignees = task ? (Array.isArray(task.assignees) ? task.assignees : (task.assignee ? [task.assignee] : [])) : [];
@@ -703,13 +712,12 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
             const isChecked = currentAssignees.includes(fullName);
 
             item.innerHTML = `
-                <input type="checkbox" id="assignee-${idx}" value="${fullName}" ${isChecked ? 'checked' : ''}>
+                <input type="checkbox" id="assignee-${idx}" value="${fullName}" data-role="${m.role || ''}" ${isChecked ? 'checked' : ''}>
                 <label for="assignee-${idx}">${m.lastName || '未設定'} <span style="font-size:11px; color:var(--text-dim);">(${roleLabel})</span></label>
             `;
             assigneesContainer.appendChild(item);
         }
     });
-
     if (index === -1) {
         title.textContent = 'タスク追加';
         nameInput.value = '';
@@ -722,9 +730,30 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
         categorySelect.value = task.category || 'effort';
         startInput.value = task.start;
         endInput.value = task.end;
+        completedInput.checked = !!task.completed;
+    }
+
+    if (index === -1) {
+        completedInput.checked = false;
     }
 
     modal.classList.add('active');
+}
+
+function bulkSelectAssignees(type) {
+    const checkboxes = document.querySelectorAll('#task-assignees-container input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        const role = cb.getAttribute('data-role');
+        if (type === 'all') {
+            cb.checked = true;
+        } else if (type === 'none') {
+            cb.checked = false;
+        } else {
+            if (role === type) {
+                cb.checked = true;
+            }
+        }
+    });
 }
 
 function closeModal() {
@@ -736,6 +765,7 @@ function saveTask() {
     const category = document.getElementById('task-category').value;
     const start = parseInt(document.getElementById('task-start').value);
     const end = parseInt(document.getElementById('task-end').value);
+    const completed = document.getElementById('task-completed').checked;
 
     // Collect all checked assignees
     const checkboxes = document.querySelectorAll('#task-assignees-container input[type="checkbox"]:checked');
@@ -743,7 +773,7 @@ function saveTask() {
 
     if (!name) return alert('タスク名を入力してください');
 
-    const taskData = { name, category, start, end, assignees, completed: false };
+    const taskData = { name, category, start, end, assignees, completed };
 
     if (editingTaskIndex === -1) {
         state.tasks.push(taskData);
