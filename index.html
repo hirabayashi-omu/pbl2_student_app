@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>応用専門PBL2 プロジェクト管理ツール</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i data-lucide="layers"></i>
+                    <span>PBL2 Manager</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i> <span>ダッシュボード</span>
+                </button>
+                <button class="nav-item" data-view="gantt">
+                    <i data-lucide="trello"></i> <span>ガントチャート</span>
+                </button>
+                <button class="nav-item" data-view="members">
+                    <i data-lucide="users"></i> <span>メンバー・テーマ</span>
+                </button>
+                <button class="nav-item" data-view="data">
+                    <i data-lucide="database"></i> <span>データ管理</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <p class="theme-name" id="display-theme-name">未設定のテーマ</p>
+                    <p class="group-name" id="display-group-name">未設定のグループ</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="view-title">ダッシュボード</h1>
+                <div class="top-bar-actions">
+                    <span id="current-date-display">2026-02-18</span>
+                    <button class="btn btn-secondary" id="btn-group-teams" style="display:none;">
+                        <i data-lucide="messages-square"></i> Teamsへ
+                    </button>
+                    <button class="btn btn-primary" id="btn-save-all">
+                        <i data-lucide="save"></i> 保存
+                    </button>
+                </div>
+            </header>
+
+            <section id="view-dashboard" class="view active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>完了した作業報告書</h3>
+                        <div class="stat-value"><span id="completed-reports-count">0</span> / 25</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="reports-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>次の重要イベント</h3>
+                        <div class="event-info">
+                            <p class="event-name" id="next-event-name">読み込み中...</p>
+                            <p class="event-date" id="next-event-date"></p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>タスク完了率</h3>
+                        <div class="stat-value"><span id="task-completion-rate">0</span>%</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="tasks-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="recent-activities card">
+                        <h2>最近の活動</h2>
+                        <ul id="recent-activity-list" class="activity-list">
+                            <li class="empty-msg">活動はまだありません</li>
+                        </ul>
+                    </div>
+                    <div class="upcoming-schedule card">
+                        <h2>直近のスケジュール</h2>
+                        <ul id="upcoming-schedule-list" class="schedule-list">
+                            <li class="empty-msg">スケジュールを読み込み中...</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-gantt" class="view">
+                <div class="gantt-header-info">
+                    <h2 id="gantt-theme-display" class="gantt-theme-title">未設定のテーマ</h2>
+                    <p id="gantt-group-display" class="gantt-group-subtitle">未設定のグループ</p>
+                </div>
+                <div class="gantt-actions">
+                    <button class="btn btn-secondary" id="btn-add-task">
+                        <i data-lucide="plus"></i> タスク追加
+                    </button>
+                </div>
+                <div class="gantt-container-wrapper card">
+                    <div id="gantt-chart" class="gantt-chart">
+                        <!-- Gantt implementation will go here -->
+                        <div class="gantt-placeholder">ガントチャートを生成中...</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-reports" class="view">
+                <div class="report-tabs">
+                    <button class="report-tab active" data-report="work-report">作業報告書 (活動日報)</button>
+                    <button class="report-tab" data-report="analysis-report">分析レポート</button>
+                    <button class="report-tab" data-report="contribution">貢献度調査</button>
+                </div>
+
+                <div id="report-work-report" class="report-content active">
+                    <div class="report-selector">
+                        <label>回数を選択:</label>
+                        <select id="work-report-iteration">
+                            <!-- Options 1-25 will be generated -->
+                        </select>
+                    </div>
+                    <div class="work-report-editor card">
+                        <div class="form-group">
+                            <label>活動内容</label>
+                            <textarea id="work-report-content" placeholder="本日の活動内容を入力してください..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>画像アップロード (Webボード)</label>
+                            <div class="image-upload-zone" id="image-upload-zone">
+                                <i data-lucide="image-plus"></i>
+                                <p>クリックまたはドラッグ＆ドロップで画像をアップロード</p>
+                                <input type="file" id="image-input" hidden accept="image/*">
+                            </div>
+                            <div id="image-preview-container" class="image-preview-container"></div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-save-report">報告書を保存</button>
+                        <button class="btn btn-secondary mt-1" onclick="switchView('gantt')">
+                            <i data-lucide="arrow-left"></i> ガントチャートに戻る
+                        </button>
+                    </div>
+                </div>
+
+                <div id="report-analysis-report" class="report-content">
+                    <div class="analysis-report-editor card">
+                        <h2>課題設定レポート</h2>
+                        <p class="subtitle">中間発表前に作成</p>
+                        <hr>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>テーマ名</label>
+                                <input type="text" id="analysis-theme-title" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>グループ</label>
+                                <input type="text" id="analysis-group-name" readonly>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>1. 現状の把握と課題の背景</label>
+                            <textarea id="analysis-bg" rows="5"
+                                placeholder="解決したい社会的な課題やその背景について記載してください..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>2. 解決すべき主要課題</label>
+                            <textarea id="analysis-problem" rows="5"
+                                placeholder="具体的にどのような課題を本プロジェクトで解決しますか？"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>3. 解決策の提案</label>
+                            <textarea id="analysis-solution" rows="5" placeholder="どのようなIT技術や仕組みを用いて解決しますか？"></textarea>
+                        </div>
+                        <button class="btn btn-primary" id="btn-save-analysis">レポートを保存</button>
+                        <button class="btn btn-secondary mt-1" onclick="switchView('gantt')">
+                            <i data-lucide="arrow-left"></i> ガントチャートに戻る
+                        </button>
+                    </div>
+                </div>
+
+                <div id="report-contribution" class="report-content">
+                    <div class="contribution-editor card">
+                        <h2>貢献度調査・振り返り</h2>
+                        <div class="form-group">
+                            <label id="contribution-label">内容を入力してください</label>
+                            <textarea id="contribution-content" rows="10"
+                                placeholder="活動内容や自分自身の貢献、反省点などを入力してください..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" id="btn-save-contribution">保存</button>
+                        <button class="btn btn-secondary mt-1" onclick="switchView('gantt')">
+                            <i data-lucide="arrow-left"></i> ガントチャートに戻る
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-members" class="view">
+                <div class="settings-grid">
+                    <div class="card">
+                        <h2>テーマ・グループ設定</h2>
+                        <div class="form-group">
+                            <label>選択テーマ</label>
+                            <input type="text" id="input-theme-name" placeholder="例: カネカテーマ">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>グループ記号</label>
+                                <select id="select-group-symbol">
+                                    <option value="">選択...</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="E">E</option>
+                                    <option value="F">F</option>
+                                    <option value="G">G</option>
+                                    <option value="H">H</option>
+                                    <option value="I">I</option>
+                                    <option value="J">J</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label>キャッチーなグループ名</label>
+                                <input type="text" id="input-group-name" placeholder="例: チーム・イノベーション">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>メンバー登録</h2>
+                            <button class="btn btn-secondary btn-sm" id="btn-add-member">
+                                <i data-lucide="user-plus"></i> メンバー追加
+                            </button>
+                        </div>
+                        <div id="member-list-container" class="member-grid mt-1">
+                            <!-- Member Cards will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>役割の定義・説明</h2>
+                        <div id="role-guide-list" class="role-guide-list mt-1">
+                            <!-- Role descriptions will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-data" class="view">
+                <div class="data-actions card">
+                    <h2>教員への提出</h2>
+                    <p>現在のデータをJSON形式で書き出します。このファイルを教員に提出してください。</p>
+                    <button class="btn btn-primary" id="btn-export-json">
+                        <i data-lucide="download"></i> JSONを書き出す
+                    </button>
+                </div>
+                <div class="data-actions card mt-2">
+                    <h2>データの復元</h2>
+                    <p>保存したJSONファイルを読み込んでデータを復元します。</p>
+                    <input type="file" id="import-json-file" hidden accept=".json">
+                    <button class="btn btn-secondary" id="btn-trigger-import">
+                        <i data-lucide="upload"></i> JSONを読み込む
+                    </button>
+                </div>
+                <div class="data-actions card mt-2 danger-zone">
+                    <h2 class="text-danger">初期化</h2>
+                    <p>すべてのデータを削除して初期状態に戻します。</p>
+                    <button class="btn btn-danger" id="btn-reset-data">
+                        <i data-lucide="trash-2"></i> データをリセット
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-task" class="modal">
+        <div class="modal-content">
+            <h2 id="task-modal-title">タスク追加</h2>
+            <div class="form-group">
+                <label>タスク名</label>
+                <input type="text" id="task-name">
+            </div>
+            <div class="form-group">
+                <label>カテゴリー</label>
+                <select id="task-category">
+                    <option value="effort">取り組み (日常の活動・分析)</option>
+                    <option value="presentation">発表成果にかかわるもの</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>開始回 (1-28)</label>
+                    <input type="number" id="task-start" min="1" max="28">
+                </div>
+                <div class="form-group">
+                    <label>終了回 (1-28)</label>
+                    <input type="number" id="task-end" min="1" max="28">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>担当者 (複数選択可)</label>
+                <div id="task-assignees-container" class="checkbox-group-container">
+                    <!-- Checkboxes will be rendered here -->
+                </div>
+            </div>
+            <div class="modal-btns">
+                <button class="btn btn-secondary" id="btn-close-modal">キャンセル</button>
+                <button class="btn btn-primary" id="btn-save-task">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1135 @@
+:root {
+    /* Color Palette - Premium Dark */
+    --bg-main: #0a0c10;
+    --bg-sidebar: #13171f;
+    --bg-card: #1c212c;
+    --bg-hover: #2d3646;
+    --primary: #4f46e5;
+    --primary-glow: rgba(79, 70, 229, 0.4);
+    --secondary: #64748b;
+    --accent: #0ea5e9;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text-main: #f1f5f9;
+    --text-dim: #94a3b8;
+    --border: #2e3748;
+
+    --sidebar-width: 260px;
+    --topbar-height: 70px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 12px;
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    overflow: hidden;
+    line-height: 1.5;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.sidebar-header {
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 0.5rem 1rem;
+}
+
+.nav-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.user-info .theme-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.user-info .group-name {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: relative;
+}
+
+.top-bar {
+    height: var(--topbar-height);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 12, 16, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+}
+
+.top-bar h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.top-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+#current-date-display {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* Views */
+.view {
+    display: none;
+    padding: 2rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.view.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Cards & Grid */
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--bg-card), #252b38);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.stat-card h3 {
+    font-size: 0.875rem;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--bg-hover);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 4px;
+    transition: width 1s ease-in-out;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: var(--transition);
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+/* Gantt Chart Custom Styles */
+.gantt-chart {
+    min-height: 400px;
+    overflow-x: auto;
+    position: relative;
+    padding: 1rem 0;
+}
+
+.gantt-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+/* Report Styles */
+.report-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.report-tab {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.report-tab.active {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--primary);
+}
+
+.report-content {
+    display: none;
+}
+
+.report-content.active {
+    display: block;
+}
+
+.image-upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.image-upload-zone:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.image-preview-item {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview-item .remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    color: var(--text-dim);
+    font-weight: 500;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    width: 100%;
+    max-width: 500px;
+    padding: 2.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: modalSlide 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.mod.gantt-header-info {
+    margin-bottom: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+.gantt-theme-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    position: relative;
+    padding-left: 1rem;
+    line-height: 1.2;
+}
+
+.gantt-group-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+    padding-left: 1rem;
+}
+
+.gantt-theme-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+.gantt-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+    padding: 0 0.5rem;
+}
+
+.modal-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-hover);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary);
+}
+
+/* Gantt Chart Specialized Layout */
+.gantt-table {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-width: 1400px;
+    /* Label 200px + Grid 1200px */
+}
+
+.gantt-header-col {
+    background: var(--bg-sidebar);
+    padding: 12px;
+    /* Consistent with gantt-label */
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    /* Ensure it stays above grid content */
+}
+
+.gantt-timeline-col {
+    display: grid;
+    grid-template-columns: repeat(28, 40px);
+    border-bottom: 2px solid var(--border);
+}
+
+.gantt-tick {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    padding: 10px 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gantt-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-bottom: 1px solid var(--border);
+}
+
+.gantt-label {
+    padding: 12px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Member Checkbox Group */
+.checkbox-group-container {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.checkbox-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    font-size: 0.85rem;
+    cursor: pointer;
+    flex: 1;
+}
+
+.gantt-grid {
+    display: grid;
+    grid-template-columns: repeat(28, 40px);
+    height: 44px;
+    position: relative;
+}
+
+.gantt-cell {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.gantt-task-bar {
+    position: absolute;
+    height: 24px;
+    top: 10px;
+    background: var(--primary);
+    border-radius: 12px;
+    z-index: 1;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.gantt-task-bar:hover {
+    filter: brightness(1.2);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+/* Dashboard Lists */
+.activity-list,
+.schedule-list {
+    list-style: none;
+    margin-top: 1rem;
+}
+
+.activity-list li,
+.schedule-list li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.activity-icon {
+    color: var(--success);
+    display: flex;
+    align-items: center;
+}
+
+.schedule-date {
+    font-size: 0.8rem;
+    color: var(--primary);
+    background: rgba(79, 70, 229, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.schedule-label {
+    font-size: 0.9rem;
+}
+
+.empty-msg {
+    color: var(--text-dim);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem !important;
+}
+
+.activity-text {
+    font-size: 0.9rem;
+}
+
+/* Report Status Markers in Gantt */
+.report-row-label {
+    background: rgba(16, 185, 129, 0.05) !important;
+    font-weight: 600 !important;
+    color: var(--success) !important;
+}
+
+.report-row-grid {
+    background: rgba(16, 185, 129, 0.02);
+}
+
+.report-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 16px auto;
+    transition: var(--transition);
+    position: relative;
+    cursor: help;
+}
+
+.report-marker.submitted {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.report-marker.pending {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+}
+
+/* Marker Categories */
+.report-marker.category-effort.submitted {
+    background: #ef4444;
+    /* Red */
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.report-marker.category-effort.pending {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.report-marker.category-presentation.submitted {
+    background: #f59e0b;
+    /* Orange */
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.report-marker.category-presentation.pending {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.report-marker:hover {
+    transform: scale(1.2);
+    z-index: 10;
+}
+
+/* Event Status Markers in Gantt */
+.event-row-label {
+    background: rgba(14, 165, 233, 0.05) !important;
+    font-weight: 600 !important;
+    color: var(--accent) !important;
+}
+
+.event-row-grid {
+    background: rgba(14, 165, 233, 0.02);
+}
+
+.event-marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 17px auto;
+    position: relative;
+}
+
+.event-marker.special-event {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: var(--accent);
+    border-radius: 8px;
+    margin: 4px 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    line-height: 1.1;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+}
+
+.event-marker.special-event span {
+    white-space: nowrap;
+}
+
+/* Semester Distinction */
+.semester-border {
+    border-right: 2px solid var(--primary) !important;
+    position: relative;
+}
+
+.semester-border::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    /* Center with the 2px border */
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+    filter: blur(4px);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.gantt-tick {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 0 !important;
+}
+
+.tick-num {
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.tick-date {
+    font-size: 8px;
+    color: var(--text-dim);
+}
+
+/* Semester & Exam Boundaries */
+.semester-border {
+    border-right: 2px solid var(--primary) !important;
+    position: relative;
+}
+
+.semester-border::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+    filter: blur(4px);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.exam-border-mid,
+.exam-border-final {
+    border-right: 2px dashed #fbbf24 !important;
+    position: relative;
+}
+
+.semester-label {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    font-weight: 800;
+    color: var(--primary);
+    background: rgba(79, 70, 229, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 20;
+    letter-spacing: 0.02em;
+}
+
+.exam-label {
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.1) !important;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+/* Deliverables Sub-rows Styling */
+/* Category Headers and Labels */
+.category-header-label {
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    padding-top: 12px !important;
+}
+
+.category-header-grid {
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid var(--border);
+}
+
+.deliverable-label {
+    padding-left: 24px !important;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-dim) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+
+/* Ensure report markers are centered in the grid cells of deliverable rows */
+.gantt-grid .report-marker {
+    margin: 16px auto;
+}
+
+/* Member Grid & Cards */
+.member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.member-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.member-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.member-card-header {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.teams-link {
+    color: #6264A7;
+    /* MS Teams Brand Color */
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.teams-link:hover {
+    background: rgba(98, 100, 167, 0.1);
+    transform: scale(1.1);
+}
+
+.teams-link i {
+    width: 18px;
+    height: 18px;
+}
+
+.member-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-course {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-role {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.member-card-body {
+    padding: 1rem;
+}
+
+.email-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.email-input-group input {
+    border: none !important;
+    background: transparent !important;
+    flex: 1;
+}
+
+.email-suffix {
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+    font-size: 12px;
+    border-left: 1px solid var(--border);
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* Role Definition Table Styling */
+.role-guide-list {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.role-definition-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    min-height: 50px;
+}
+
+.role-definition-row:last-child {
+    border-bottom: none;
+}
+
+.role-cell {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+}
+
+.role-title-cell {
+    width: 160px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.role-desc-cell {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    padding-left: 20px;
+}
+
+.role-action-cell {
+    width: 150px;
+    flex-shrink: 0;
+    justify-content: flex-end;
+}
+
+.teams-sub-link {
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 6px 10px;
+    height: 30px;
+    gap: 6px;
+}
+
+.teams-sub-link i {
+    width: 14px;
+    height: 14px;
+}
+
+/* Helper Classes */
+.mt-1 {
+    margin-top: 1rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+.danger-zone {
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes animateIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: animateIn 0.3s ease forwards;
+}
