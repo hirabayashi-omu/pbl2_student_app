@@ -5,6 +5,7 @@ let state = {
     themeName: '',
     groupSymbol: '', // A, B, C...
     groupName: '',   // Catchy name
+    groupLogo: '',   // DataURL for team logo
     teamsUrl: '',    // URL to Teams chat/channel
     members: [],
     tasks: [],
@@ -113,6 +114,43 @@ function updateDisplayInfo() {
     const combinedGroupName = state.groupSymbol ? `グループ ${state.groupSymbol}${state.groupName ? ': ' + state.groupName : ''}` : (state.groupName || '未設定のグループ');
     document.getElementById('display-group-name').textContent = combinedGroupName;
     document.getElementById('gantt-group-display').textContent = combinedGroupName;
+
+    // --- Logo Logic (Sidebar & Gantt) ---
+    const updateLogo = (imgId, placeholderId, isSidebar = false) => {
+        const logoImg = document.getElementById(imgId);
+        const logoPlaceholder = document.getElementById(placeholderId);
+
+        if (!logoImg || !logoPlaceholder) return;
+
+        if (state.groupLogo) {
+            // Show Image
+            logoImg.src = state.groupLogo;
+            logoImg.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+        } else {
+            // Show Placeholder
+            logoImg.style.display = 'none';
+            logoPlaceholder.style.display = 'flex';
+
+            // Symbol Logic: "未設定の場合は単色塗りでグループ記号"
+            if (state.groupSymbol) {
+                logoPlaceholder.style.background = '#4f46e5'; // Primary color (solid)
+                logoPlaceholder.innerText = state.groupSymbol;
+                logoPlaceholder.style.fontSize = '24px';
+            } else {
+                // Default Icon view
+                logoPlaceholder.style.background = 'rgba(255,255,255,0.1)';
+                logoPlaceholder.innerHTML = isSidebar
+                    ? `<i data-lucide="image-plus" style="width:20px;height:20px;opacity:0.5;"></i>`
+                    : `<i data-lucide="image" style="width:20px;height:20px;opacity:0.5;"></i>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    };
+
+    updateLogo('team-logo-img', 'team-logo-placeholder', true);
+    updateLogo('gantt-team-logo', 'gantt-team-logo-placeholder', false);
+
 
     document.getElementById('input-theme-name').value = state.themeName || '';
     document.getElementById('select-group-symbol').value = state.groupSymbol || '';
@@ -243,6 +281,28 @@ function initEventListeners() {
         state.groupSymbol = e.target.value;
         saveState();
     });
+
+    // Team Logo Upload
+    const logoWrapper = document.getElementById('team-logo-wrapper');
+    const logoInput = document.getElementById('team-logo-input');
+    if (logoWrapper && logoInput) {
+        logoWrapper.addEventListener('click', (e) => {
+            logoInput.value = ''; // Reset to allow same file selection
+            logoInput.click();
+        });
+        logoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (rev) => {
+                    // Simple DataURL save. For larger apps, resize on client side.
+                    state.groupLogo = rev.target.result;
+                    saveState();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
     document.getElementById('input-group-name').addEventListener('input', (e) => {
         state.groupName = e.target.value;
         saveState();

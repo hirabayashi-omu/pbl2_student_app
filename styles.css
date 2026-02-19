@@ -2573,3 +2573,16 @@ th {
 .hotspot-rect:hover .hotspot-delete-btn {
     display: flex;
 }
+
+/* Team Logo Styling */
+#team-logo-wrapper {
+    transition: opacity 0.2s ease;
+}
+
+#team-logo-wrapper:hover {
+    opacity: 0.8;
+}
+
+#gantt-team-logo {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
