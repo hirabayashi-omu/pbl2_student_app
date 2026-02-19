@@ -17,7 +17,8 @@ let state = {
         pamphlet_25: false,
         slides_25: false
     },
-    schedule: [] // Loaded from CSV data
+    schedule: [], // Loaded from CSV data
+    sidebarCollapsed: false
 };
 
 const STORAGE_KEY = 'pbl2_student_manager_data';
@@ -91,6 +92,13 @@ function loadState() {
     }
     // Sync UI with state
     updateDisplayInfo();
+
+    // Restore sidebar state
+    if (state.sidebarCollapsed) {
+        document.querySelector('.sidebar').classList.add('collapsed');
+    } else {
+        document.querySelector('.sidebar').classList.remove('collapsed');
+    }
 }
 
 function saveState() {
@@ -154,7 +162,10 @@ function updateDisplayInfo() {
 function initEventListeners() {
     // Navigation
     document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
-        document.querySelector('.sidebar').classList.toggle('collapsed');
+        const sidebar = document.querySelector('.sidebar');
+        sidebar.classList.toggle('collapsed');
+        state.sidebarCollapsed = sidebar.classList.contains('collapsed');
+        saveState();
     });
 
     document.querySelectorAll('.nav-item').forEach(btn => {
@@ -234,7 +245,7 @@ function switchView(viewId) {
 
     const titles = {
         dashboard: 'ダッシュボード',
-        gantt: 'プロジェクト管理 (ガントチャート)',
+        gantt: 'プロジェクト管理',
         reports: '報告書・レポート作成',
         members: 'メンバー・テーマ設定',
         data: 'データ管理',
