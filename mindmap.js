@@ -98,6 +98,7 @@ var MindMapModule = window.MindMapModule = (() => {
             active: false,
             nodeId: null
         },
+        allowedMemberIndices: null,
         // Undo/Redo
         history: [],
         future: []
@@ -971,6 +972,71 @@ var MindMapModule = window.MindMapModule = (() => {
         });
         menu.appendChild(swatchContainer);
 
+        // Assignees (if configured)
+        if (mindMapState.allowedMemberIndices && mindMapState.allowedMemberIndices.length > 0 && typeof state !== 'undefined' && state.members) {
+            const separator3 = document.createElement('div');
+            separator3.className = 'context-menu-separator';
+            menu.appendChild(separator3);
+
+            const assigneeContainer = document.createElement('div');
+            assigneeContainer.className = 'assignee-selector-container';
+            assigneeContainer.style.padding = '4px 8px';
+            assigneeContainer.style.display = 'flex';
+            assigneeContainer.style.gap = '4px';
+            assigneeContainer.style.flexWrap = 'wrap';
+
+            // Ensure node.assignees exists
+            const currentAssignees = node.assignees || [];
+
+            mindMapState.allowedMemberIndices.forEach(idx => {
+                const m = state.members[idx];
+                if (!m) return;
+
+                const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+                const color = m.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                const initial = (m.lastName || '?').slice(0, 1);
+                const isSelected = currentAssignees.includes(idx);
+
+                const avatar = document.createElement('div');
+                avatar.title = `${m.lastName} ${m.firstName || ''}`;
+                avatar.style.cssText = `
+                    width: 24px; height: 24px; border-radius: 50%;
+                    background: ${m.avatarImage ? 'transparent' : color};
+                    display: flex; align-items: center; justify-content: center;
+                    cursor: pointer; position: relative;
+                    border: 2px solid ${isSelected ? '#fff' : 'transparent'};
+                    box-shadow: ${isSelected ? '0 0 0 2px var(--primary)' : 'none'};
+                    overflow: hidden; flex-shrink: 0;
+                `;
+
+                if (m.avatarImage) {
+                    avatar.innerHTML = `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;">`;
+                } else {
+                    avatar.innerHTML = `<span style="font-size:10px;font-weight:bold;color:white;">${initial}</span>`;
+                }
+
+                avatar.onclick = (e) => {
+                    e.stopPropagation();
+                    saveState(); // Save before modifying
+                    if (!node.assignees) node.assignees = [];
+
+                    if (node.assignees.includes(idx)) {
+                        node.assignees = node.assignees.filter(i => i !== idx);
+                        avatar.style.borderColor = 'transparent';
+                        avatar.style.boxShadow = 'none';
+                    } else {
+                        node.assignees.push(idx);
+                        avatar.style.borderColor = '#fff';
+                        avatar.style.boxShadow = '0 0 0 2px var(--primary)';
+                    }
+                    render();
+                };
+
+                assigneeContainer.appendChild(avatar);
+            });
+            menu.appendChild(assigneeContainer);
+        }
+
         // Position
         menu.style.display = 'block'; // Ensure it's measurable
         const rect = menu.getBoundingClientRect();
@@ -1491,6 +1557,44 @@ var MindMapModule = window.MindMapModule = (() => {
             // Improve visibility for custom colors
             el.style.borderColor = 'rgba(255,255,255,0.2)';
         }
+
+        // Render Assignee Avatars (Top-Right)
+        if (node.assignees && node.assignees.length > 0 && typeof state !== 'undefined' && state.members) {
+            const avatarGroup = document.createElement('div');
+            avatarGroup.className = 'node-assignees';
+            avatarGroup.style.cssText = `
+                position: absolute; top: -8px; right: -8px;
+                display: flex; pointer-events: none; z-index: 5;
+            `;
+
+            node.assignees.forEach(idx => {
+                const m = state.members[idx];
+                if (!m) return;
+
+                const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+                const color = m.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                const initial = (m.lastName || '?').slice(0, 1);
+
+                const av = document.createElement('div');
+                av.style.cssText = `
+                    width: 18px; height: 18px; border-radius: 50%;
+                    background: ${m.avatarImage ? '#fff' : color};
+                    border: 1px solid white;
+                    margin-left: -6px;
+                    display: flex; align-items: center; justify-content: center;
+                    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                `;
+
+                if (m.avatarImage) {
+                    av.innerHTML = `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;">`;
+                } else {
+                    av.innerHTML = `<span style="font-size:9px;font-weight:700;color:white;line-height:1;">${initial}</span>`;
+                }
+                avatarGroup.appendChild(av);
+            });
+            el.appendChild(avatarGroup);
+        }
+
 
         // Position (center origin logic in CSS vs top-left here)
         // Let's say node.y is center, node.x is left.
@@ -3110,11 +3214,16 @@ var MindMapModule = window.MindMapModule = (() => {
         }
     }
 
+    function setAssigneeFilter(indices) {
+        mindMapState.allowedMemberIndices = indices;
+    }
+
     // Start
     return {
         init: init,
         loadData: loadData,
         setRootText: setRootText,
+        setAssigneeFilter: setAssigneeFilter,
         exportData: exportData,
         addChildToRoot: () => {
             if (mindMapState.root) {
