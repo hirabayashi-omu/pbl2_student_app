@@ -1011,6 +1011,28 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
                 const container = document.getElementById('task-flow-editor');
                 if (container) {
                     MindMapModule.init(container);
+                    // Pass assigned members to mind map for context menu filtering
+                    const currentTask = state.tasks[editingTaskIndex];
+                    let assigneeIndices = [];
+                    if (currentTask) {
+                        if (Array.isArray(currentTask.assignees)) {
+                            // Map names back to indices
+                            assigneeIndices = currentTask.assignees.map(name => {
+                                return state.members.findIndex(m =>
+                                    `${m.lastName || ''} ${m.firstName || ''}`.trim() === name
+                                );
+                            }).filter(i => i !== -1);
+                        } else if (currentTask.assignee) {
+                            const idx = state.members.findIndex(m =>
+                                `${m.lastName || ''} ${m.firstName || ''}`.trim() === currentTask.assignee
+                            );
+                            if (idx !== -1) assigneeIndices.push(idx);
+                        }
+                    }
+                    if (MindMapModule.setAssigneeFilter) {
+                        MindMapModule.setAssigneeFilter(assigneeIndices);
+                    }
+
                     MindMapModule.loadData(task.processFlow, task.name);
                 }
             }, 250);
@@ -2160,6 +2182,66 @@ function buildMindMapSvg(pf) {
     // Helper: truncate text
     const trunc = (t, max) => (t && t.length > max) ? t.slice(0, max) + '…' : (t || '');
 
+    // Helper: Add assignees
+    const addAssignees = (node, rectX, rectY, rectW) => {
+        if (!node.assignees || node.assignees.length === 0) return;
+        const group = document.createElementNS(ns, 'g');
+        const startX = rectX + rectW - 6;
+        const startY = rectY - 6;
+
+        node.assignees.forEach((idx, i) => {
+            const m = state.members[idx];
+            if (!m) return;
+            const x = startX - (i * 12); // Stack from right
+            const y = startY;
+            const r = 9;
+
+            const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+            const color = m.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+
+            // White border circle
+            const bg = document.createElementNS(ns, 'circle');
+            bg.setAttribute('cx', x); bg.setAttribute('cy', y); bg.setAttribute('r', r);
+            bg.setAttribute('fill', m.avatarImage ? '#fff' : color);
+            bg.setAttribute('stroke', '#fff'); bg.setAttribute('stroke-width', '1.5');
+            group.appendChild(bg);
+
+            if (m.avatarImage) {
+                // Clip path for image
+                const clipId = `clip-${node.id}-${i}-${Math.random().toString(36).substr(2, 5)}`;
+                const defs = document.createElementNS(ns, 'defs');
+                const clipPath = document.createElementNS(ns, 'clipPath');
+                clipPath.id = clipId;
+                const clipCircle = document.createElementNS(ns, 'circle');
+                clipCircle.setAttribute('cx', x); clipCircle.setAttribute('cy', y); clipCircle.setAttribute('r', r);
+                clipPath.appendChild(clipCircle);
+                defs.appendChild(clipPath);
+                group.appendChild(defs);
+
+                const img = document.createElementNS(ns, 'image');
+                img.setAttribute('x', x - r); img.setAttribute('y', y - r);
+                img.setAttribute('width', r * 2); img.setAttribute('height', r * 2);
+                img.setAttribute('href', m.avatarImage);
+                img.setAttribute('clip-path', `url(#${clipId})`);
+                img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+                group.appendChild(img);
+            } else {
+                const txt = document.createElementNS(ns, 'text');
+                txt.setAttribute('x', x); txt.setAttribute('y', y + 3);
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('fill', '#fff');
+                txt.setAttribute('font-size', '9px');
+                txt.setAttribute('font-weight', 'bold');
+                txt.textContent = (m.lastName || '?').slice(0, 1);
+                group.appendChild(txt);
+            }
+        });
+        svg.appendChild(group);
+    };
+
+    // Map to store node center coordinates for relations
+    const nodeCoords = {}; // { id: {x, y} }
+
     // Root node
     const rootCY = H / 2;
     const rootRect = document.createElementNS(ns, 'rect');
@@ -2167,6 +2249,7 @@ function buildMindMapSvg(pf) {
     rootRect.setAttribute('width', 110); rootRect.setAttribute('height', 28);
     rootRect.setAttribute('rx', 8); rootRect.setAttribute('fill', '#6366f1');
     svg.appendChild(rootRect);
+    addAssignees(root, rootX, rootCY - 14, 110);
 
     const rootText = document.createElementNS(ns, 'text');
     rootText.setAttribute('x', rootX + 55); rootText.setAttribute('y', rootCY + 5);
@@ -2175,23 +2258,26 @@ function buildMindMapSvg(pf) {
     rootText.textContent = trunc(root.text, 10);
     svg.appendChild(rootText);
 
+    nodeCoords[root.id] = { x: rootX, y: rootCY - 14, w: 110, h: 28 };
+
     // Children
     children.forEach((child, i) => {
         const cy = PADDING + i * ROW_H + ROW_H / 2;
-        // Connector line
+        // Connector
         const line = document.createElementNS(ns, 'path');
         line.setAttribute('d', `M ${rootX + 110} ${rootCY} C ${childX - 20} ${rootCY}, ${childX - 20} ${cy}, ${childX} ${cy}`);
         line.setAttribute('stroke', '#6366f155'); line.setAttribute('stroke-width', '1.5');
         line.setAttribute('fill', 'none');
         svg.appendChild(line);
 
-        // Child node box
+        // Child node
         const crect = document.createElementNS(ns, 'rect');
         crect.setAttribute('x', childX); crect.setAttribute('y', cy - 13);
         crect.setAttribute('width', 140); crect.setAttribute('height', 26);
         crect.setAttribute('rx', 6); crect.setAttribute('fill', '#1e293b');
         crect.setAttribute('stroke', '#334155'); crect.setAttribute('stroke-width', '1');
         svg.appendChild(crect);
+        addAssignees(child, childX, cy - 13, 140);
 
         const ctext = document.createElementNS(ns, 'text');
         ctext.setAttribute('x', childX + 70); ctext.setAttribute('y', cy + 4);
@@ -2200,7 +2286,9 @@ function buildMindMapSvg(pf) {
         ctext.textContent = trunc(child.text, 14);
         svg.appendChild(ctext);
 
-        // Grandchildren (first 2)
+        nodeCoords[child.id] = { x: childX, y: cy - 13, w: 140, h: 26 };
+
+        // Grandchildren
         const grandX = childX + 155;
         (child.children || []).slice(0, 3).forEach((gc, gi) => {
             const gcy = cy + (gi - ((child.children.slice(0, 3).length - 1) / 2)) * 22;
@@ -2216,6 +2304,7 @@ function buildMindMapSvg(pf) {
             grect.setAttribute('rx', 5); grect.setAttribute('fill', '#0f172a');
             grect.setAttribute('stroke', '#1e293b'); grect.setAttribute('stroke-width', '1');
             svg.appendChild(grect);
+            addAssignees(gc, grandX, gcy - 11, 130);
 
             const gtext = document.createElementNS(ns, 'text');
             gtext.setAttribute('x', grandX + 65); gtext.setAttribute('y', gcy + 4);
@@ -2223,8 +2312,43 @@ function buildMindMapSvg(pf) {
             gtext.setAttribute('font-size', '9');
             gtext.textContent = trunc(gc.text, 16);
             svg.appendChild(gtext);
+
+            nodeCoords[gc.id] = { x: grandX, y: gcy - 11, w: 130, h: 22 };
         });
     });
+
+    // Render relations (simple dashed lines without arrowheads)
+    const traverseAndDrawRelations = (n) => {
+        if (n.relations && n.relations.length > 0) {
+            n.relations.forEach(r => {
+                const targetId = (typeof r === 'string') ? r : r.id;
+                const src = nodeCoords[n.id];
+                const dst = nodeCoords[targetId];
+
+                if (src && dst) {
+                    const rPath = document.createElementNS(ns, 'path');
+                    // From Right of Source to Left of Target
+                    const startX = src.x + src.w;
+                    const startY = src.y + src.h / 2;
+                    const endX = dst.x;
+                    const endY = dst.y + dst.h / 2;
+
+                    const midX = (startX + endX) / 2;
+                    // Adjust curve height based on vertical distance
+                    const cY = Math.min(startY, endY) - 20;
+
+                    rPath.setAttribute('d', `M ${startX} ${startY} Q ${midX} ${cY} ${endX} ${endY}`);
+                    rPath.setAttribute('stroke', '#f59e0b');
+                    rPath.setAttribute('stroke-width', '1.5');
+                    rPath.setAttribute('stroke-dasharray', '3,3');
+                    rPath.setAttribute('fill', 'none');
+                    svg.appendChild(rPath);
+                }
+            });
+        }
+        if (n.children) n.children.forEach(traverseAndDrawRelations);
+    };
+    traverseAndDrawRelations(root);
 
     return svg;
 }
@@ -2237,6 +2361,7 @@ function buildMindMapSvgForPrint(pf) {
     const root = pf.root;
     const W = 700, ROW_H = 38, PADDING = 18;
     const rootX = 16, childX = 160, grandX = 340;
+    const nodeCoords = {};
 
     const children = root.children || [];
     // Count total rows needed (children + their grandchildren offsets)
@@ -2259,13 +2384,58 @@ function buildMindMapSvgForPrint(pf) {
         return el;
     };
 
+    // Helper: Add assignees (similar logic but adjusted for print)
+    const addAssignees = (node, rectX, rectY, rectW) => {
+        if (!node.assignees || node.assignees.length === 0) return;
+        const group = document.createElementNS(ns, 'g');
+        const startX = rectX + rectW - 6;
+        const startY = rectY - 6;
+
+        node.assignees.forEach((idx, i) => {
+            const m = state.members[idx];
+            if (!m) return;
+            const x = startX - (i * 12);
+            const y = startY;
+            const r = 9;
+            const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+            const color = m.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+
+            const bg = mk('circle', { cx: x, cy: y, r: r, fill: m.avatarImage ? '#fff' : color, stroke: '#fff', 'stroke-width': '1.5' });
+            group.appendChild(bg);
+
+            if (m.avatarImage) {
+                const clipId = `clip-p-${node.id}-${i}-${Math.random().toString(36).substr(2, 5)}`;
+                const defs = mk('defs', {});
+                const clipPath = mk('clipPath', { id: clipId });
+                const clipCircle = mk('circle', { cx: x, cy: y, r: r });
+                clipPath.appendChild(clipCircle);
+                defs.appendChild(clipPath);
+                group.appendChild(defs);
+
+                const img = mk('image', { x: x - r, y: y - r, width: r * 2, height: r * 2, href: m.avatarImage, 'clip-path': `url(#${clipId})`, preserveAspectRatio: 'xMidYMid slice' });
+                group.appendChild(img);
+            } else {
+                const txt = mk('text', { x: x, y: y + 3, 'text-anchor': 'middle', fill: '#fff', 'font-size': '9', 'font-weight': 'bold', 'font-family': 'sans-serif' });
+                txt.textContent = (m.lastName || '?').slice(0, 1);
+                group.appendChild(txt);
+            }
+        });
+        svg.appendChild(group);
+    };
+
+    // Map to store node center coordinates for relations - already declared at top of function if added properly, 
+    // but looking at previous step, it was added at line 2379. 
+    // Let's just ensure we use the one instance.
     const rootCY = H / 2;
 
     // Root node (indigo fill, white text)
     svg.appendChild(mk('rect', { x: rootX, y: rootCY - 15, width: 124, height: 30, rx: 8, fill: '#4f46e5' }));
+    addAssignees(root, rootX, rootCY - 15, 124);
     const rootTxt = mk('text', { x: rootX + 62, y: rootCY + 5, 'text-anchor': 'middle', fill: '#fff', 'font-size': '11', 'font-weight': '700', 'font-family': 'sans-serif' });
     rootTxt.textContent = trunc(root.text, 12);
     svg.appendChild(rootTxt);
+
+    nodeCoords[root.id] = { x: rootX, y: rootCY - 15, w: 124, h: 30 };
 
     // Children
     let rowOffset = 0;
@@ -2280,24 +2450,68 @@ function buildMindMapSvgForPrint(pf) {
             stroke: '#6366f1', 'stroke-width': '1.5', fill: 'none', 'stroke-opacity': '0.5'
         }));
 
-        // Child box (light indigo bg, dark border)
-        svg.appendChild(mk('rect', { x: childX, y: childCY - 14, width: 160, height: 28, rx: 6, fill: '#ede9fe', stroke: '#7c3aed', 'stroke-width': '1' }));
-        const ctxt = mk('text', { x: childX + 80, y: childCY + 5, 'text-anchor': 'middle', fill: '#3730a3', 'font-size': '10', 'font-weight': '600', 'font-family': 'sans-serif' });
-        ctxt.textContent = trunc(child.text, 18);
-        svg.appendChild(ctxt);
+        // Child node box
+        const crect = mk('rect', { x: childX, y: childCY - 14, width: 155, height: 28, rx: 6, fill: '#f8fafc', stroke: '#cbd5e1', 'stroke-width': '1' });
+        svg.appendChild(crect);
+        addAssignees(child, childX, childCY - 14, 155);
 
-        // Grandchildren
+        const ctext = mk('text', { x: childX + 77, y: childCY + 5, 'text-anchor': 'middle', fill: '#1e293b', 'font-size': '10', 'font-family': 'sans-serif' });
+        ctext.textContent = trunc(child.text, 16);
+        svg.appendChild(ctext);
+
+        nodeCoords[child.id] = { x: childX, y: childCY - 14, w: 155, h: 28 };
+
+        // Grandchildren (limit to 4)
+        const grandX = childX + 170; // Adjusted grandX for print
         grandChildren.forEach((gc, gi) => {
-            const gcy = PADDING + (rowOffset + gi) * ROW_H + ROW_H / 2;
-            svg.appendChild(mk('line', { x1: childX + 160, y1: childCY, x2: grandX, y2: gcy, stroke: '#a78bfa', 'stroke-width': '1', 'stroke-opacity': '0.6' }));
-            svg.appendChild(mk('rect', { x: grandX, y: gcy - 12, width: 160, height: 24, rx: 5, fill: '#f5f3ff', stroke: '#c4b5fd', 'stroke-width': '1' }));
-            const gtxt = mk('text', { x: grandX + 80, y: gcy + 4, 'text-anchor': 'middle', fill: '#4c1d95', 'font-size': '9', 'font-family': 'sans-serif' });
-            gtxt.textContent = trunc(gc.text, 20);
-            svg.appendChild(gtxt);
+            const gcy = childCY + (gi - (grandChildren.length - 1) / 2) * 24;
+
+            svg.appendChild(mk('line', { x1: childX + 155, y1: childCY, x2: grandX, y2: gcy, stroke: '#cbd5e1', 'stroke-width': '1' }));
+
+            const grect = mk('rect', { x: grandX, y: gcy - 11, width: 140, height: 22, rx: 5, fill: '#fff', stroke: '#cbd5e1', 'stroke-width': '1' });
+            svg.appendChild(grect);
+            addAssignees(gc, grandX, gcy - 11, 140);
+
+            const gtext = mk('text', { x: grandX + 70, y: gcy + 4, 'text-anchor': 'middle', fill: '#64748b', 'font-size': '9', 'font-family': 'sans-serif' });
+            gtext.textContent = trunc(gc.text, 20);
+            svg.appendChild(gtext);
+
+            nodeCoords[gc.id] = { x: grandX, y: gcy - 11, w: 140, h: 22 };
         });
 
         rowOffset += gcCount;
     });
+
+    // Render relations (simple dashed lines without arrowheads)
+    const traverseAndDrawRelations = (n) => {
+        if (n.relations && n.relations.length > 0) {
+            n.relations.forEach(r => {
+                const targetId = (typeof r === 'string') ? r : r.id;
+                const src = nodeCoords[n.id];
+                const dst = nodeCoords[targetId];
+
+                if (src && dst) {
+                    const startX = src.x + src.w;
+                    const startY = src.y + src.h / 2;
+                    const endX = dst.x;
+                    const endY = dst.y + dst.h / 2;
+                    const midX = (startX + endX) / 2;
+                    const cY = Math.min(startY, endY) - 20;
+
+                    const rPath = mk('path', {
+                        d: `M ${startX} ${startY} Q ${midX} ${cY} ${endX} ${endY}`,
+                        stroke: '#f59e0b',
+                        'stroke-width': '1.5',
+                        'stroke-dasharray': '3,3',
+                        fill: 'none'
+                    });
+                    svg.appendChild(rPath);
+                }
+            });
+        }
+        if (n.children) n.children.forEach(traverseAndDrawRelations);
+    };
+    traverseAndDrawRelations(root);
 
     return svg;
 }
