@@ -84,23 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
 });
 
-function loadState() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        state = JSON.parse(saved);
-    } else {
-        state.schedule = DEFAULT_SCHEDULE;
-    }
-    // Sync UI with state
-    updateDisplayInfo();
+// function loadState() { ... } replaced by new implementation with migration logic
 
-    // Restore sidebar state
-    if (state.sidebarCollapsed) {
-        document.querySelector('.sidebar').classList.add('collapsed');
-    } else {
-        document.querySelector('.sidebar').classList.remove('collapsed');
-    }
-}
 
 function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1156,6 +1141,69 @@ function closeModal() {
     }
 }
 
+// --- Utility: ID Generator ---
+function generateId() {
+    return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
+}
+
+function migrateData(data) {
+    const now = new Date().toISOString();
+    // Tasks
+    if (Array.isArray(data.tasks)) {
+        data.tasks.forEach(t => {
+            if (!t.uuid) t.uuid = generateId();
+            if (!t.updatedAt) t.updatedAt = now;
+        });
+    }
+    // Members
+    if (Array.isArray(data.members)) {
+        data.members.forEach(m => {
+            if (!m.id) m.id = generateId();
+            if (!m.updatedAt) m.updatedAt = now;
+        });
+    }
+    // Reports
+    if (data.reports) {
+        Object.keys(data.reports).forEach(key => {
+            if (data.reports[key] && !data.reports[key].updatedAt) {
+                data.reports[key].updatedAt = now;
+            }
+        });
+    }
+    // Analysis Report
+    if (data.analysisReport) {
+        if (!data.analysisReport.updatedAt) data.analysisReport.updatedAt = now;
+    }
+    return data;
+}
+
+function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            state = JSON.parse(saved);
+            state = migrateData(state); // Ensure IDs exist
+        } catch (e) {
+            console.error('State load error', e);
+            state.schedule = DEFAULT_SCHEDULE;
+        }
+    } else {
+        state.schedule = DEFAULT_SCHEDULE;
+        state = migrateData(state);
+    }
+    // Sync UI with state
+    updateDisplayInfo();
+
+    // Restore sidebar state
+    if (state.sidebarCollapsed) {
+        document.querySelector('.sidebar').classList.add('collapsed');
+    } else {
+        document.querySelector('.sidebar').classList.remove('collapsed');
+    }
+}
+
+// ... (in updateDisplayInfo etc)
+
 function saveTask() {
     const name = document.getElementById('task-name').value;
     const category = document.getElementById('task-category').value;
@@ -1177,7 +1225,23 @@ function saveTask() {
         processFlow.authors = Array.from(authorChecks).map(el => parseInt(el.dataset.idx));
     }
 
-    const taskData = { name, category, start, end, assignees, completed, processFlow };
+    const now = new Date().toISOString();
+    // Preserve existing UUID or generate new
+    let uuid = generateId();
+    let createdAt = now;
+
+    if (editingTaskIndex !== -1) {
+        const existing = state.tasks[editingTaskIndex];
+        uuid = existing.uuid || uuid;
+        createdAt = existing.createdAt || now;
+    }
+
+    const taskData = {
+        name, category, start, end, assignees, completed, processFlow,
+        uuid,
+        updatedAt: now,
+        createdAt
+    };
 
     if (editingTaskIndex === -1) {
         state.tasks.push(taskData);
@@ -1188,6 +1252,7 @@ function saveTask() {
     saveState();
     closeModal();
     renderGantt();
+
 }
 
 /** 削除タスク */
@@ -2040,7 +2105,7 @@ function setupWrCounter(textareaId, countId, statusId, min, max) {
     ta.addEventListener('input', () => {
         update();
         updateContentTime();
-        saveDraftWorkReport();
+        saveDraftWorkReport(true);
     });
     ta.addEventListener('change', update);
 }
@@ -2079,7 +2144,7 @@ function buildCommTable() {
             state.reports[iter].communicationTimes[i] = now;
             document.getElementById(`wr-comm-time-${i}`).textContent = formattedTimestamp(now);
             // Also save on input to be "proactive"
-            saveDraftWorkReport();
+            saveDraftWorkReport(true);
         });
 
         tbody.appendChild(tr);
@@ -2108,7 +2173,7 @@ function buildAuthorChecks() {
 
         label.querySelector('input').addEventListener('change', () => {
             updateContentTime();
-            saveDraftWorkReport();
+            saveDraftWorkReport(true);
         });
 
         container.appendChild(label);
@@ -2687,11 +2752,15 @@ function collectWrFormData() {
 }
 
 /** 一時保存 — saves without locking */
-function saveDraftWorkReport() {
+/** 一時保存 — saves without locking */
+function saveDraftWorkReport(silent = false) {
+    // If event object is passed (from click listener), treat as not silent
+    if (silent && silent.type) silent = false;
+
     const iter = getWrIter();
     if (!state.reports[iter]) state.reports[iter] = {};
     if (state.reports[iter].submitted) {
-        alert('この回の報告書は提出済みです。内容を変更することはできません。');
+        if (!silent) alert('この回の報告書は提出済みです。内容を変更することはできません。');
         return;
     }
 
@@ -2701,7 +2770,8 @@ function saveDraftWorkReport() {
         authors: authors,
         selectedTasks: getSelectedTaskIds(),
         content: `${ach}\n${chal}`.trim(),
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     });
     saveState();
 
@@ -2773,7 +2843,8 @@ function submitWorkReport() {
         selectedTasks: getSelectedTaskIds(),
         content: `${ach}\n${chal}`.trim(),
         submitted: true,
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     });
     saveState();
 
@@ -3019,7 +3090,7 @@ function saveAnalysisReport() {
     const problem = document.getElementById('analysis-problem').value;
     const solution = document.getElementById('analysis-solution').value;
     const content = `${bg}\n${problem}\n${solution}`.trim();
-    state.reports['analysis'] = { bg, problem, solution, content };
+    state.reports['analysis'] = { bg, problem, solution, content, updatedAt: new Date().toISOString() };
     saveState();
     alert('課題設定レポートを保存しました');
     renderGantt();
@@ -3081,34 +3152,148 @@ function importData(e) {
     const reader = new FileReader();
     reader.onload = (event) => {
         try {
-            const imported = JSON.parse(event.target.result);
+            let imported = JSON.parse(event.target.result);
+            // Ensure imported data has IDs/timestamps
+            imported = migrateData(imported);
 
-            // ── 1. 現在の「自分」メンバー情報を退避 ──
+            const doMerge = confirm(
+                'インポート方式を選択してください:\n' +
+                '[OK] = マージ（統合）\n' +
+                '  - IDが同じデータは新しい方を採用\n' +
+                '  - 新しいデータは追加\n' +
+                '[キャンセル] = 上書き（現在のデータを消して置き換え）'
+            );
+
+            // 1. Preserve Self Info (always needed for restore context)
             const selfMember = (state.members || []).find(m => m.isSelf);
             const selfKey = selfMember
                 ? (selfMember.emailLocal || `${selfMember.lastName}${selfMember.firstName}`)
                 : null;
 
-            // ── 2. インポートデータで上書き ──
-            state = imported;
+            if (doMerge) {
+                // --- MERGE LOGIC ---
 
-            // ── 3. インポート先メンバーにアバター画像をマージ ──
-            // (インポートファイルに avatarImage があればそれを優先)
-            // (自分の avatarImage と isSelf だけ元のものを復元)
+                // A. Tasks Merge
+                if (imported.tasks && Array.isArray(imported.tasks)) {
+                    imported.tasks.forEach(remoteTask => {
+                        const localIndex = state.tasks.findIndex(t => t.uuid === remoteTask.uuid);
+
+                        if (localIndex === -1) {
+                            // New Task: Add
+                            state.tasks.push(remoteTask);
+                        } else {
+                            // Existing Task: Update if remote is newer
+                            const localTask = state.tasks[localIndex];
+                            const localTime = new Date(localTask.updatedAt || 0).getTime();
+                            const remoteTime = new Date(remoteTask.updatedAt || 0).getTime();
+
+                            if (remoteTime > localTime) {
+                                state.tasks[localIndex] = remoteTask;
+                            }
+                        }
+                    });
+                }
+
+                // B. Members Merge
+                if (imported.members && Array.isArray(imported.members)) {
+                    imported.members.forEach(remoteMem => {
+                        const rKey = remoteMem.emailLocal || `${remoteMem.lastName}${remoteMem.firstName}`;
+                        const localIndex = state.members.findIndex(m =>
+                            (m.emailLocal || `${m.lastName}${m.firstName}`) === rKey
+                        );
+
+                        if (localIndex !== -1) {
+                            const localMem = state.members[localIndex];
+                            // Update avatar if newer (simple check: if remote has image and local doesn't, or newer timestamp)
+                            // Since we didn't track member update time rigorously before, prioritize remote if it has info
+                            if (remoteMem.avatarImage && !localMem.avatarImage) {
+                                localMem.avatarImage = remoteMem.avatarImage;
+                            }
+                            if (remoteMem.updatedAt && localMem.updatedAt) {
+                                if (new Date(remoteMem.updatedAt) > new Date(localMem.updatedAt)) {
+                                    // Careful not to overwrite isSelf unless intended (usually keep local isSelf)
+                                    const wasSelf = localMem.isSelf;
+                                    state.members[localIndex] = { ...remoteMem, isSelf: wasSelf };
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // C. Reports Merge (Work Reports & Analysis Report)
+                if (imported.reports) {
+                    if (!state.reports) state.reports = {};
+                    Object.keys(imported.reports).forEach(key => {
+                        const remoteRep = imported.reports[key];
+                        const localRep = state.reports[key];
+
+                        // Skip if remote is invalid (though unlikely)
+                        if (!remoteRep) return;
+
+                        if (!localRep) {
+                            // New: Add
+                            state.reports[key] = remoteRep;
+                        } else {
+                            // Existing: Update if remote is newer
+                            const localTime = new Date(localRep.updatedAt || 0).getTime();
+                            const remoteTime = new Date(remoteRep.updatedAt || 0).getTime();
+
+                            if (remoteTime > localTime) {
+                                state.reports[key] = remoteRep;
+                            }
+                        }
+                    });
+                }
+
+                // D. Artifact Settings (Safe Merge)
+                // If local has no slides for a type, allow import to fill it. 
+                // If local has slides, keep local (User is working on it).
+                if (imported.artifactSettings) {
+                    if (!state.artifactSettings) state.artifactSettings = {};
+                    Object.keys(imported.artifactSettings).forEach(key => {
+                        const localSet = state.artifactSettings[key];
+                        const remoteSet = imported.artifactSettings[key];
+
+                        if (remoteSet && remoteSet.slides && remoteSet.slides.length > 0) {
+                            if (!localSet || !localSet.slides || localSet.slides.length === 0) {
+                                state.artifactSettings[key] = remoteSet;
+                            }
+                        }
+                    });
+                }
+
+                // E. Artifact Progress Flags (Union)
+                if (imported.artifacts) {
+                    Object.keys(imported.artifacts).forEach(key => {
+                        if (imported.artifacts[key]) state.artifacts[key] = true;
+                    });
+                }
+
+                // F. Other Settings Merge (Theme, Group, etc)
+                // Or user might want to keep local settings. Let's update only if local is empty or remote is explicitly newer?
+                // For simplicity, let's assume team settings sync is desired.
+                if (imported.themeName) state.themeName = imported.themeName;
+                if (imported.groupName) state.groupName = imported.groupName;
+                if (imported.groupSymbol) state.groupSymbol = imported.groupSymbol;
+                if (imported.groupLogo) state.groupLogo = imported.groupLogo;
+
+            } else {
+                // --- OVERWRITE LOGIC ---
+                state = imported;
+            }
+
+            // 3. Post-Merge/Overwrite Self Restoration Logic
+            // (Ensure local user remains "Self" and keeps their own avatar if better)
             if (selfMember && selfKey && Array.isArray(state.members)) {
                 state.members.forEach(m => {
                     const mKey = m.emailLocal || `${m.lastName}${m.firstName}`;
                     if (mKey === selfKey) {
-                        // 自分のアバター画像・色・フラグを復元（インポート側に画像がなければ自分のを維持）
+                        m.isSelf = true;
+                        // If overwrite cleared avatar, restore it
                         if (!m.avatarImage && selfMember.avatarImage) {
                             m.avatarImage = selfMember.avatarImage;
                         }
-                        if (!m.avatarColor && selfMember.avatarColor) {
-                            m.avatarColor = selfMember.avatarColor;
-                        }
-                        m.isSelf = true;
                     } else {
-                        // 他メンバーは isSelf を外す（自分は1人だけ）
                         m.isSelf = false;
                     }
                 });
@@ -3118,9 +3303,10 @@ function importData(e) {
             location.reload();
         } catch (err) {
             alert('ファイルの読み込みに失敗しました: ' + err.message);
+            console.error(err);
         }
     };
-    reader.readAsText(file);  // JSON は readAsText で読む
+    reader.readAsText(file);
 }
 
 function resetData() {
