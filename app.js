@@ -153,6 +153,10 @@ function updateDisplayInfo() {
 // --- View Controller ---
 function initEventListeners() {
     // Navigation
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+        document.querySelector('.sidebar').classList.toggle('collapsed');
+    });
+
     document.querySelectorAll('.nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const viewId = btn.getAttribute('data-view');
@@ -413,6 +417,18 @@ function renderGantt() {
     const ganttTable = document.createElement('div');
     ganttTable.className = 'gantt-table';
 
+    // Highlight today logic
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    let currentIteration = -1;
+    for (let i = 0; i < DEFAULT_SCHEDULE.length; i++) {
+        if (DEFAULT_SCHEDULE[i].date <= todayStr) {
+            currentIteration = DEFAULT_SCHEDULE[i].id;
+        } else {
+            break;
+        }
+    }
+
     // Header
     const labelHeader = document.createElement('div');
     labelHeader.className = 'gantt-header-col';
@@ -448,6 +464,8 @@ function renderGantt() {
         if (i === 7 || i === 20) tick.classList.add('exam-border-mid');
         if (i === 27) tick.classList.add('exam-border-final');
         if (i === 27) tick.classList.add('exam-border-final', 'exam-year-end');
+
+        if (i === currentIteration) tick.classList.add('is-today');
 
         timelineHeader.appendChild(tick);
     }
@@ -560,6 +578,7 @@ function renderGantt() {
             if (i === 12) cell.classList.add('exam-border-final');
             if (i === 7 || i === 20) cell.classList.add('exam-border-mid');
             if (i === 27) cell.classList.add('exam-border-final');
+            if (i === currentIteration) cell.classList.add('is-today');
             headerGrid.appendChild(cell);
         }
         ganttTable.appendChild(headerGrid);
@@ -582,6 +601,7 @@ function renderGantt() {
                 if (i === 12) cell.classList.add('exam-border-final');
                 if (i === 7 || i === 20) cell.classList.add('exam-border-mid');
                 if (i === 27) cell.classList.add('exam-border-final');
+                if (i === currentIteration) cell.classList.add('is-today');
 
                 // Logic for different item types
                 if (it.type === 'report') {
@@ -668,6 +688,7 @@ function renderGantt() {
                 if (i === 12) cell.classList.add('exam-border-final');
                 if (i === 7 || i === 20) cell.classList.add('exam-border-mid');
                 if (i === 27) cell.classList.add('exam-border-final');
+                if (i === currentIteration) cell.classList.add('is-today');
                 gridCell.appendChild(cell);
             }
 
