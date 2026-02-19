@@ -193,7 +193,8 @@ function initEventListeners() {
     document.getElementById('btn-add-member').addEventListener('click', addMemberRow);
 
     // Task Modal
-    document.getElementById('btn-add-task').addEventListener('click', () => openTaskModal());
+    const btnAddTask = document.getElementById('btn-add-task');
+    if (btnAddTask) btnAddTask.addEventListener('click', () => openTaskModal());
     document.getElementById('btn-close-modal').addEventListener('click', () => closeModal());
     document.getElementById('btn-save-task').addEventListener('click', saveTask);
 
@@ -214,6 +215,8 @@ function initEventListeners() {
     document.getElementById('btn-add-artifact-slide').addEventListener('click', () => document.getElementById('artifact-slide-input').click());
     document.getElementById('artifact-slide-input').addEventListener('change', handleArtifactSlideUpload);
     initHotspotLogic();
+    initArtifactRichEditor();
+    document.getElementById('btn-export-artifact-script').addEventListener('click', exportArtifactScript);
 
     // Report Tabs switching
     document.querySelectorAll('.report-tab').forEach(tab => {
@@ -645,11 +648,11 @@ function renderGantt() {
                         marker.title = `${it.name} (${i}回目): ${isSubmitted ? '提出済' : '未提出'}\nクリックで編集・登録`;
                         marker.onclick = () => {
                             if (it.type === 'toggle') {
-                                if (it.key === 'poster') {
-                                    // Special interactive modal for poster
+                                if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(it.key)) {
+                                    // Special interactive modal for detailed deliverables
                                     openArtifactModal(itKey, it.name);
                                 } else {
-                                    // Simple toggle for others (leaflet, etc.)
+                                    // Simple toggle for others
                                     state.artifacts[itKey] = !state.artifacts[itKey];
                                     saveState();
                                     renderGantt();
@@ -939,9 +942,11 @@ function openArtifactModal(key, name) {
 
     // Reset viewer
     document.getElementById('hotspot-container').style.display = 'none';
+    document.getElementById('presenters-section').style.display = 'none';
     document.getElementById('viewer-placeholder').style.display = 'block';
 
     document.getElementById('modal-artifact-detail').classList.add('active');
+    renderContributorChart();
     if (window.lucide) lucide.createIcons();
 }
 
@@ -1032,6 +1037,257 @@ async function processPdfFile(file, artifactKey) {
     }
 }
 
+/** Export presentation scripts as a printable document */
+function exportArtifactScript() {
+    if (!currentArtifactKey) return;
+    const settings = state.artifactSettings[currentArtifactKey];
+    if (!settings || !settings.slides || settings.slides.length === 0) {
+        alert('スライドがありません。');
+        return;
+    }
+
+    const artifactName = (() => {
+        // Try to find the artifact name
+        for (const phase of Object.values(state.phases || {})) {
+            for (const task of Object.values(phase.tasks || {})) {
+                if (task.artifacts) {
+                    for (const art of task.artifacts) {
+                        if (art.key === currentArtifactKey) return art.name || '成果物';
+                    }
+                }
+            }
+        }
+        return '成果物';
+    })();
+
+    const slidePages = settings.slides.map((slide, idx) => {
+        const num = idx + 1;
+        const script = slide.script || '';
+        // Presenters
+        const presenterNames = (slide.presenters || []).map(pIdx => {
+            const m = state.members[pIdx];
+            return m ? (m.lastName + (m.firstName || '')) : '';
+        }).filter(Boolean).join('・');
+        // Hotspot labels
+        const hotspotItems = (slide.hotspots || []).map(hs => {
+            const author = state.members[hs.authorIdx];
+            const aName = author ? (author.lastName + (author.firstName || '')) : '担当';
+            const label = hs.text ? `「${hs.text}」` : '';
+            return `<li>${aName}${label}</li>`;
+        }).join('');
+
+        return `
+        <div class="slide-page">
+            <div class="slide-header">
+                <span class="slide-num">スライド ${num}</span>
+                ${presenterNames ? `<span class="presenter-names">発表担当: ${presenterNames}</span>` : ''}
+            </div>
+            <div class="slide-image-wrap">
+                <img src="${slide.src}" alt="スライド${num}">
+                ${hotspotItems ? `<ul class="hotspot-list">${hotspotItems}</ul>` : ''}
+            </div>
+            <div class="script-area">
+                <div class="script-label"><i>🎤 発表内容・原稿</i></div>
+                <div class="script-body">${script || '<span class="empty">（原稿未入力）</span>'}</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>原稿出力 - ${artifactName}</title>
+<style>
+    @page { size: A4; margin: 15mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+        background: #fff;
+        color: #111;
+        font-size: 12pt;
+        line-height: 1.7;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    h1.doc-title {
+        text-align: center;
+        font-size: 18pt;
+        margin-bottom: 6mm;
+        padding-bottom: 4mm;
+        border-bottom: 2px solid #333;
+        color: #222;
+    }
+    .slide-page {
+        page-break-after: always;
+        padding-bottom: 8mm;
+    }
+    .slide-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4mm;
+        padding: 2mm 3mm;
+        background: #f0f0f0;
+        border-left: 4px solid #4f46e5;
+        border-radius: 2px;
+    }
+    .slide-num {
+        font-weight: 700;
+        font-size: 13pt;
+        color: #222;
+    }
+    .presenter-names {
+        font-size: 10pt;
+        color: #444;
+    }
+    .slide-image-wrap {
+        text-align: center;
+        margin-bottom: 5mm;
+    }
+    .slide-image-wrap img {
+        max-width: 100%;
+        max-height: 110mm;
+        object-fit: contain;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .hotspot-list {
+        list-style: disc;
+        text-align: left;
+        display: inline-block;
+        margin-top: 2mm;
+        padding-left: 1em;
+        font-size: 9pt;
+        color: #555;
+    }
+    .script-area {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4mm 5mm;
+        min-height: 40mm;
+        background: #fafafa;
+    }
+    .script-label {
+        font-size: 9pt;
+        color: #888;
+        margin-bottom: 2mm;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1mm;
+    }
+    .script-body {
+        color: #111;
+        font-size: 11pt;
+        line-height: 1.9;
+    }
+    .script-body b, strong { color: #000; }
+    .script-body em, i { color: #333; }
+    .empty { color: #aaa; font-style: italic; }
+    @media print {
+        body { background: #fff !important; color: #000 !important; }
+        .script-area { background: #fafafa !important; }
+        .slide-header { background: #f0f0f0 !important; }
+    }
+</style>
+</head>
+<body>
+<h1 class="doc-title">📋 ${artifactName} - 原稿</h1>
+${slidePages}
+<script>window.onload = () => window.print();<\/script>
+</body>
+</html>`;
+
+    const screenW = window.screen.width;
+    const screenH = window.screen.height;
+    const winW = Math.min(950, screenW - 100);
+    const winH = Math.min(900, screenH - 100);
+    const left = Math.floor((screenW - winW) / 2);
+    const top = Math.floor((screenH - winH) / 2);
+    const win = window.open('', '_blank',
+        `width=${winW},height=${winH},left=${left},top=${top},resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no`);
+    win.document.write(html);
+    win.document.close();
+}
+
+
+/** Render contributor ratio bar chart in the modal footer */
+function renderContributorChart() {
+    const container = document.getElementById('artifact-contributor-chart');
+    if (!container) return;
+    if (!currentArtifactKey || !state.artifactSettings || !state.artifactSettings[currentArtifactKey]) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+    const slides = state.artifactSettings[currentArtifactKey].slides || [];
+
+    // ── 発表者割合（スライドの出演回数ベース） ──
+    const presMap = {};
+    slides.forEach(slide => {
+        (slide.presenters || []).forEach(idx => {
+            presMap[idx] = (presMap[idx] || 0) + 1;
+        });
+    });
+    const presTotal = Object.values(presMap).reduce((s, v) => s + v, 0);
+
+    // ── 作成者割合（ホットスポット面積ベース） ──
+    const areaMap = {};
+    slides.forEach(slide => {
+        (slide.hotspots || []).forEach(hs => {
+            const idx = hs.authorIdx;
+            const area = (hs.rect.w * hs.rect.h) / 10000;
+            areaMap[idx] = (areaMap[idx] || 0) + area;
+        });
+    });
+    const areaTotal = Object.values(areaMap).reduce((s, v) => s + v, 0);
+
+    function buildChart(map, total, label, emptyMsg) {
+        if (total === 0) {
+            return `
+            <div style="font-size:10px; color:var(--text-dim); font-weight:600; margin-bottom:4px;">${label}</div>
+            <div style="font-size:10px; color:var(--text-dim); font-style:italic;">${emptyMsg}</div>`;
+        }
+        const segs = Object.entries(map).map(([idx, val]) => {
+            const member = state.members[parseInt(idx)];
+            const name = member ? (member.lastName || `M${idx}`) : `M${idx}`;
+            const pct = Math.round((val / total) * 100);
+            const color = COLORS[parseInt(idx) % COLORS.length];
+            return { name, pct, color };
+        }).sort((a, b) => b.pct - a.pct);
+
+        const bars = segs.map(s =>
+            `<div title="${s.name}: ${s.pct}%" style="flex:${s.pct}; background:${s.color}; height:100%; min-width:4px;"></div>`
+        ).join('');
+        const legend = segs.map(s =>
+            `<span style="display:inline-flex; align-items:center; gap:3px; font-size:10px; color:var(--text-dim); white-space:nowrap;">
+                <span style="width:7px;height:7px;border-radius:2px;background:${s.color};display:inline-block;"></span>
+                ${s.name} ${s.pct}%
+            </span>`
+        ).join('');
+
+        return `
+        <div style="font-size:10px; color:var(--text-dim); font-weight:600; margin-bottom:4px;">${label}</div>
+        <div style="display:flex; height:10px; border-radius:5px; overflow:hidden; margin-bottom:4px; gap:1px;">${bars}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">${legend}</div>`;
+    }
+
+    const presChart = buildChart(presMap, presTotal, '🎤 発表担当割合', '未割り当て');
+    const areaChart = buildChart(areaMap, areaTotal, '✏️ 作成担当割合', '未割り当て');
+
+    container.innerHTML = `
+        <div style="display:flex; gap:12px; width:100%;">
+            <div style="flex:1; min-width:0; padding:6px 8px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px;">
+                ${presChart}
+            </div>
+            <div style="flex:1; min-width:0; padding:6px 8px; background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:6px;">
+                ${areaChart}
+            </div>
+        </div>
+    `;
+}
+
 /** Render slide thumbnail list in sidebar */
 function renderArtifactSlides() {
     const list = document.getElementById('artifact-slide-list');
@@ -1042,10 +1298,21 @@ function renderArtifactSlides() {
     slides.forEach((slide, idx) => {
         const item = document.createElement('div');
         item.className = 'slide-item';
+
+        const presenterNames = (slide.presenters || []).map(pIdx => {
+            const m = state.members[pIdx];
+            return m ? (m.lastName || 'メンバー') : '';
+        }).filter(n => n);
+
+        const presentersHtml = presenterNames.length > 0
+            ? `<div class="slide-presenters-tag"><i data-lucide="mic" style="width:10px;height:10px;"></i> ${presenterNames.join(', ')}</div>`
+            : '';
+
         item.innerHTML = `
             <div class="slide-thumb ${idx === currentSlideIndex ? 'active' : ''}" onclick="selectArtifactSlide(${idx})">
                 <img src="${slide.src}" alt="">
                 <span class="slide-num-badge">${idx + 1}</span>
+                ${presentersHtml}
             </div>
             <button class="btn-remove-slide" onclick="removeArtifactSlide(${idx})"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
         `;
@@ -1066,9 +1333,52 @@ function selectArtifactSlide(idx) {
 
     img.src = slide.src;
     container.style.display = 'block';
+    document.getElementById('presenters-section').style.display = 'flex';
     placeholder.style.display = 'none';
 
     renderHotspots();
+    renderArtifactPresenterChecks();
+
+    // Load script content (Rich Text Support)
+    const scriptArea = document.getElementById('artifact-presentation-script');
+    scriptArea.innerHTML = slide.script || '';
+    scriptArea.oninput = () => {
+        slide.script = scriptArea.innerHTML;
+    };
+}
+
+/** Render presenter checkboxes for current slide */
+function renderArtifactPresenterChecks() {
+    const container = document.getElementById('artifact-presenter-checks');
+    if (!container || currentSlideIndex === -1) return;
+    container.innerHTML = '';
+
+    const slide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
+    if (!slide.presenters) slide.presenters = [];
+
+    state.members.forEach((m, i) => {
+        const fullName = `${m.lastName || ''} ${m.firstName || ''}`.trim();
+        if (!fullName) return;
+
+        const isChecked = slide.presenters.includes(i);
+        const label = document.createElement('label');
+        label.className = 'wr-author-item';
+        label.innerHTML = `
+            <input type="checkbox" ${isChecked ? 'checked' : ''}>
+            <span>${fullName}</span>
+        `;
+        const input = label.querySelector('input');
+        input.onchange = () => {
+            if (input.checked) {
+                if (!slide.presenters.includes(i)) slide.presenters.push(i);
+            } else {
+                slide.presenters = slide.presenters.filter(idx => idx !== i);
+            }
+            renderArtifactSlides(); // Refresh thumbnails to show presenters
+            renderContributorChart();
+        };
+        container.appendChild(label);
+    });
 }
 
 /** Remove a slide from the artifact */
@@ -1078,6 +1388,7 @@ function removeArtifactSlide(idx) {
     if (currentSlideIndex === idx) {
         currentSlideIndex = -1;
         document.getElementById('hotspot-container').style.display = 'none';
+        document.getElementById('presenters-section').style.display = 'none';
         document.getElementById('viewer-placeholder').style.display = 'block';
     } else if (currentSlideIndex > idx) {
         currentSlideIndex--;
@@ -1094,6 +1405,8 @@ function initHotspotLogic() {
         if (currentSlideIndex === -1) return;
         const rect = container.getBoundingClientRect();
         isDrawingHotspot = true;
+
+        // Use clientX/Y to get consistent coordinates regardless of where mousedown originated
         hotspotStartPos = {
             x: e.clientX - rect.left,
             y: e.clientY - rect.top
@@ -1104,6 +1417,8 @@ function initHotspotLogic() {
         drawingRect.style.width = '0px';
         drawingRect.style.height = '0px';
         drawingRect.style.display = 'block';
+
+        e.preventDefault(); // Prevent text selection
     });
 
     window.addEventListener('mousemove', (e) => {
@@ -1129,13 +1444,17 @@ function initHotspotLogic() {
         drawingRect.style.display = 'none';
 
         const rect = container.getBoundingClientRect();
-        const endX = e.clientX - rect.left;
-        const endY = e.clientY - rect.top;
+        // Constrain mouse coordinates to container boundaries
+        const endX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+        const endY = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
 
         const x1 = Math.min(hotspotStartPos.x, endX);
         const y1 = Math.min(hotspotStartPos.y, endY);
-        const w = Math.abs(endX - hotspotStartPos.x);
-        const h = Math.abs(endY - hotspotStartPos.y);
+        const x2 = Math.max(hotspotStartPos.x, endX);
+        const y2 = Math.max(hotspotStartPos.y, endY);
+
+        const w = x2 - x1;
+        const h = y2 - y1;
 
         if (w < 10 || h < 10) return; // Ignore tiny rects
 
@@ -1149,12 +1468,35 @@ function initHotspotLogic() {
         const selectedRadio = document.querySelector('input[name="artifact-member"]:checked');
         const authorIdx = selectedRadio ? parseInt(selectedRadio.value) : 0;
 
-        state.artifactSettings[currentArtifactKey].slides[currentSlideIndex].hotspots.push({
+        const currentSlide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
+        if (!currentSlide.hotspots) currentSlide.hotspots = [];
+
+        currentSlide.hotspots.push({
             rect: { x: px, y: py, w: pw, h: ph },
             authorIdx: authorIdx
         });
 
         renderHotspots();
+    });
+}
+
+/** Initialize Rich Editor Toolbar for Artifacts */
+function initArtifactRichEditor() {
+    document.querySelectorAll('.editor-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const command = btn.getAttribute('data-command');
+            document.execCommand(command, false, null);
+            document.getElementById('artifact-presentation-script').focus();
+        });
+    });
+
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', (e) => {
+            const color = swatch.getAttribute('data-color');
+            document.execCommand('foreColor', false, color);
+            document.getElementById('artifact-presentation-script').focus();
+        });
     });
 }
 
@@ -1179,11 +1521,36 @@ function renderHotspots() {
 
         div.innerHTML = `
             <span class="hotspot-author-tag">${name}</span>
+            <div class="hotspot-label">${hs.text || ''}</div>
             <button class="hotspot-delete-btn" onclick="deleteHotspot(${idx})"><i data-lucide="x" style="width:10px;height:10px;"></i></button>
         `;
+
+        div.ondblclick = (e) => {
+            e.stopPropagation();
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'hotspot-input';
+            input.value = hs.text || '';
+            div.innerHTML = '';
+            div.appendChild(input);
+            input.focus();
+
+            input.onblur = () => {
+                hs.text = input.value;
+                renderHotspots();
+            };
+            input.onkeydown = (ev) => {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    input.blur();
+                }
+            };
+        };
+
         overlay.appendChild(div);
     });
     if (window.lucide) lucide.createIcons();
+    renderContributorChart();
 }
 
 /** Delete a specific hotspot from current slide */
@@ -1191,6 +1558,7 @@ function deleteHotspot(idx) {
     if (currentSlideIndex === -1) return;
     state.artifactSettings[currentArtifactKey].slides[currentSlideIndex].hotspots.splice(idx, 1);
     renderHotspots();
+    renderContributorChart();
 }
 
 /** Save detailed artifact data and mark as submitted on Gantt */

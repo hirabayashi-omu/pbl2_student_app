@@ -125,11 +125,6 @@
                     <h2 id="gantt-theme-display" class="gantt-theme-title">未設定のテーマ</h2>
                     <p id="gantt-group-display" class="gantt-group-subtitle">未設定のグループ</p>
                 </div>
-                <div class="gantt-actions">
-                    <button class="btn btn-secondary" id="btn-add-task">
-                        <i data-lucide="plus"></i> タスク追加
-                    </button>
-                </div>
                 <div class="gantt-container-wrapper card">
                     <div id="gantt-chart" class="gantt-chart">
                         <!-- Gantt implementation will go here -->
@@ -682,17 +677,22 @@
             style="width: 90vw; max-width: 1200px; height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h3 id="artifact-modal-title">成果物詳細設定</h3>
-                        <p id="artifact-modal-desc"
-                            style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.25rem;">
+                    <div style="flex: 1;">
+                        <h3 id="artifact-modal-title" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="layers" style="width:20px; height:20px; color:var(--primary);"></i>
+                            成果物詳細設定
+                        </h3>
+                        <div id="artifact-modal-desc"
+                            style="font-size: 0.85rem; color: var(--text-dim); margin-top: 0.4rem; display: flex; align-items: center; gap: 6px;">
+                            <span
+                                style="background: var(--primary); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TIPS</span>
                             スライド画像をアップロードし、範囲を指定して作成担当者を割り当てます。
-                        </p>
+                        </div>
                     </div>
                     <div
                         style="display: flex; gap: 1rem; align-items: center; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px;">
                         <span
-                            style="font-size: 0.85rem; color: var(--primary-light); font-weight: 600;">現在選択中の担当者:</span>
+                            style="font-size: 0.85rem; color: var(--primary-light); font-weight: 600;">製作担当者（作成箇所をマウスで囲う）:</span>
                         <div id="artifact-member-list" class="wr-author-checks">
                             <!-- Filled by JS -->
                         </div>
@@ -701,10 +701,12 @@
             </div>
 
             <div class="artifact-detail-grid" style="flex: 1; min-height: 0; margin-top: 1rem;">
+                <!-- Column 1: Slide List -->
                 <aside class="artifact-sidebar">
-                    <div style="margin-bottom: 1rem;">
-                        <button class="btn btn-sm btn-primary w-full" id="btn-add-artifact-slide">
-                            <i data-lucide="upload" style="width:14px; height:14px; margin-right:4px;"></i> スライド画像追加
+                    <div style="margin-bottom: 0.75rem;">
+                        <button class="btn btn-sm btn-primary w-full" id="btn-add-artifact-slide"
+                            style="font-size: 11px; padding: 6px;">
+                            <i data-lucide="upload" style="width:12px; height:12px; margin-right:4px;"></i> スライド追加
                         </button>
                     </div>
                     <div class="slide-list" id="artifact-slide-list">
@@ -712,25 +714,98 @@
                     </div>
                 </aside>
 
-                <main class="artifact-main" id="artifact-viewer">
-                    <div class="hotspot-canvas-container" id="hotspot-container" style="display:none;">
-                        <img id="artifact-current-image" src="" alt="">
+                <!-- Column 2: Slide Preview -->
+                <main class="artifact-main" id="artifact-viewer"
+                    style="background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                    <div id="hotspot-container" style="display:none; position:relative; pointer-events: auto;">
+                        <img id="artifact-current-image" src="" alt=""
+                            style="max-width:100%; max-height:80vh; display:block;">
                         <div id="hotspot-overlay" class="hotspot-overlay"></div>
                         <div id="drawing-rect"
-                            style="display:none; position:absolute; border:2px dashed var(--primary); background:rgba(59, 130, 246, 0.2); pointer-events:none; z-index:100;">
+                            style="display:none; position:absolute; border:2px dashed var(--primary); background:rgba(59, 130, 246, 0.2); pointer-events:none; z-index:200;">
                         </div>
                     </div>
                     <div id="viewer-placeholder" style="color:var(--text-dim); text-align:center;">
                         <i data-lucide="presentation"
-                            style="width:64px; height:64px; margin-bottom:1rem; opacity:0.2;"></i>
-                        <p>左側のリストからスライドを選択するか、新規追加してください</p>
+                            style="width:64px; height:64px; margin-bottom:1rem; opacity:0.1;"></i>
+                        <p style="font-size: 0.9rem;">スライドを選択してください</p>
                     </div>
                 </main>
+
+                <!-- Column 3: Settings Panel -->
+                <aside class="artifact-settings-panel" id="presenters-section" style="display:none;">
+                    <div style="flex-shrink: 0; max-height: 180px; display: flex; flex-direction: column;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-shrink: 0;">
+                            <h4
+                                style="font-size:0.85rem; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+                                <i data-lucide="mic" style="width:14px; height:14px; color:var(--accent);"></i> 発表担当者
+                            </h4>
+                        </div>
+                        <div id="artifact-presenter-checks" class="wr-author-checks"
+                            style="background:var(--bg-sidebar); padding:0.75rem; border-radius:8px; border:1px solid var(--border); overflow-y: auto; flex: 1;">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin-top: 1rem;">
+                        <h4
+                            style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.5rem; display:flex; align-items:center; gap:6px; flex-shrink: 0;">
+                            <i data-lucide="file-text" style="width:14px; height:14px; color:var(--primary);"></i>
+                            発表内容・原稿
+                        </h4>
+                        <div class="rich-editor-container"
+                            style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                            <div class="rich-editor-toolbar">
+                                <button type="button" class="editor-btn" data-command="bold" title="太字"><i
+                                        data-lucide="bold"></i></button>
+                                <button type="button" class="editor-btn" data-command="italic" title="斜体"><i
+                                        data-lucide="italic"></i></button>
+                                <button type="button" class="editor-btn" data-command="underline" title="下線"><i
+                                        data-lucide="underline"></i></button>
+                                <div
+                                    style="width:1px; height:20px; background:var(--border); margin: 0 4px; align-self:center;">
+                                </div>
+                                <div class="editor-color-palette">
+                                    <div class="color-swatch" style="background: #ffffff;" data-color="#ffffff"
+                                        title="白"></div>
+                                    <div class="color-swatch" style="background: #3b82f6;" data-color="#3b82f6"
+                                        title="青"></div>
+                                    <div class="color-swatch" style="background: #ef4444;" data-color="#ef4444"
+                                        title="赤"></div>
+                                    <div class="color-swatch" style="background: #f59e0b;" data-color="#f59e0b"
+                                        title="黄"></div>
+                                    <div class="color-swatch" style="background: #10b981;" data-color="#10b981"
+                                        title="緑"></div>
+                                    <div class="color-swatch" style="background: #06b6d4;" data-color="#06b6d4"
+                                        title="空色"></div>
+                                    <div class="color-swatch" style="background: #f97316;" data-color="#f97316"
+                                        title="橙"></div>
+                                    <div class="color-swatch" style="background: #ec4899;" data-color="#ec4899"
+                                        title="ピンク"></div>
+                                </div>
+                            </div>
+                            <div id="artifact-presentation-script" class="rich-editor-content" contenteditable="true"
+                                placeholder="発表の主旨やスクリプトを記入してください..." style="flex: 1; min-height: 200px;"></div>
+                        </div>
+                    </div>
+                </aside>
             </div>
 
-            <div class="modal-btns" style="margin-top: 1.5rem;">
-                <button class="btn btn-secondary" id="btn-close-artifact-modal">閉じる</button>
-                <button class="btn btn-primary" id="btn-save-artifact-data">設定を保存して反映</button>
+            <div class="modal-btns"
+                style="margin-top: 1.5rem; flex-shrink: 0; display: flex; align-items: center; gap: 1rem;">
+                <!-- Contributor ratio bar chart -->
+                <div id="artifact-contributor-chart" style="flex: 1; min-width: 0;">
+                    <!-- Filled by JS -->
+                </div>
+                <div style="display: flex; gap: 1rem; flex-shrink: 0;">
+                    <button class="btn btn-secondary" id="btn-close-artifact-modal">閉じる</button>
+                    <button class="btn btn-outline" id="btn-export-artifact-script"
+                        style="border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="printer" style="width:14px; height:14px;"></i> 原稿を出力
+                    </button>
+                    <button class="btn btn-primary" id="btn-save-artifact-data">設定を保存して反映</button>
+                </div>
             </div>
         </div>
         <input type="file" id="artifact-slide-input" accept="image/*,.pdf" multiple style="display:none;">
