@@ -474,7 +474,10 @@ function renderGantt() {
     // --- NEW: Events Status Row ---
     const eventsLabel = document.createElement('div');
     eventsLabel.className = 'gantt-label event-row-label';
-    eventsLabel.innerHTML = '<i data-lucide="calendar" style="width:14px; height:14px; vertical-align:middle; margin-right:5px; color:var(--accent)"></i> 授業イベント';
+    eventsLabel.innerHTML = `
+        <i data-lucide="calendar" style="width:14px; height:14px; margin-right:8px; color:var(--accent); flex-shrink:0;"></i>
+        <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">授業イベント</span>
+    `;
     ganttTable.appendChild(eventsLabel);
 
     const eventsGrid = document.createElement('div');
@@ -560,9 +563,9 @@ function renderGantt() {
         headerLabel.className = 'gantt-label category-header-label';
         headerLabel.style.color = group.color;
         headerLabel.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <strong>${group.name}</strong>
-                <button class="btn btn-sm" style="padding: 2px 8px; font-size: 11px; height: auto; background-color: ${group.color}; border-color: ${group.color}; color: white;" onclick="openTaskModal(-1, '${group.id}')">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; height: 100%;">
+                <strong style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${group.name}</strong>
+                <button class="btn btn-sm" style="padding: 2px 6px; font-size: 10px; height: 22px; background-color: ${group.color}; border-color: ${group.color}; color: white; display: flex; align-items: center; flex-shrink:0;" onclick="openTaskModal(-1, '${group.id}')">
                     <i data-lucide="plus" style="width:12px; height:12px; margin-right:4px;"></i>タスク
                 </button>
             </div>
@@ -588,7 +591,10 @@ function renderGantt() {
             const labelCell = document.createElement('div');
             labelCell.className = `gantt-label deliverable-label label-${group.id}`;
             labelCell.style.color = group.color;
-            labelCell.innerHTML = `<i data-lucide="file-check-2" style="width:12px; height:12px; margin-right:6px;"></i> ${it.name}`;
+            labelCell.innerHTML = `
+                <i data-lucide="file-check-2" style="width:14px; height:14px; margin-right:8px; flex-shrink:0;"></i>
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${it.name}</span>
+            `;
             ganttTable.appendChild(labelCell);
 
             const gridCell = document.createElement('div');
@@ -667,9 +673,6 @@ function renderGantt() {
             const labelCell = document.createElement('div');
             labelCell.className = `gantt-label user-task-label label-${group.id}`;
             labelCell.style.color = group.color;
-            labelCell.style.display = 'flex';
-            labelCell.style.justifyContent = 'space-between';
-            labelCell.style.alignItems = 'center';
             labelCell.innerHTML = `
                 <span class="task-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${task.name}">${task.name}</span>
                 <button class="btn-delete-task" title="削除" onclick="event.stopPropagation(); deleteTask(${taskIndex});">

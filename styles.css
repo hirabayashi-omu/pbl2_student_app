@@ -243,7 +243,7 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -723,7 +723,10 @@ th {
 }
 
 .gantt-label {
-    padding: 12px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
     background: var(--bg-card);
     border-right: 1px solid var(--border);
     position: sticky;
@@ -810,6 +813,7 @@ th {
     display: grid;
     grid-template-columns: repeat(28, 40px);
     height: 44px;
+    position: relative;
 }
 
 .gantt-cell {
