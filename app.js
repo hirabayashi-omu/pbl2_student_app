@@ -156,6 +156,65 @@ function updateDisplayInfo() {
         const artPercent = (completedArtifacts / artifactKeys.length) * 100;
         document.getElementById('artifacts-progress').style.width = `${artPercent}%`;
     }
+    renderArtifactShortcuts();
+}
+
+/** Render artifact shortcut cards on the dashboard */
+function renderArtifactShortcuts() {
+    const container = document.getElementById('artifact-shortcut-cards');
+    if (!container) return;
+
+    const ARTIFACT_DEFS = [
+        { key: 'poster', name: '事業企画ポスター', icon: 'image', color: '#4f46e5' },
+        { key: 'leaflet', name: '事業企画リーフレット', icon: 'file-text', color: '#0ea5e9' },
+        { key: 'pamphlet_25', name: '製品・サービスパンフレット', icon: 'book-open', color: '#10b981' },
+        { key: 'slides_25', name: '最終プレゼンスライド', icon: 'presentation', color: '#f59e0b' },
+    ];
+
+    container.innerHTML = '';
+    ARTIFACT_DEFS.forEach(def => {
+        const settings = state.artifactSettings && state.artifactSettings[def.key];
+        const slideCount = settings && settings.slides ? settings.slides.length : 0;
+        const isSubmitted = state.artifacts[def.key];
+
+        const card = document.createElement('div');
+        card.style.cssText = `
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid ${def.color};
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        `;
+        card.onmouseenter = () => card.style.background = 'var(--bg-hover)';
+        card.onmouseleave = () => card.style.background = 'var(--bg-card)';
+        card.onclick = () => openArtifactModal(def.key, def.name);
+
+        const statusColor = isSubmitted ? 'var(--success)' : 'var(--text-dim)';
+        const statusLabel = isSubmitted ? '登録済み' : '未登録';
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="width:36px;height:36px;border-radius:8px;background:${def.color}22;display:flex;align-items:center;justify-content:center;">
+                    <i data-lucide="${def.icon}" style="width:18px;height:18px;color:${def.color};"></i>
+                </div>
+                <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${isSubmitted ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)'};color:${statusColor};font-weight:600;">${statusLabel}</span>
+            </div>
+            <div style="font-size:0.85rem;font-weight:600;color:var(--text-main);line-height:1.3;">${def.name}</div>
+            <div style="font-size:11px;color:var(--text-dim);">
+                ${slideCount > 0 ? `スライド ${slideCount} 枚登録済み` : 'スライドPDF未登録'}
+            </div>
+            <div style="font-size:10px;color:${def.color};margin-top:auto;display:flex;align-items:center;gap:4px;">
+                <i data-lucide="settings" style="width:11px;height:11px;"></i> 詳細設定を開く
+            </div>
+        `;
+        container.appendChild(card);
+    });
+    if (window.lucide) lucide.createIcons();
 }
 
 // --- View Controller ---
@@ -296,9 +355,17 @@ function renderMemberList() {
     const listContainer = document.getElementById('member-list-container');
     listContainer.innerHTML = '';
 
+    const AVATAR_COLORS = [
+        '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b',
+        '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'
+    ];
+
     state.members.forEach((member, index) => {
         const card = document.createElement('div');
         card.className = 'member-card card';
+        if (member.isSelf) {
+            card.style.cssText = 'border: 2px solid var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);';
+        }
 
         const roleOptions = MEMBER_ROLES.map(role =>
             `<option value="${role.title}" ${member.role === role.title ? 'selected' : ''}>${role.title}</option>`
@@ -308,14 +375,54 @@ function renderMemberList() {
             `<option value="${course}" ${member.course === course ? 'selected' : ''}>${course}</option>`
         ).join('');
 
-        const fullName = `${member.lastName || ''} ${member.firstName || ''}`.trim();
+        const fullName = `${member.lastName || ''}${member.firstName || ''}`.trim();
+        const initials = fullName ? fullName.slice(0, 1) : '?';
+        const avatarColor = member.avatarColor || AVATAR_COLORS[index % AVATAR_COLORS.length];
         const teamsLink = member.emailLocal ? `https://teams.microsoft.com/l/chat/0/0?users=${member.emailLocal}@st.omu.ac.jp` : null;
+        const hasImage = !!member.avatarImage;
+
+        // Avatar inner: photo or initials
+        const avatarInner = hasImage
+            ? `<img src="${member.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`
+            : initials;
+        const avatarBg = hasImage ? 'transparent' : avatarColor;
+        const avatarShadow = hasImage ? '0 2px 8px rgba(0,0,0,0.3)' : `0 2px 8px ${avatarColor}55`;
 
         card.innerHTML = `
+            <input type="file" id="avatar-input-${index}" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
             <div class="member-card-header">
-                <div class="member-badges">
-                    <span class="badge badge-course">${member.course || '未設定'}</span>
-                    <span class="badge badge-role">${member.role || '未設定'}</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="member-avatar" style="
+                        width:44px; height:44px; border-radius:50%;
+                        background:${avatarBg};
+                        display:flex; align-items:center; justify-content:center;
+                        font-size:1.2rem; font-weight:700; color:white;
+                        cursor:pointer; flex-shrink:0; position:relative; overflow:hidden;
+                        box-shadow: ${avatarShadow};
+                        transition: transform 0.15s;
+                    " onclick="document.getElementById('avatar-input-${index}').click()"
+                       oncontextmenu="clearAvatarImage(${index}); return false;"
+                       title="クリックで画像を変更 / 右クリックで削除">
+                        ${avatarInner}
+                        <div style="position:absolute;inset:0;background:rgba(0,0,0,0);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" class="avatar-hover-overlay">
+                            <i data-lucide="camera" style="width:16px;height:16px;color:white;opacity:0;transition:opacity 0.2s;"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.9rem; font-weight:600; color:var(--text-main);">
+                            ${fullName || '（未入力）'}
+                        </div>
+                        <button onclick="setSelf(${index})" style="
+                            font-size:10px; padding:1px 7px; margin-top:3px;
+                            border-radius:10px; cursor:pointer; font-weight:600;
+                            border: 1px solid ${member.isSelf ? 'var(--primary)' : 'var(--border)'};
+                            background: ${member.isSelf ? 'var(--primary)' : 'transparent'};
+                            color: ${member.isSelf ? 'white' : 'var(--text-dim)'};
+                            transition: all 0.2s;
+                        ">
+                            ${member.isSelf ? '✓ 自分' : 'メンバー'}
+                        </button>
+                    </div>
                 </div>
                 <div class="header-actions">
                     ${teamsLink ? `
@@ -367,6 +474,46 @@ function renderMemberList() {
         listContainer.appendChild(card);
     });
     lucide.createIcons();
+}
+
+/** Mark one member as 'self', clear others */
+function setSelf(index) {
+    state.members.forEach((m, i) => m.isSelf = (i === index) ? !m.isSelf : false);
+    saveState();
+    renderMemberList();
+}
+
+/** Cycle avatar color (used as fallback) */
+function cycleAvatarColor(index) {
+    const AVATAR_COLORS = [
+        '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b',
+        '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'
+    ];
+    const current = state.members[index].avatarColor || AVATAR_COLORS[index % AVATAR_COLORS.length];
+    const currentIdx = AVATAR_COLORS.indexOf(current);
+    state.members[index].avatarColor = AVATAR_COLORS[(currentIdx + 1) % AVATAR_COLORS.length];
+    saveState();
+    renderMemberList();
+}
+
+/** Set avatar image from file input (base64) */
+function setAvatarImage(index, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        state.members[index].avatarImage = e.target.result;
+        saveState();
+        renderMemberList();
+    };
+    reader.readAsDataURL(file);
+}
+
+/** Remove avatar image on right-click */
+function clearAvatarImage(index) {
+    state.members[index].avatarImage = null;
+    saveState();
+    renderMemberList();
 }
 
 function addMemberRow() {
@@ -729,14 +876,39 @@ function renderGantt() {
                 bar.classList.add('is-completed');
             }
 
-            const getLastName = (fullName) => fullName ? fullName.split(' ')[0] : '';
-            const displayAssignees = Array.isArray(task.assignees)
-                ? task.assignees.map(getLastName).join(', ')
-                : getLastName(task.assignee);
+            const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+            const makeAvatarHtml = (fullName, memberIdx) => {
+                const m = state.members.find(mb => `${mb.lastName || ''} ${mb.firstName || ''}`.trim() === fullName)
+                    || state.members[memberIdx];
+                if (!m) return `<span style="font-size:10px;">${fullName.split(' ')[0]}</span>`;
+                const idx = state.members.indexOf(m);
+                const color = m.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                const initial = (m.lastName || '?').slice(0, 1);
+                const inner = m.avatarImage
+                    ? `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`
+                    : `<span style="font-size:9px;font-weight:700;color:white;line-height:1;">${initial}</span>`;
+                return `<div title="${fullName}" style="
+                    width:22px;height:22px;border-radius:50%;
+                    background:${m.avatarImage ? 'transparent' : color};
+                    display:inline-flex;align-items:center;justify-content:center;
+                    border:2px solid rgba(255,255,255,0.3);
+                    overflow:hidden;flex-shrink:0;margin-left:-6px;
+                    box-shadow:0 1px 4px rgba(0,0,0,0.4);
+                ">${inner}</div>`;
+            };
+
+            const assigneeList = Array.isArray(task.assignees) ? task.assignees : (task.assignee ? [task.assignee] : []);
+            const avatarHtml = assigneeList.length > 0
+                ? `<div style="display:flex;align-items:center;gap:0;margin-left:6px;">${assigneeList.map((n, i) => makeAvatarHtml(n, i)).join('')}</div>`
+                : '';
 
             bar.innerHTML = task.completed
-                ? `<i data-lucide="check-circle-2" style="width:14px; height:14px; margin-right:4px;"></i> ${displayAssignees}`
-                : displayAssignees;
+                ? `<i data-lucide="check-circle-2" style="width:13px;height:13px;flex-shrink:0;"></i>${avatarHtml}`
+                : avatarHtml;
+            bar.style.display = 'flex';
+            bar.style.alignItems = 'center';
+            bar.style.gap = '2px';
+            bar.style.paddingLeft = '6px';
 
             bar.onclick = () => openTaskModal(taskIndex);
 
@@ -993,6 +1165,25 @@ function clearAllSlidesAssignments() {
     renderArtifactPresenterChecks();
     renderArtifactSlides();
     renderContributorChart();
+}
+
+/** Shared: build a small avatar circle for a member by index */
+function memberAvatarHtml(memberIndex, size = 22) {
+    const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+    const m = state.members[memberIndex];
+    if (!m) return '';
+    const color = m.avatarColor || AVATAR_COLORS[memberIndex % AVATAR_COLORS.length];
+    const initial = (m.lastName || '?').slice(0, 1);
+    const inner = m.avatarImage
+        ? `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`
+        : `<span style="font-size:${Math.floor(size * 0.42)}px;font-weight:700;color:white;line-height:1;">${initial}</span>`;
+    return `<div style="
+        width:${size}px;height:${size}px;border-radius:50%;
+        background:${m.avatarImage ? '#00000022' : color};
+        display:inline-flex;align-items:center;justify-content:center;
+        overflow:hidden;flex-shrink:0;
+        box-shadow:0 1px 4px rgba(0,0,0,0.35);
+    ">${inner}</div>`;
 }
 
 /** Populate member radio list in artifact modal */
@@ -1339,13 +1530,12 @@ function renderArtifactSlides() {
         const item = document.createElement('div');
         item.className = 'slide-item';
 
-        const presenterNames = (slide.presenters || []).map(pIdx => {
-            const m = state.members[pIdx];
-            return m ? (m.lastName || 'メンバー') : '';
-        }).filter(n => n);
-
-        const presentersHtml = presenterNames.length > 0
-            ? `<div class="slide-presenters-tag"><i data-lucide="mic" style="width:10px;height:10px;"></i> ${presenterNames.join(', ')}</div>`
+        const presenterAvatars = (slide.presenters || []).map(pIdx => memberAvatarHtml(pIdx, 20)).join('');
+        const presentersHtml = presenterAvatars
+            ? `<div class="slide-presenters-tag" style="display:flex;align-items:center;gap:2px;padding:2px 4px;">
+                <i data-lucide="mic" style="width:9px;height:9px;flex-shrink:0;"></i>
+                <div style="display:flex;gap:-4px;">${presenterAvatars}</div>
+               </div>`
             : '';
 
         item.innerHTML = `
@@ -1556,11 +1746,10 @@ function renderHotspots() {
         div.style.width = hs.rect.w + '%';
         div.style.height = hs.rect.h + '%';
 
-        const author = state.members[hs.authorIdx];
-        const name = author ? (author.lastName || '担当') : '担当';
-
         div.innerHTML = `
-            <span class="hotspot-author-tag">${name}</span>
+            <div style="position:absolute;top:-12px;left:-12px;z-index:2;pointer-events:none;">
+                ${memberAvatarHtml(hs.authorIdx, 24)}
+            </div>
             <div class="hotspot-label">${hs.text || ''}</div>
             <button class="hotspot-delete-btn" onclick="deleteHotspot(${idx})"><i data-lucide="x" style="width:10px;height:10px;"></i></button>
         `;
@@ -2573,14 +2762,45 @@ function importData(e) {
     reader.onload = (event) => {
         try {
             const imported = JSON.parse(event.target.result);
+
+            // ── 1. 現在の「自分」メンバー情報を退避 ──
+            const selfMember = (state.members || []).find(m => m.isSelf);
+            const selfKey = selfMember
+                ? (selfMember.emailLocal || `${selfMember.lastName}${selfMember.firstName}`)
+                : null;
+
+            // ── 2. インポートデータで上書き ──
             state = imported;
+
+            // ── 3. インポート先メンバーにアバター画像をマージ ──
+            // (インポートファイルに avatarImage があればそれを優先)
+            // (自分の avatarImage と isSelf だけ元のものを復元)
+            if (selfMember && selfKey && Array.isArray(state.members)) {
+                state.members.forEach(m => {
+                    const mKey = m.emailLocal || `${m.lastName}${m.firstName}`;
+                    if (mKey === selfKey) {
+                        // 自分のアバター画像・色・フラグを復元（インポート側に画像がなければ自分のを維持）
+                        if (!m.avatarImage && selfMember.avatarImage) {
+                            m.avatarImage = selfMember.avatarImage;
+                        }
+                        if (!m.avatarColor && selfMember.avatarColor) {
+                            m.avatarColor = selfMember.avatarColor;
+                        }
+                        m.isSelf = true;
+                    } else {
+                        // 他メンバーは isSelf を外す（自分は1人だけ）
+                        m.isSelf = false;
+                    }
+                });
+            }
+
             saveState();
             location.reload();
         } catch (err) {
-            alert('ファイルの読み込みに失敗しました');
+            alert('ファイルの読み込みに失敗しました: ' + err.message);
         }
     };
-    reader.readAsDataURL(file);
+    reader.readAsText(file);  // JSON は readAsText で読む
 }
 
 function resetData() {
