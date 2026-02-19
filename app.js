@@ -3053,9 +3053,25 @@ function exportData() {
     const dataStr = JSON.stringify(state, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() +
+        (now.getMonth() + 1).toString().padStart(2, '0') +
+        now.getDate().toString().padStart(2, '0') + '_' +
+        now.getHours().toString().padStart(2, '0') +
+        now.getMinutes().toString().padStart(2, '0');
+
+    const groupPart = state.groupSymbol ? `Group-${state.groupSymbol}` : 'NoGroup';
+    // Truncate theme name to 8 chars and sanitize
+    const themePart = (state.themeName || 'NoTheme')
+        .substring(0, 8)
+        .replace(/[<>:"/\\|?*]/g, '_'); // Sanitize invalid chars
+
+    const filename = `pbl2_backup_${dateStr}_${groupPart}_${themePart}.json`;
+
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pbl2_data_${state.groupName || 'student'}.json`;
+    a.download = filename;
     a.click();
 }
 
