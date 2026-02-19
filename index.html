@@ -687,6 +687,10 @@
                             <span
                                 style="background: var(--primary); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">TIPS</span>
                             スライド画像をアップロードし、範囲を指定して作成担当者を割り当てます。
+                            <button id="btn-clear-all-hotspots" type="button"
+                                style="margin-left:8px; font-size:10px; padding:2px 8px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:4px; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                                全スライドの担当設定をクリア
+                            </button>
                         </div>
                     </div>
                     <div
@@ -696,6 +700,10 @@
                         <div id="artifact-member-list" class="wr-author-checks">
                             <!-- Filled by JS -->
                         </div>
+                        <button id="btn-clear-hotspots" type="button"
+                            style="font-size:10px; padding:2px 8px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:4px; cursor:pointer; white-space:nowrap; flex-shrink:0;">
+                            担当者クリア
+                        </button>
                     </div>
                 </div>
             </div>
@@ -741,6 +749,10 @@
                                 style="font-size:0.85rem; color:var(--text-main); display:flex; align-items:center; gap:6px;">
                                 <i data-lucide="mic" style="width:14px; height:14px; color:var(--accent);"></i> 発表担当者
                             </h4>
+                            <button id="btn-clear-presenters" type="button"
+                                style="font-size:10px; padding:2px 8px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:4px; cursor:pointer; white-space:nowrap;">
+                                発表者クリア
+                            </button>
                         </div>
                         <div id="artifact-presenter-checks" class="wr-author-checks"
                             style="background:var(--bg-sidebar); padding:0.75rem; border-radius:8px; border:1px solid var(--border); overflow-y: auto; flex: 1;">
@@ -750,7 +762,7 @@
 
                     <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; margin-top: 1rem;">
                         <h4
-                            style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.5rem; display:flex; align-items:center; gap:6px; flex-shrink: 0;">
+                            style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.5rem; display:flex; align-items:center; gap:6px; flex-shrink:0;">
                             <i data-lucide="file-text" style="width:14px; height:14px; color:var(--primary);"></i>
                             発表内容・原稿
                         </h4>

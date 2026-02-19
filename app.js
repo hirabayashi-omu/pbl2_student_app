@@ -217,6 +217,9 @@ function initEventListeners() {
     initHotspotLogic();
     initArtifactRichEditor();
     document.getElementById('btn-export-artifact-script').addEventListener('click', exportArtifactScript);
+    document.getElementById('btn-clear-presenters').addEventListener('click', clearSlidePresenters);
+    document.getElementById('btn-clear-hotspots').addEventListener('click', clearSlideHotspots);
+    document.getElementById('btn-clear-all-hotspots').addEventListener('click', clearAllSlidesAssignments);
 
     // Report Tabs switching
     document.querySelectorAll('.report-tab').forEach(tab => {
@@ -953,6 +956,43 @@ function openArtifactModal(key, name) {
 /** Close the artifact modal */
 function closeArtifactModal() {
     document.getElementById('modal-artifact-detail').classList.remove('active');
+}
+
+/** Clear all presenter assignments for the current slide */
+function clearSlidePresenters() {
+    if (currentSlideIndex === -1) { alert('スライドを選択してください。'); return; }
+    if (!confirm('このスライドの発表者を全員クリアしますか？')) return;
+    const slide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
+    slide.presenters = [];
+    renderArtifactPresenterChecks();
+    renderArtifactSlides();
+    renderContributorChart();
+}
+
+/** Clear all hotspot assignments for the current slide */
+function clearSlideHotspots() {
+    if (currentSlideIndex === -1) { alert('スライドを選択してください。'); return; }
+    if (!confirm('このスライドの作成担当者（矩形）を全てクリアしますか？')) return;
+    const slide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
+    slide.hotspots = [];
+    renderHotspots();
+    renderContributorChart();
+}
+
+/** Clear ALL slides' hotspots AND presenters for the current artifact */
+function clearAllSlidesAssignments() {
+    if (!currentArtifactKey) return;
+    if (!confirm('全スライドの発表担当者・作成担当者（矩形）を全てクリアしますか？\nこの操作は取り消せません。')) return;
+    const slides = state.artifactSettings[currentArtifactKey].slides || [];
+    slides.forEach(slide => {
+        slide.hotspots = [];
+        slide.presenters = [];
+    });
+    // Refresh current slide view
+    renderHotspots();
+    renderArtifactPresenterChecks();
+    renderArtifactSlides();
+    renderContributorChart();
 }
 
 /** Populate member radio list in artifact modal */
