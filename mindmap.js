@@ -11,25 +11,27 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     // State
-    // State Management
-    const STORAGE_KEY = 'mindmap_data_v1';
-
     const rootId = generateUUID();
+    let isEmbedded = false;
+    let isEventListenersAdded = false;
+    let isKeyboardShortcutsAdded = false;
+    let isTouchEventsAdded = false;
     let mindMapState = {
         root: {
             id: rootId,
-            text: 'Central Idea',
+            text: 'プロジェクトテーマ',
             x: 0,
             y: 0,
             column: 0,
             children: []
         },
-        images: [], // New images array
-        columnLabels: {}, // Generation labels
-        pan: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+        images: [],
+        columnLabels: {},
+        pan: { x: 0, y: 0 },
         scale: 1,
         isDragging: false,
         lastMousePos: { x: 0, y: 0 },
+        // ... (rest of state stays same)
 
         // DnD State
         draggedNodeId: null,
@@ -119,6 +121,7 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function persistState() {
+        if (isEmbedded) return; // Don't overwrite global state if editing a task flow
         const data = {
             version: 1,
             root: mindMapState.root,
@@ -127,11 +130,12 @@ var MindMapModule = window.MindMapModule = (() => {
             pan: mindMapState.pan,
             scale: mindMapState.scale
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem('mindmap_data_v1', JSON.stringify(data));
     }
 
     function restoreState() {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        if (isEmbedded) return;
+        const saved = localStorage.getItem('mindmap_data_v1');
         if (saved) {
             try {
                 const data = JSON.parse(saved);
@@ -227,8 +231,8 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function updateUndoRedoButtons() {
-        const undoBtn = document.getElementById('mm-undo-btn');
-        const redoBtn = document.getElementById('mm-redo-btn');
+        const undoBtn = currentBase.querySelector('.mm-undo-btn') || document.getElementById('mm-undo-btn');
+        const redoBtn = currentBase.querySelector('.mm-redo-btn') || document.getElementById('mm-redo-btn');
 
         if (undoBtn) {
             undoBtn.disabled = mindMapState.history.length === 0;
@@ -265,111 +269,142 @@ var MindMapModule = window.MindMapModule = (() => {
     ];
 
     // Elements
-    let canvasContainer, nodesLayer, connectionsLayer, gridLayer, foregroundLayer, zoomLevelEl;
+    let canvasContainer, nodesLayer, connectionsLayer, gridLayer, foregroundLayer, imagesLayer, zoomLevelEl;
 
-    // Initialization
+    // Module-level utility: sets CSS --vh variable to real viewport height (for mobile)
+    function setViewportHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
     // Initialization
     let isInitialized = false;
-    function init() {
-        // Select elements first
-        canvasContainer = document.getElementById('mm-canvas-container');
-        nodesLayer = document.getElementById('mm-nodes-layer');
-        connectionsLayer = document.getElementById('mm-connections-layer');
-        gridLayer = document.getElementById('mm-grid-layer');
-        foregroundLayer = document.getElementById('mm-foreground-layer');
-        zoomLevelEl = document.getElementById('mm-zoom-level');
+    let currentBase = document;
+    function init(container = null) {
+        isEmbedded = !!container;
+        currentBase = container || document;
 
-        if (!canvasContainer || !nodesLayer) {
-            console.error('MindMapModule: Required elements not found. Initialization aborted.');
-            return;
+        // Select elements - prioritize global IDs when not embedded to avoid modal conflicts
+        if (!isEmbedded) {
+            canvasContainer = document.getElementById('mm-canvas-container');
+            nodesLayer = document.getElementById('mm-nodes-layer');
+            connectionsLayer = document.getElementById('mm-connections-layer');
+            gridLayer = document.getElementById('mm-grid-layer');
+            foregroundLayer = document.getElementById('mm-foreground-layer');
+            imagesLayer = document.getElementById('mm-images-layer');
+            zoomLevelEl = document.getElementById('mm-zoom-level');
+        } else {
+            canvasContainer = currentBase.querySelector('.mm-canvas-container');
+            nodesLayer = currentBase.querySelector('.mm-nodes-layer');
+            connectionsLayer = currentBase.querySelector('.mm-connections-layer');
+            gridLayer = currentBase.querySelector('.mm-grid-layer');
+            foregroundLayer = currentBase.querySelector('.mm-foreground-layer');
+            imagesLayer = currentBase.querySelector('.mm-images-layer');
+            zoomLevelEl = currentBase.querySelector('.mm-zoom-level');
         }
 
-        if (isInitialized) {
+        console.log('MindMapModule: Initializing...', { isEmbedded, container: !!container, currentBase: currentBase.nodeName });
+
+        if (!canvasContainer || !nodesLayer) {
+            console.warn('MindMapModule: Required canvas elements not found in', isEmbedded ? 'Embedded' : 'Global', 'context.');
+            console.log('Target container:', currentBase);
+            // Search globally as fallback if not found in container (should not happen if HTML is correct)
+            if (isEmbedded) {
+                console.log('MindMapModule: Re-trying global search as fallback...');
+                canvasContainer = canvasContainer || document.getElementById('mm-canvas-container');
+                nodesLayer = nodesLayer || document.getElementById('mm-nodes-layer');
+            }
+            if (!canvasContainer || !nodesLayer) {
+                console.error('MindMapModule: Critical - Cannot find canvas elements.');
+                return;
+            }
+        }
+
+        // For global mode: skip re-init if already done
+        // For embedded mode: always re-init (new container each time)
+        if (isInitialized && !container) {
+            console.log('MindMapModule: Already initialized globally, refreshing...');
+            // Re-verify elements just in case DOM changed
+            canvasContainer = document.getElementById('mm-canvas-container');
+            nodesLayer = document.getElementById('mm-nodes-layer');
+
+            if (mindMapState.root && !mindMapState.root.text) {
+                mindMapState.root.text = 'プロジェクトテーマ';
+            }
+
             updateLayout();
             render();
             return;
         }
-        isInitialized = true;
-        // Set CSS custom property for mobile viewport height
-        function setViewportHeight() {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        // Only set isInitialized for global mode
+        if (!container) {
+            isInitialized = true;
         }
-
-        // Set on load
-        setViewportHeight();
-
-        // Update on resize and orientation change
-        window.addEventListener('resize', setViewportHeight);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(setViewportHeight, 100);
-        });
-
-        // Mobile UI Adjustment
-        // Mobile UI Adjustment
-        function adjustMobileUI() {
-            // Broaden mobile detection: Small screen OR touch device
-            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-            const isSmallScreen = window.innerWidth <= 1024; // Increased threshold
-            const isMobile = isSmallScreen || isTouch;
-
-            const btnTexts = document.querySelectorAll('.btn-text');
-
-            // Add class to body for CSS overrides
-            if (isMobile) {
-                document.body.classList.add('is-mobile');
-            } else {
-                document.body.classList.remove('is-mobile');
-            }
-
-            btnTexts.forEach(span => {
-                if (isMobile) {
-                    // Determine text if not stored
-                    if (!span.getAttribute('data-text')) {
-                        span.setAttribute('data-text', span.innerText);
-                    }
-                    span.style.display = 'none';
-                    span.innerText = ''; // Force clear
-                } else {
-                    // Restore text
-                    const text = span.getAttribute('data-text');
-                    if (text) {
-                        span.innerText = text;
-                        span.style.display = ''; // Reset display
-                    }
-                }
-            });
-        }
-
-        // Run on load and resize
-        adjustMobileUI();
-        window.addEventListener('resize', adjustMobileUI);
 
         setupEventListeners();
+        setupInstanceButtons();
         setupKeyboardShortcuts();
-        restoreState();
+        if (!isEmbedded) {
+            restoreState();
+        }
+        initContextMenu();
 
-        // UI Undo/Redo
-        const undoBtn = document.getElementById('mm-undo-btn');
-        if (undoBtn) undoBtn.onclick = undo;
-        const redoBtn = document.getElementById('mm-redo-btn');
-        if (redoBtn) redoBtn.onclick = redo;
-        const clearBtn = document.getElementById('mm-clear-all-btn');
-        if (clearBtn) clearBtn.onclick = clearAll;
+        setViewportHeight();
 
-        // Image Button
-        const addImgBtn = document.getElementById('mm-add-image-btn');
-        if (addImgBtn) {
-            addImgBtn.onclick = () => {
+        // Only render immediately for global mode
+        // For embedded, loadData will be called right after and will render
+        if (!isEmbedded) {
+            updateLayout();
+            render();
+        }
+    }
+
+    function setupInstanceButtons() {
+        const btnMap = {
+            '.mm-undo-btn': undo,
+            '.mm-redo-btn': redo,
+            '.mm-add-child-btn': () => addNode(mindMapState.selectedNodeId),
+            '.mm-add-sibling-btn': () => addSibling(mindMapState.selectedNodeId),
+            '.mm-delete-btn': () => deleteNode(mindMapState.selectedNodeId),
+            '.mm-center-btn': fitToScreen,
+            '.mm-zoom-in': () => zoom(1.2),
+            '.mm-zoom-out': () => zoom(0.8),
+            '.mm-add-image-btn': () => {
                 const rect = canvasContainer.getBoundingClientRect();
-                // Use current scale/pan
                 const centerX = (rect.width / 2 - mindMapState.pan.x) / mindMapState.scale;
                 const centerY = (rect.height / 2 - mindMapState.pan.y) / mindMapState.scale;
                 addImage(centerX - 100, centerY - 75);
-            };
+            },
+            '.mm-clear-all-btn': clearAll,
+            '.mm-move-up-btn': () => moveNodeUp(mindMapState.selectedNodeId),
+            '.mm-move-down-btn': () => moveNodeDown(mindMapState.selectedNodeId),
+            '.mm-export-btn': saveMap,
+            '.mm-import-btn-trigger': () => {
+                const inp = currentBase.querySelector('.mm-import-input') || currentBase.querySelector('#mm-import-input') || document.getElementById('mm-import-input');
+                if (inp) inp.click();
+            }
+        };
+
+        console.log('MindMapModule: Setting up buttons for', isEmbedded ? 'Embedded content' : 'Global content');
+        for (const [selector, handler] of Object.entries(btnMap)) {
+            const btn = currentBase.querySelector(selector) || document.getElementById(selector.replace('.', ''));
+            if (btn) {
+                // Clear existing and set new to avoid duplicate/stale handlers
+                btn.onclick = null;
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handler();
+                };
+            } else {
+                if (selector.includes('add-child') || selector.includes('add-sibling')) {
+                    console.warn('MindMapModule: Vital button not found:', selector);
+                }
+            }
         }
 
-        const imgInput = document.getElementById('mm-image-upload-input');
+        // Special case for image upload input as it's an onchange event
+        const imgInput = currentBase.querySelector('#mm-image-upload-input') || document.getElementById('mm-image-upload-input');
         if (imgInput) {
             imgInput.onchange = (e) => {
                 const file = e.target.files[0];
@@ -388,12 +423,6 @@ var MindMapModule = window.MindMapModule = (() => {
                 e.target.value = '';
             };
         }
-
-        updateUndoRedoButtons();
-        initContextMenu();
-        updateLayout();
-        render();
-        setupTouchEvents();
     }
 
     function addImage(x, y) {
@@ -412,7 +441,7 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function renderImages() {
-        const layer = document.getElementById('mm-images-layer');
+        const layer = imagesLayer;
         if (!layer) return;
         layer.innerHTML = '';
 
@@ -460,6 +489,7 @@ var MindMapModule = window.MindMapModule = (() => {
 
             // Events
             frame.onmousedown = (e) => {
+                hideContextMenu();
                 if (e.target.classList.contains('image-resizer')) return;
                 e.stopPropagation();
                 if (mindMapState.selectedImageId !== img.id) {
@@ -556,7 +586,7 @@ var MindMapModule = window.MindMapModule = (() => {
                 const closeMenu = (ev) => {
                     if (!menu.contains(ev.target)) {
                         menu.remove();
-                        document.removeEventListener('mousedown', closeMenu);
+                        document.removeEventListener('mousedown', closeMenu, true);
                     }
                 };
 
@@ -565,7 +595,7 @@ var MindMapModule = window.MindMapModule = (() => {
                 menu.appendChild(deleteItem);
                 document.body.appendChild(menu);
 
-                setTimeout(() => document.addEventListener('mousedown', closeMenu), 0);
+                setTimeout(() => document.addEventListener('mousedown', closeMenu, true), 0);
             };
 
             layer.appendChild(frame);
@@ -862,51 +892,94 @@ var MindMapModule = window.MindMapModule = (() => {
             menu.className = 'context-menu hidden';
             document.body.appendChild(menu);
 
-            COLOR_PALETTE.forEach(color => {
-                const swatch = document.createElement('div');
-                swatch.className = 'color-swatch';
-                swatch.style.backgroundColor = color;
-                swatch.dataset.color = color;
-                swatch.title = color;
-
-                swatch.onclick = (e) => {
-                    e.stopPropagation();
-                    if (mindMapState.contextMenu.nodeId) {
-                        const node = findNode(mindMapState.contextMenu.nodeId);
-                        if (node) {
-                            saveState();
-                            node.color = color;
-                            render();
-                        }
-                    }
+            // Close on mousedown outside
+            document.addEventListener('mousedown', (e) => {
+                if (!e.target.closest('#context-menu')) {
                     hideContextMenu();
-                };
-                menu.appendChild(swatch);
-            });
+                }
+            }, true);
+
+            // Close on escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') hideContextMenu();
+            }, true);
         }
 
-        // Close on click outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#context-menu')) {
-                hideContextMenu();
-            }
-        });
+        // We will populate the menu in showContextMenu based on the node
     }
 
     function showContextMenu(nodeId, x, y) {
         mindMapState.contextMenu.nodeId = nodeId;
         mindMapState.contextMenu.active = true;
         const menu = document.getElementById('context-menu');
+        const node = findNode(nodeId);
+        if (!menu || !node) return;
+
+        menu.innerHTML = '';
         menu.classList.remove('hidden');
 
+        // Helper to create items
+        const createItem = (text, icon, onClick, isDestructive = false) => {
+            const item = document.createElement('div');
+            item.className = isDestructive ? 'context-menu-item destructive' : 'context-menu-item';
+            item.innerHTML = `<i class="fas ${icon}"></i> <span>${text}</span>`;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                onClick();
+                hideContextMenu();
+            };
+            return item;
+        };
+
+        // Actions
+        menu.appendChild(createItem('子ノードを追加', 'fa-level-down-alt', () => addNode(nodeId)));
+
+        if (nodeId !== mindMapState.root.id) {
+            menu.appendChild(createItem('兄弟ノードを追加', 'fa-plus', () => addSibling(nodeId)));
+            menu.appendChild(createItem('上に移動', 'fa-arrow-up', () => moveNodeUp(nodeId)));
+            menu.appendChild(createItem('下に移動', 'fa-arrow-down', () => moveNodeDown(nodeId)));
+
+            const separator = document.createElement('div');
+            separator.className = 'context-menu-separator';
+            menu.appendChild(separator);
+
+            menu.appendChild(createItem('ノードを削除', 'fa-trash', () => deleteNode(nodeId), true));
+        }
+
+        const separator2 = document.createElement('div');
+        separator2.className = 'context-menu-separator';
+        menu.appendChild(separator2);
+
+        // Color Palette
+        const swatchContainer = document.createElement('div');
+        swatchContainer.className = 'color-swatch-container';
+
+        COLOR_PALETTE.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = color;
+            swatch.title = color;
+
+            swatch.onclick = (e) => {
+                e.stopPropagation();
+                saveState();
+                node.color = color;
+                render();
+                hideContextMenu();
+            };
+            swatchContainer.appendChild(swatch);
+        });
+        menu.appendChild(swatchContainer);
+
         // Position
+        menu.style.display = 'block'; // Ensure it's measurable
         const rect = menu.getBoundingClientRect();
-        let left = x + 10;
-        let top = y + 10;
+        let left = x + 5;
+        let top = y + 5;
 
         // Bounds check
-        if (left + rect.width > window.innerWidth) left = x - rect.width - 10;
-        if (top + rect.height > window.innerHeight) top = y - rect.height - 10;
+        if (left + rect.width > window.innerWidth) left = x - rect.width - 5;
+        if (top + rect.height > window.innerHeight) top = y - rect.height - 5;
 
         menu.style.left = `${left}px`;
         menu.style.top = `${top}px`;
@@ -916,7 +989,10 @@ var MindMapModule = window.MindMapModule = (() => {
         mindMapState.contextMenu.active = false;
         mindMapState.contextMenu.nodeId = null;
         const menu = document.getElementById('context-menu');
-        if (menu) menu.classList.add('hidden');
+        if (menu) {
+            menu.classList.add('hidden');
+            menu.style.display = 'none'; // Overwrite inline block style
+        }
     }
 
     function moveNodeTo(nodeId, newParentId) {
@@ -1120,7 +1196,6 @@ var MindMapModule = window.MindMapModule = (() => {
         const svgTransform = `translate(${mindMapState.pan.x}, ${mindMapState.pan.y}) scale(${mindMapState.scale})`;
 
         nodesLayer.style.transform = cssTransform;
-        const imagesLayer = document.getElementById('mm-images-layer');
         if (imagesLayer) imagesLayer.style.transform = cssTransform;
 
         // Update SVG transforms
@@ -1129,10 +1204,21 @@ var MindMapModule = window.MindMapModule = (() => {
             if (g) g.setAttribute('transform', svgTransform);
         });
 
-        zoomLevelEl.textContent = `${Math.round(mindMapState.scale * 100)}%`;
+        if (zoomLevelEl) {
+            zoomLevelEl.textContent = `${Math.round(mindMapState.scale * 100)}%`;
+        }
     }
 
     function render() {
+        if (!mindMapState.root) {
+            console.error('MindMapModule: Cannot render, root node is missing.');
+            return;
+        }
+        if (!nodesLayer) {
+            console.error('MindMapModule: Cannot render, nodesLayer is null.');
+            return;
+        }
+
         renderImages(); // Render Images Layer
 
         // 1. Initial Render Nodes (To get them into DOM for measurement)
@@ -1397,7 +1483,8 @@ var MindMapModule = window.MindMapModule = (() => {
 
         el.className = classes.join(' ');
         el.dataset.id = node.id;
-        el.textContent = node.text;
+        el.innerText = node.text || '';
+
 
         if (node.color) {
             el.style.backgroundColor = node.color;
@@ -1456,6 +1543,7 @@ var MindMapModule = window.MindMapModule = (() => {
         };
 
         el.onmousedown = (e) => {
+            hideContextMenu();
             if (e.button !== 0) return; // Left click only
 
             // Check if handle clicked
@@ -1679,6 +1767,7 @@ var MindMapModule = window.MindMapModule = (() => {
 
             hitPath.addEventListener('mousedown', (e) => {
                 e.preventDefault(); e.stopPropagation();
+                hideContextMenu();
                 mindMapState.selectedConnection = { sourceId: source.id, targetId: target.id };
                 render();
             });
@@ -1746,6 +1835,7 @@ var MindMapModule = window.MindMapModule = (() => {
             handleGroup.addEventListener('mousedown', (e) => {
                 if (e.button === 0) {
                     e.stopPropagation();
+                    hideContextMenu();
                     mindMapState.archDrag.active = true;
                     mindMapState.archDrag.dragged = false;
                     mindMapState.archDrag.sourceId = source.id;
@@ -1859,7 +1949,7 @@ var MindMapModule = window.MindMapModule = (() => {
                     swatch.onclick = (ev) => {
                         ev.stopPropagation();
                         menu.remove();
-                        document.removeEventListener('mousedown', closeMenu);
+                        document.removeEventListener('mousedown', closeMenu, true);
                         updateConnectionColor(source.id, target.id, isRelation, color);
                     };
                     colorGrid.appendChild(swatch);
@@ -1893,7 +1983,7 @@ var MindMapModule = window.MindMapModule = (() => {
                     widthBtn.onclick = (ev) => {
                         ev.stopPropagation();
                         menu.remove();
-                        document.removeEventListener('mousedown', closeMenu);
+                        document.removeEventListener('mousedown', closeMenu, true);
                         updateConnectionWidth(source.id, target.id, isRelation, width);
                     };
                     widthGrid.appendChild(widthBtn);
@@ -1947,7 +2037,7 @@ var MindMapModule = window.MindMapModule = (() => {
                     styleBtn.onclick = (ev) => {
                         ev.stopPropagation();
                         menu.remove();
-                        document.removeEventListener('mousedown', closeMenu);
+                        document.removeEventListener('mousedown', closeMenu, true);
                         updateConnectionStyle(source.id, target.id, isRelation, style.value);
                     };
                     styleGrid.appendChild(styleBtn);
@@ -1971,11 +2061,11 @@ var MindMapModule = window.MindMapModule = (() => {
                 const closeMenu = (ev) => {
                     if (!menu.contains(ev.target)) {
                         menu.remove();
-                        document.removeEventListener('mousedown', closeMenu);
+                        document.removeEventListener('mousedown', closeMenu, true);
                     }
                 };
                 document.body.appendChild(menu);
-                setTimeout(() => document.addEventListener('mousedown', closeMenu), 0);
+                setTimeout(() => document.addEventListener('mousedown', closeMenu, true), 0);
             };
 
             handleGroup.oncontextmenu = onContextMenu;
@@ -2093,665 +2183,376 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function setupEventListeners() {
-        // Shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Ignore if input is focused
-            if (e.target.tagName === 'INPUT') return;
+        if (!isEventListenersAdded) {
+            window.addEventListener('mousemove', handleGlobalMouseMove);
+            window.addEventListener('mouseup', handleGlobalMouseUp);
+            window.addEventListener('resize', () => {
+                setViewportHeight();
+            });
+            window.addEventListener('orientationchange', () => {
+                setTimeout(setViewportHeight, 100);
+            });
+            isEventListenersAdded = true;
+        }
 
-            switch (e.key) {
-                case 'Tab':
-                    e.preventDefault();
-                    if (mindMapState.selectedNodeId) addNode(mindMapState.selectedNodeId);
-                    break;
-                case 'Enter':
-                    e.preventDefault();
-                    if (mindMapState.selectedNodeId) {
-                        if (mindMapState.selectedNodeId === mindMapState.root.id) {
-                            // Auto-fix: Sibling on Root -> Add Child
-                            addNode(mindMapState.selectedNodeId);
-                            showToast('Root cannot have siblings. Added child instead.');
-                        } else {
-                            addSibling(mindMapState.selectedNodeId);
-                        }
-                    }
-                    break;
-                case 'Delete':
-                case 'Backspace':
-                    if (mindMapState.selectedNodeId) {
-                        if (mindMapState.selectedNodeId === mindMapState.root.id) {
-                            showToast('Cannot delete the root node.', 'error');
-                        } else {
-                            deleteNode(mindMapState.selectedNodeId);
-                        }
-                    } else if (mindMapState.selectedImageId) {
-                        deleteImage(mindMapState.selectedImageId);
-                    }
-                    break;
-                case 'ArrowUp':
-                    if (e.altKey && mindMapState.selectedNodeId) {
-                        e.preventDefault();
-                        moveNodeUp(mindMapState.selectedNodeId);
-                    }
-                    break;
-                case 'ArrowDown':
-                    if (e.altKey && mindMapState.selectedNodeId) {
-                        e.preventDefault();
-                        moveNodeDown(mindMapState.selectedNodeId);
-                    }
-                    break;
-            }
-        });
-
-        // Global Mouse Handlers for Pan & Drag
-        canvasContainer.addEventListener('mousedown', (e) => {
-            // Clear connection selection if clicking empty space
-            if (!e.target.closest('.connection-handle-group') && !e.target.closest('.node')) {
-                if (mindMapState.selectedConnection) {
-                    mindMapState.selectedConnection = null;
-                    render();
-                }
-            }
-
-            if (e.target.closest('.node')) return; // Don't pan if clicking node
-
-            mindMapState.isDragging = true;
-            mindMapState.lastMousePos = { x: e.clientX, y: e.clientY };
-            canvasContainer.style.cursor = 'grabbing';
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            // Arch Height Dragging
-            if (mindMapState.archDrag.active) {
-                const source = findNode(mindMapState.archDrag.sourceId);
-                const target = findNode(mindMapState.archDrag.targetId);
-                if (!source || !target) return;
-
-                if (!mindMapState.archDrag.dragged) {
-                    if (Math.hypot(e.clientX - mindMapState.archDrag.startX, e.clientY - mindMapState.archDrag.startY) > 5) mindMapState.archDrag.dragged = true;
-                }
-
-                const rect = canvasContainer.getBoundingClientRect();
-                // Current mouse in world space
-                const worldMouseX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
-                const worldMouseY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
-                // Start mouse in world space
-                const startWorldX = (mindMapState.archDrag.startX - rect.left - mindMapState.pan.x) / mindMapState.scale;
-                const startWorldY = (mindMapState.archDrag.startY - rect.top - mindMapState.pan.y) / mindMapState.scale;
-
-                const isSelfLoop = (source.id === target.id);
-                const colStep = (target.column || 0) - (source.column || 0);
-
-                // 1. Ports
-                const pEl = nodesLayer.querySelector(`[data-id="${source.id}"]`);
-                if (!pEl) return;
-                const pWidth = pEl.offsetWidth;
-                let pX = source.x + pWidth;
-                let pY = source.y;
-                let cX = target.x - 4;
-                let cY = target.y;
-
-                if (mindMapState.archDrag.isRelation) {
-                    const idx = (source.relations || []).findIndex(r => (typeof r === 'string' ? r === target.id : r.id === target.id));
-                    pY += 6 + (idx * 6);
-                    cY += 6;
-                }
-                if (isSelfLoop) {
-                    const nodeH = pEl.offsetHeight;
-                    const spreadOffset = nodeH * 0.4;
-                    pY = source.y - spreadOffset;
-                    cY = source.y + spreadOffset;
-                    pX = source.x + pWidth;
-                    cX = source.x - 4;
-                }
-
-                // 2. Interaction: X is Width Delta, Y is Height position direct mapping
-                // Horizontal: Stretching the bulge
-                let newW = mindMapState.archDrag.startArchWidth + (worldMouseX - startWorldX);
-                // Vertical: Handle moves only up/down, maps to mouse Y
-                const signedH = (8 * worldMouseY - 4 * pY - 4 * cY) / 6;
-                const newH = Math.abs(signedH);
-                const isNowUp = (signedH < 0);
-
-                // Update mindMapState
-                if (mindMapState.archDrag.isRelation) {
-                    const rel = (source.relations || []).find(r => (typeof r === 'string' ? r === target.id : r.id === target.id));
-                    if (rel && typeof rel === 'object') {
-                        rel.arch = isNowUp ? 'up' : 'down';
-                        rel.archWidth = newW; rel.archHeight = newH;
-                    }
-                } else {
-                    target.archPreference = isNowUp ? 'up' : 'down';
-                    target.customArchWidth = newW; target.customArchHeight = newH;
-                }
-
-                // 3. Real-time DOM Update
-                const path = mindMapState.archDrag.cachedPath;
-                const hGroup = mindMapState.archDrag.cachedHandleGroup;
-                if (path || hGroup) {
-                    // SymmetricalWeights lock handle to X midpoint: Mx = (pX+cX)/2
-                    const c1x = pX + newW;
-                    const c2x = cX - newW;
-                    const c1y = pY + signedH;
-                    const c2y = cY + signedH;
-
-                    const d = `M ${pX} ${pY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${cX} ${cY}`;
-                    if (path) path.setAttribute('d', d);
-                    const hx = (pX + 3 * c1x + 3 * c2x + cX) / 8; // result: (4pX+4cX)/8 = (pX+cX)/2
-                    const hy = (pY + 3 * c1y + 3 * c2y + cY) / 8;
-                    if (hGroup) hGroup.setAttribute('transform', `translate(${hx}, ${hy})`);
-                }
-                return;
-            }
-
-            // Connection Dragging
-            if (mindMapState.connectionDrag.active) {
-                mindMapState.connectionDrag.currentPos = { x: e.clientX, y: e.clientY };
-
-                // Hit Test & Target Highlighting
-                const nodes = document.elementsFromPoint(e.clientX, e.clientY);
-                // Allow target to be source for self-loops (relations)
-                const targetEl = nodes.find(el => el.classList.contains('node'));
-                const newTargetId = targetEl ? targetEl.dataset.id : null;
-
-                if (mindMapState.dropTargetId !== newTargetId) {
-                    // Update classes manually to avoid re-render
-                    if (mindMapState.dropTargetId) {
-                        const oldEl = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
-                        if (oldEl) oldEl.classList.remove('drop-target');
-                    }
-                    mindMapState.dropTargetId = newTargetId;
-                    if (mindMapState.dropTargetId) {
-                        const newEl = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
-                        if (newEl) newEl.classList.add('drop-target');
+        // Per-container interaction
+        if (canvasContainer) {
+            canvasContainer.onmousedown = (e) => {
+                if (!e.target.closest('.connection-handle-group') && !e.target.closest('.node')) {
+                    if (mindMapState.selectedConnection) {
+                        mindMapState.selectedConnection = null;
+                        render();
                     }
                 }
+                if (e.target.closest('.node')) return;
 
-                // Draw Drag Line
-                updateDragLine();
-
-                return;
-            }
-
-            // Node Dragging
-            if (mindMapState.potentialDragNodeId && !mindMapState.isNodeDragging) {
-                const dx = e.clientX - mindMapState.dragStartPos.x;
-                const dy = e.clientY - mindMapState.dragStartPos.y;
-                if (Math.hypot(dx, dy) > 5) { // Threshold
-                    if (mindMapState.potentialDragNodeId !== mindMapState.root.id) {
-                        mindMapState.isNodeDragging = true;
-                        mindMapState.draggedNodeId = mindMapState.potentialDragNodeId;
-                        canvasContainer.style.cursor = 'move';
-                        render(); // Apply classes
-                    } else {
-                        mindMapState.potentialDragNodeId = null; // Can't drag root
-                    }
-                }
-            }
-
-            if (mindMapState.isNodeDragging) {
-                // Hit Test for Target
-                const nodes = document.elementsFromPoint(e.clientX, e.clientY);
-                const targetEl = nodes.find(el => el.classList.contains('node') && el.dataset.id !== mindMapState.draggedNodeId);
-                const newTargetId = targetEl ? targetEl.dataset.id : null;
-
-                let newTargetType = 'parent';
-                let newTargetIndex = -1;
-
-                if (newTargetId) {
-                    const draggedParent = findParent(mindMapState.draggedNodeId);
-                    const targetParent = findParent(newTargetId);
-
-                    // Check if target is a sibling for reordering
-                    if (draggedParent && targetParent && draggedParent.id === targetParent.id) {
-                        newTargetType = 'sibling';
-                        const rect = targetEl.getBoundingClientRect();
-                        const midY = rect.top + rect.height / 2;
-                        const children = draggedParent.children;
-                        const targetIdx = children.findIndex(c => c.id === newTargetId);
-
-                        if (e.clientY < midY) {
-                            newTargetIndex = targetIdx;
-                        } else {
-                            newTargetIndex = targetIdx + 1;
-                        }
-                    }
-                }
-
-                if (mindMapState.dropTargetId !== newTargetId || mindMapState.dropTargetIndex !== newTargetIndex) {
-                    mindMapState.dropTargetId = newTargetId;
-                    mindMapState.dropTargetType = newTargetType;
-                    mindMapState.dropTargetIndex = newTargetIndex;
-                    render(); // Update highlight
-                }
-                return; // Don't pan while dragging node
-            }
-
-
-
-            // Image Drag
-            if (mindMapState.imageDrag.active) {
-                const dx = e.clientX - mindMapState.imageDrag.lastX;
-                const dy = e.clientY - mindMapState.imageDrag.lastY;
-
-                const img = mindMapState.images.find(img => img.id === mindMapState.imageDrag.id);
-                if (img) {
-                    // We update position. 
-                    // We need to account for scale if we want pixel perfect drag on scaled canvas?
-                    // Yes: dx / scale
-                    img.x += dx / mindMapState.scale;
-                    img.y += dy / mindMapState.scale;
-                    mindMapState.imageDrag.lastX = e.clientX;
-                    mindMapState.imageDrag.lastY = e.clientY;
-                    renderImages(); // Re-render images only
-                }
-                return;
-            }
-
-            // Image Resize
-            if (mindMapState.imageResize.active) {
-                const idx = mindMapState.images.findIndex(img => img.id === mindMapState.imageResize.id);
-                if (idx !== -1) {
-                    const dx = e.clientX - mindMapState.imageResize.startX;
-                    const dy = e.clientY - mindMapState.imageResize.startY;
-
-                    const newW = Math.max(50, mindMapState.imageResize.startW + (dx / mindMapState.scale));
-                    const newH = Math.max(50, mindMapState.imageResize.startH + (dy / mindMapState.scale));
-
-                    mindMapState.images[idx].width = newW;
-                    mindMapState.images[idx].height = newH;
-                    renderImages();
-                }
-                return;
-            }
-
-            // Canvas Panning
-            if (mindMapState.isDragging) {
-                const dx = e.clientX - mindMapState.lastMousePos.x;
-                const dy = e.clientY - mindMapState.lastMousePos.y;
-                mindMapState.pan.x += dx;
-                mindMapState.pan.y += dy;
+                mindMapState.isDragging = true;
                 mindMapState.lastMousePos = { x: e.clientX, y: e.clientY };
-                updateView(); // Efficient view update only
-            }
+                canvasContainer.style.cursor = 'grabbing';
+                hideContextMenu();
+            };
 
-            // Node Resizing
-            if (mindMapState.nodeResize.active) {
-                const node = findNode(mindMapState.nodeResize.nodeId);
-                if (!node) return;
+            canvasContainer.onwheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                zoom(delta);
+            };
 
-                if (mindMapState.nodeResize.axis === 'v') {
-                    const dy = e.clientY - mindMapState.nodeResize.startY;
-                    node.customHeight = Math.max(CONFIG.nodeHeight, mindMapState.nodeResize.startSize + (dy / mindMapState.scale));
-                } else {
-                    const dx = e.clientX - mindMapState.nodeResize.startX;
-                    node.customWidth = Math.max(CONFIG.nodeWidth, mindMapState.nodeResize.startSize + (dx / mindMapState.scale));
-                }
-                render();
-            }
-        });
+            setupTouchEvents();
+        }
+    }
 
-        window.addEventListener('mouseup', (e) => {
-            if (mindMapState.nodeResize.active) {
-                mindMapState.nodeResize.active = false;
-                canvasContainer.style.cursor = 'grab';
-                return;
-            }
+    function setupKeyboardShortcuts() {
+        if (isKeyboardShortcutsAdded) return;
+        isKeyboardShortcutsAdded = true;
+        document.addEventListener('keydown', handleGlobalKeyDown);
+    }
 
-            if (mindMapState.imageDrag.active) {
-                mindMapState.imageDrag.active = false;
-                mindMapState.imageDrag.id = null;
-                persistState(); // Save after move
-                return;
-            }
+    function handleGlobalKeyDown(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true') return;
 
-            if (mindMapState.imageResize.active) {
-                mindMapState.imageResize.active = false;
-                mindMapState.imageResize.id = null;
-                persistState(); // Save after resize
-                return;
-            }
-
-            if (mindMapState.archDrag.active) {
-                mindMapState.archDrag.active = false;
-                // Clear dragged flag after a small delay to prevent immediate click
-                setTimeout(() => { mindMapState.archDrag.dragged = false; }, 200);
-                canvasContainer.style.cursor = 'grab';
-                return;
-            }
-
-            // End Connection Drag
-            if (mindMapState.connectionDrag.active) {
-                const sourceId = mindMapState.connectionDrag.sourceNodeId;
-                const targetId = mindMapState.dropTargetId;
-                const type = mindMapState.connectionDrag.type;
-                const mousePos = { x: e.clientX, y: e.clientY };
-
-                // Cleanup Highlights
-                canvasContainer.classList.remove('dragging-in', 'dragging-out');
-
-                // Cleanup Drag Line
-                const dragLine = document.getElementById('drag-line');
-                if (dragLine) dragLine.remove();
-
-                if (mindMapState.dropTargetId) {
-                    const el = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
-                    if (el) el.classList.remove('drop-target');
-                }
-
-                mindMapState.connectionDrag.active = false;
-
-                // ACTION
-                if (targetId) {
-                    if (type === 'out') {
-                        // Calculate World Coordinates to determine Arch Choice
-                        const sourceNode = findNode(sourceId);
-                        const rect = canvasContainer.getBoundingClientRect();
-                        const worldY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
-
-                        let archChoice = 'auto';
-                        if (sourceNode) {
-                            const dy = worldY - sourceNode.y;
-                            if (dy < -30) archChoice = 'up';
-                            else if (dy > 30) archChoice = 'down';
-                        }
-
-                        toggleRelation(sourceId, targetId, archChoice);
-                    } else if (sourceId !== targetId) {
-                        // 'in' drag: cannot make self as parent
-                        moveNodeTo(sourceId, targetId);
-                    }
-                } else if (!targetId && type === 'out') {
-                    addNode(sourceId);
-                    showToast('New node created.');
-                }
-
-                mindMapState.connectionDrag.sourceNodeId = null;
-                mindMapState.dropTargetId = null;
-                canvasContainer.style.cursor = 'grab';
-                render();
-                return;
-            }
-
-            // End Node Drag
-            if (mindMapState.isNodeDragging) {
-                if (mindMapState.draggedNodeId && mindMapState.dropTargetId) {
-                    if (mindMapState.dropTargetType === 'sibling') {
-                        // Reorder within parent
-                        saveState();
-                        const parent = findParent(mindMapState.draggedNodeId);
-                        const oldIdx = parent.children.findIndex(c => c.id === mindMapState.draggedNodeId);
-                        const nodeRecord = parent.children.splice(oldIdx, 1)[0];
-
-                        let newIdx = mindMapState.dropTargetIndex;
-                        if (oldIdx < newIdx) newIdx--; // Adjust for shift after removal
-                        parent.children.splice(newIdx, 0, nodeRecord);
-
-                        updateLayout();
-                    } else if (e.shiftKey) {
-                        toggleRelation(mindMapState.draggedNodeId, mindMapState.dropTargetId);
+        switch (e.key) {
+            case 'Tab':
+                e.preventDefault();
+                if (mindMapState.selectedNodeId) addNode(mindMapState.selectedNodeId);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (mindMapState.selectedNodeId) {
+                    if (mindMapState.selectedNodeId === mindMapState.root.id) {
+                        addNode(mindMapState.selectedNodeId);
                     } else {
-                        moveNodeTo(mindMapState.draggedNodeId, mindMapState.dropTargetId);
+                        addSibling(mindMapState.selectedNodeId);
                     }
                 }
-                mindMapState.isNodeDragging = false;
-                mindMapState.draggedNodeId = null;
-                mindMapState.dropTargetId = null;
-                mindMapState.dropTargetType = null;
-                mindMapState.dropTargetIndex = -1;
-                mindMapState.potentialDragNodeId = null;
-                canvasContainer.style.cursor = 'grab';
+                break;
+            case 'Delete':
+            case 'Backspace':
+                if (mindMapState.selectedNodeId) {
+                    if (mindMapState.selectedNodeId !== mindMapState.root.id) {
+                        deleteNode(mindMapState.selectedNodeId);
+                    }
+                } else if (mindMapState.selectedImageId) {
+                    deleteImage(mindMapState.selectedImageId);
+                }
+                break;
+            case 'ArrowUp':
+                if (e.altKey && mindMapState.selectedNodeId) {
+                    e.preventDefault();
+                    moveNodeUp(mindMapState.selectedNodeId);
+                }
+                break;
+            case 'ArrowDown':
+                if (e.altKey && mindMapState.selectedNodeId) {
+                    e.preventDefault();
+                    moveNodeDown(mindMapState.selectedNodeId);
+                }
+                break;
+        }
+    }
+
+    function handleGlobalMouseMove(e) {
+        if (!canvasContainer) return;
+
+        if (mindMapState.archDrag.active) handleArchDragMouseMove(e);
+        else if (mindMapState.connectionDrag.active) handleConnectionDragMouseMove(e);
+        else if (mindMapState.potentialDragNodeId && !mindMapState.isNodeDragging) handlePotentialNodeDragMouseMove(e);
+        else if (mindMapState.isNodeDragging) handleNodeDragMouseMove(e);
+        else if (mindMapState.imageDrag.active) handleImageDragMouseMove(e);
+        else if (mindMapState.imageResize.active) handleImageResizeMouseMove(e);
+        else if (mindMapState.isDragging) handleCanvasPanMouseMove(e);
+        else if (mindMapState.nodeResize.active) handleNodeResizeMouseMove(e);
+    }
+
+    function handleArchDragMouseMove(e) {
+        const source = findNode(mindMapState.archDrag.sourceId);
+        const target = findNode(mindMapState.archDrag.targetId);
+        if (!source || !target) return;
+
+        if (!mindMapState.archDrag.dragged) {
+            if (Math.hypot(e.clientX - mindMapState.archDrag.startX, e.clientY - mindMapState.archDrag.startY) > 5) mindMapState.archDrag.dragged = true;
+        }
+
+        const rect = canvasContainer.getBoundingClientRect();
+        const worldMouseX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+        const worldMouseY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+        const startWorldX = (mindMapState.archDrag.startX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+
+        const pEl = nodesLayer.querySelector(`[data-id="${source.id}"]`);
+        if (!pEl) return;
+        const pWidth = pEl.offsetWidth;
+        const isSelfLoop = (source.id === target.id);
+
+        let pX = source.x + pWidth, pY = source.y;
+        let cX = target.x - 4, cY = target.y;
+
+        if (mindMapState.archDrag.isRelation) {
+            const idx = (source.relations || []).findIndex(r => (typeof r === 'string' ? r === target.id : r.id === target.id));
+            if (idx !== -1) { pY += 6 + (idx * 6); cY += 6; }
+        }
+        if (isSelfLoop) {
+            const nodeH = pEl.offsetHeight;
+            pY = source.y - nodeH * 0.4; cY = source.y + nodeH * 0.4;
+            pX = source.x + pWidth; cX = source.x - 4;
+        }
+
+        let newW = mindMapState.archDrag.startArchWidth + (worldMouseX - startWorldX);
+        const signedH = (8 * worldMouseY - 4 * pY - 4 * cY) / 6;
+        const newH = Math.abs(signedH);
+        const isNowUp = (signedH < 0);
+
+        if (mindMapState.archDrag.isRelation) {
+            const rel = (source.relations || []).find(r => (typeof r === 'string' ? r === target.id : r.id === target.id));
+            if (rel && typeof rel === 'object') {
+                rel.arch = isNowUp ? 'up' : 'down';
+                rel.archWidth = newW; rel.archHeight = newH;
+            }
+        } else {
+            target.archPreference = isNowUp ? 'up' : 'down';
+            target.customArchWidth = newW; target.customArchHeight = newH;
+        }
+
+        const path = mindMapState.archDrag.cachedPath;
+        const hGroup = mindMapState.archDrag.cachedHandleGroup;
+        if (path || hGroup) {
+            const c1x = pX + newW, c2x = cX - newW;
+            const c1y = pY + signedH, c2y = cY + signedH;
+            const d = `M ${pX} ${pY} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${cX} ${cY}`;
+            if (path) path.setAttribute('d', d);
+            const hx = (pX + 3 * c1x + 3 * c2x + cX) / 8, hy = (pY + 3 * c1y + 3 * c2y + cY) / 8;
+            if (hGroup) hGroup.setAttribute('transform', `translate(${hx}, ${hy})`);
+        }
+    }
+
+    function handleConnectionDragMouseMove(e) {
+        mindMapState.connectionDrag.currentPos = { x: e.clientX, y: e.clientY };
+        const nodes = document.elementsFromPoint(e.clientX, e.clientY);
+        const targetEl = nodes.find(el => el.classList.contains('node'));
+        const newTargetId = targetEl ? targetEl.dataset.id : null;
+
+        if (mindMapState.dropTargetId !== newTargetId) {
+            if (mindMapState.dropTargetId) {
+                const oldEl = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
+                if (oldEl) oldEl.classList.remove('drop-target');
+            }
+            mindMapState.dropTargetId = newTargetId;
+            if (mindMapState.dropTargetId) {
+                const newEl = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
+                if (newEl) newEl.classList.add('drop-target');
+            }
+        }
+        updateDragLine();
+    }
+
+    function handlePotentialNodeDragMouseMove(e) {
+        const dx = e.clientX - mindMapState.dragStartPos.x;
+        const dy = e.clientY - mindMapState.dragStartPos.y;
+        if (Math.hypot(dx, dy) > 5) {
+            if (mindMapState.potentialDragNodeId !== mindMapState.root.id) {
+                mindMapState.isNodeDragging = true;
+                mindMapState.draggedNodeId = mindMapState.potentialDragNodeId;
+                canvasContainer.style.cursor = 'move';
                 render();
-                return;
-            }
-
-            // If simply clicked node (no drag)
-            if (mindMapState.potentialDragNodeId) {
-                selectNode(mindMapState.potentialDragNodeId);
+            } else {
                 mindMapState.potentialDragNodeId = null;
             }
+        }
+    }
 
-            mindMapState.isDragging = false;
-            canvasContainer.style.cursor = 'grab';
-            persistState(); // Save pan position after dragging
-        });
+    function handleNodeDragMouseMove(e) {
+        const nodes = document.elementsFromPoint(e.clientX, e.clientY);
+        const targetEl = nodes.find(el => el.classList.contains('node') && el.dataset.id !== mindMapState.draggedNodeId);
+        const newTargetId = targetEl ? targetEl.dataset.id : null;
 
-        // Zooming
-        canvasContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            zoom(delta);
-        }, { passive: false });
-
-        // Buttons
-        document.getElementById('mm-add-child-btn').onclick = () => {
-            mindMapState.selectedNodeId ? addNode(mindMapState.selectedNodeId) : showToast('Select a node.', 'error');
-        };
-        document.getElementById('mm-add-sibling-btn').onclick = () => {
-            if (mindMapState.selectedNodeId) {
-                mindMapState.selectedNodeId === mindMapState.root.id ?
-                    (addNode(mindMapState.selectedNodeId), showToast('Root cannot have siblings. Added child instead.')) :
-                    addSibling(mindMapState.selectedNodeId);
-            } else showToast('Select a node.', 'error');
-        };
-        document.getElementById('mm-delete-btn').onclick = () => {
-            if (mindMapState.selectedNodeId) {
-                mindMapState.selectedNodeId === mindMapState.root.id ? showToast('Cannot delete root.', 'error') : deleteNode(mindMapState.selectedNodeId);
-            } else if (mindMapState.selectedImageId) {
-                deleteImage(mindMapState.selectedImageId);
-            } else showToast('Select a node or image.', 'error');
-        };
-
-        // New Buttons
-        document.getElementById('mm-move-up-btn').onclick = () => {
-            mindMapState.selectedNodeId ? moveNodeUp(mindMapState.selectedNodeId) : showToast('Select a node.', 'error');
-        };
-        document.getElementById('mm-move-down-btn').onclick = () => {
-            mindMapState.selectedNodeId ? moveNodeDown(mindMapState.selectedNodeId) : showToast('Select a node.', 'error');
-        };
-
-        document.getElementById('mm-center-btn').onclick = centerView;
-        document.getElementById('mm-zoom-in').onclick = () => zoom(1.2);
-        document.getElementById('mm-zoom-out').onclick = () => zoom(0.8);
-
-        // Save/Load
-        document.getElementById('mm-export-btn').onclick = saveMap;
-        document.getElementById('mm-import-btn-trigger').onclick = () => document.getElementById('mm-import-input').click();
-        document.getElementById('mm-import-input').onchange = loadMap;
-        document.getElementById('mm-export-pdf-btn').onclick = () => {
-            try {
-                // Clone & Print Strategy for perfect A4 output
-                let printContainer = document.getElementById('print-container');
-                if (!printContainer) {
-                    printContainer = document.createElement('div');
-                    printContainer.id = 'print-container';
-                    document.body.appendChild(printContainer);
-                }
-                printContainer.innerHTML = ''; // Clear previous
-
-                // 1. Calculate Bounds of Data
-                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-                const traverse = (node) => {
-                    const width = node.customWidth || node.measuredWidth || CONFIG.nodeWidth;
-                    const height = node.customHeight || node.measuredHeight || CONFIG.nodeHeight;
-                    minX = Math.min(minX, node.x);
-                    maxX = Math.max(maxX, node.x + width);
-                    minY = Math.min(minY, node.y - height / 2);
-                    maxY = Math.max(maxY, node.y + height / 2);
-                    if (node.children) node.children.forEach(traverse);
-                };
-                traverse(mindMapState.root);
-
-                mindMapState.images.forEach(img => {
-                    minX = Math.min(minX, img.x);
-                    maxX = Math.max(maxX, img.x + img.width);
-                    minY = Math.min(minY, img.y);
-                    maxY = Math.max(maxY, img.y + img.height);
-                });
-
-                if (minX === Infinity) {
-                    showToast('No content to export.', 'error');
-                    return;
-                }
-
-                // A4 Landscape Dimensions
-                const a4w = 1123;
-                const a4h = 794;
-                const outputMargin = 40; // Fixed margin in output pixels (approx 1cm)
-
-                const contentW = maxX - minX;
-                const contentH = maxY - minY;
-                const availW = a4w - (outputMargin * 2);
-                const availH = a4h - (outputMargin * 2);
-
-                // 2. Calculate Scale to fit A4 (Available Area / Content Size)
-                // Increased max scale further to 5.0
-                const scale = Math.min(availW / contentW, availH / contentH, 5.0);
-
-                // 3. Create Wrapper for transforming content to A4 center
-                const wrapper = document.createElement('div');
-                wrapper.style.position = 'absolute';
-                wrapper.style.top = '0';
-                wrapper.style.left = '0';
-                wrapper.style.transformOrigin = '0 0';
-                wrapper.style.width = '100%';
-                wrapper.style.height = '100%';
-
-                // Translate so that (minX, minY) moves to (0,0) then center in A4 available area
-                const offsetX = (availW - contentW * scale) / 2;
-                const offsetY = (availH - contentH * scale) / 2;
-
-                // tx = Margin + CenteringOffset - (MinX * Scale)
-                const tx = outputMargin + offsetX - (minX * scale);
-                const ty = outputMargin + offsetY - (minY * scale);
-
-                wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-
-                // 4. Clone Layers
-
-                // Clone Connections (SVG) - Process FIRST to establish underlay
-                const svgClone = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                svgClone.style.position = 'absolute';
-                svgClone.style.top = '0';
-                svgClone.style.left = '0';
-                svgClone.style.width = '100%';
-                svgClone.style.height = '100%';
-                svgClone.style.overflow = 'visible';
-                svgClone.style.zIndex = '1';
-
-                // Handle IDs to prevent 'display:none' issues with Markers
-                const defs = document.querySelector('defs').cloneNode(true);
-                const markers = defs.querySelectorAll('marker');
-                markers.forEach(m => {
-                    m.id = 'print-' + m.id;
-                });
-                svgClone.appendChild(defs);
-
-                const connectionLayerEl = document.getElementById('mm-connections-layer');
-                if (connectionLayerEl) {
-                    const originalG = connectionLayerEl.querySelector('g');
-                    if (originalG) {
-                        const gClone = originalG.cloneNode(true);
-                        gClone.setAttribute('transform', ''); // Remove view transform
-
-                        // Update marker references in the cloned SVG HTML
-                        let innerHTML = gClone.innerHTML;
-                        innerHTML = innerHTML.replace(/url\(#([^)]+)\)/g, 'url(#print-$1)');
-                        gClone.innerHTML = innerHTML;
-
-                        svgClone.appendChild(gClone);
-                    }
-                }
-
-                // Clone Images
-                const imagesClone = document.getElementById('mm-images-layer').cloneNode(true);
-                imagesClone.style.transform = 'none';
-                imagesClone.id = ''; // Remove ID to avoid conflict, set position manually
-                imagesClone.style.position = 'absolute';
-                imagesClone.style.top = '0';
-                imagesClone.style.left = '0';
-                imagesClone.style.width = '100%';
-                imagesClone.style.height = '100%';
-                imagesClone.style.zIndex = '5';
-
-                imagesClone.querySelectorAll('.image-resizer, .image-frame').forEach(el => {
-                    if (el.classList.contains('image-resizer')) el.remove();
-                    el.style.border = 'none'; // Clean look
-                });
-
-                // Clone Nodes
-                const nodesClone = document.getElementById('mm-nodes-layer').cloneNode(true);
-                nodesClone.style.transform = 'none';
-                nodesClone.id = '';
-                nodesClone.style.position = 'absolute';
-                nodesClone.style.top = '0';
-                nodesClone.style.left = '0';
-                nodesClone.style.width = '100%';
-                nodesClone.style.height = '100%';
-                nodesClone.style.zIndex = '10'; // Ensure on top
-
-                // Remove controls/handlers from clone
-                nodesClone.querySelectorAll('.resize-handle, .handle').forEach(el => el.remove());
-
-                // Freeze dimensions of nodes to prevent print-layout shift
-                nodesClone.querySelectorAll('.node').forEach(cloneEl => {
-                    const id = cloneEl.dataset.id;
-                    const originalEl = document.querySelector(`#nodes-layer .node[data-id="${id}"]`);
-                    if (originalEl) {
-                        const w = originalEl.offsetWidth;
-                        const h = originalEl.offsetHeight;
-                        cloneEl.style.width = `${w}px`;
-                        cloneEl.style.height = `${h}px`;
-                        // prevent wrapping changes
-                        cloneEl.style.boxSizing = 'border-box';
-                        cloneEl.style.display = 'flex';
-                        cloneEl.style.alignItems = 'center';
-                        cloneEl.style.justifyContent = 'center';
-                        cloneEl.style.whiteSpace = 'pre-wrap';
-                        cloneEl.style.overflow = 'hidden';
-                    }
-                });
-
-                // 5. Assemble
-                wrapper.appendChild(svgClone);
-                wrapper.appendChild(imagesClone);
-                wrapper.appendChild(nodesClone);
-                printContainer.appendChild(wrapper);
-
-                // 6. Print Sequence
-                document.body.classList.add('printing');
-
-                // Cleanup function
-                const cleanup = () => {
-                    document.body.classList.remove('printing');
-                    printContainer.innerHTML = '';
-                    window.removeEventListener('afterprint', cleanup);
-                };
-
-                // Listen for print completion
-                window.addEventListener('afterprint', cleanup);
-
-                // Delay for rendering
-                setTimeout(() => {
-                    window.print();
-
-                    // Fallback cleanup in case afterprint doesn't fire (e.g. mobile or specific browser scenarios)
-                    // We use a long timeout to avoid clearing while dialog is open
-                    setTimeout(() => {
-                        // Check if still printing
-                        if (document.body.classList.contains('printing')) {
-                            // We don't force cleanup here automatically to avoid breaking long interactions,
-                            // but we could offer a UI way to exit or just rely on afterprint.
-                            // For now, assume afterprint works on target desktop browser.
-                        }
-                    }, 5000);
-                }, 500);
-
-            } catch (e) {
-                console.error('PDF Export Error:', e);
-                document.body.classList.remove('printing');
-                showToast('PDF Export Failed: ' + e.message, 'error');
+        let newTargetType = 'parent', newTargetIndex = -1;
+        if (newTargetId) {
+            const draggedParent = findParent(mindMapState.draggedNodeId);
+            const targetParent = findParent(newTargetId);
+            if (draggedParent && targetParent && draggedParent.id === targetParent.id) {
+                newTargetType = 'sibling';
+                const rect = targetEl.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const targetIdx = targetParent.children.findIndex(c => c.id === newTargetId);
+                newTargetIndex = (e.clientY < midY) ? targetIdx : targetIdx + 1;
             }
-        };
+        }
+
+        if (mindMapState.dropTargetId !== newTargetId || mindMapState.dropTargetIndex !== newTargetIndex) {
+            mindMapState.dropTargetId = newTargetId;
+            mindMapState.dropTargetType = newTargetType;
+            mindMapState.dropTargetIndex = newTargetIndex;
+            render();
+        }
+    }
+
+    function handleImageDragMouseMove(e) {
+        const dx = e.clientX - mindMapState.imageDrag.lastX;
+        const dy = e.clientY - mindMapState.imageDrag.lastY;
+        const img = mindMapState.images.find(img => img.id === mindMapState.imageDrag.id);
+        if (img) {
+            img.x += dx / mindMapState.scale;
+            img.y += dy / mindMapState.scale;
+            mindMapState.imageDrag.lastX = e.clientX;
+            mindMapState.imageDrag.lastY = e.clientY;
+            renderImages();
+        }
+    }
+
+    function handleImageResizeMouseMove(e) {
+        const idx = mindMapState.images.findIndex(img => img.id === mindMapState.imageResize.id);
+        if (idx !== -1) {
+            const dx = e.clientX - mindMapState.imageResize.startX;
+            const dy = e.clientY - mindMapState.imageResize.startY;
+            mindMapState.images[idx].width = Math.max(50, mindMapState.imageResize.startW + (dx / mindMapState.scale));
+            mindMapState.images[idx].height = Math.max(50, mindMapState.imageResize.startH + (dy / mindMapState.scale));
+            renderImages();
+        }
+    }
+
+    function handleCanvasPanMouseMove(e) {
+        const dx = e.clientX - mindMapState.lastMousePos.x;
+        const dy = e.clientY - mindMapState.lastMousePos.y;
+        mindMapState.pan.x += dx;
+        mindMapState.pan.y += dy;
+        mindMapState.lastMousePos = { x: e.clientX, y: e.clientY };
+        updateView();
+    }
+
+    function handleNodeResizeMouseMove(e) {
+        const node = findNode(mindMapState.nodeResize.nodeId);
+        if (!node) return;
+        if (mindMapState.nodeResize.axis === 'v') {
+            const dy = e.clientY - mindMapState.nodeResize.startY;
+            node.customHeight = Math.max(CONFIG.nodeHeight, mindMapState.nodeResize.startSize + (dy / mindMapState.scale));
+        } else {
+            const dx = e.clientX - mindMapState.nodeResize.startX;
+            node.customWidth = Math.max(CONFIG.nodeWidth, mindMapState.nodeResize.startSize + (dx / mindMapState.scale));
+        }
+        render();
+    }
+
+    function handleGlobalMouseUp(e) {
+        if (mindMapState.nodeResize.active) {
+            mindMapState.nodeResize.active = false;
+            if (canvasContainer) canvasContainer.style.cursor = 'grab';
+            return;
+        }
+
+        if (mindMapState.imageDrag.active || mindMapState.imageResize.active) {
+            mindMapState.imageDrag.active = false; mindMapState.imageResize.active = false;
+            persistState(); return;
+        }
+
+        if (mindMapState.archDrag.active) {
+            mindMapState.archDrag.active = false;
+            setTimeout(() => { mindMapState.archDrag.dragged = false; }, 200);
+            if (canvasContainer) canvasContainer.style.cursor = 'grab';
+            return;
+        }
+
+        if (mindMapState.connectionDrag.active) {
+            handleConnectionDragEnd(e);
+            return;
+        }
+
+        if (mindMapState.isNodeDragging) {
+            handleNodeDragEnd(e);
+            return;
+        }
+
+        if (mindMapState.potentialDragNodeId) {
+            selectNode(mindMapState.potentialDragNodeId);
+            mindMapState.potentialDragNodeId = null;
+        }
+
+        mindMapState.isDragging = false;
+        if (canvasContainer) canvasContainer.style.cursor = 'grab';
+        persistState();
+    }
+
+    function handleConnectionDragEnd(e) {
+        const sourceId = mindMapState.connectionDrag.sourceNodeId;
+        const targetId = mindMapState.dropTargetId;
+        const type = mindMapState.connectionDrag.type;
+
+        if (canvasContainer) canvasContainer.classList.remove('dragging-in', 'dragging-out');
+        const dragLine = document.getElementById('drag-line');
+        if (dragLine) dragLine.remove();
+
+        if (mindMapState.dropTargetId) {
+            const el = nodesLayer.querySelector(`[data-id="${mindMapState.dropTargetId}"]`);
+            if (el) el.classList.remove('drop-target');
+        }
+
+        mindMapState.connectionDrag.active = false;
+
+        if (targetId) {
+            if (type === 'out') {
+                const sourceNode = findNode(sourceId);
+                const rect = canvasContainer ? canvasContainer.getBoundingClientRect() : { top: 0, left: 0 };
+                const worldY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+                let archChoice = 'auto';
+                if (sourceNode) {
+                    const dy = worldY - sourceNode.y;
+                    if (dy < -30) archChoice = 'up';
+                    else if (dy > 30) archChoice = 'down';
+                }
+                toggleRelation(sourceId, targetId, archChoice);
+            } else if (sourceId !== targetId) {
+                moveNodeTo(sourceId, targetId);
+            }
+        } else if (type === 'out') {
+            addNode(sourceId);
+            showToast('New node created.');
+        }
+
+        mindMapState.connectionDrag.sourceNodeId = null;
+        mindMapState.dropTargetId = null;
+        render();
+    }
+
+    function handleNodeDragEnd(e) {
+        if (mindMapState.draggedNodeId && mindMapState.dropTargetId) {
+            if (mindMapState.dropTargetType === 'sibling') {
+                saveState();
+                const parent = findParent(mindMapState.draggedNodeId);
+                const oldIdx = parent.children.findIndex(c => c.id === mindMapState.draggedNodeId);
+                const nodeRecord = parent.children.splice(oldIdx, 1)[0];
+                let newIdx = mindMapState.dropTargetIndex;
+                if (oldIdx < newIdx) newIdx--;
+                parent.children.splice(newIdx, 0, nodeRecord);
+                updateLayout();
+            } else if (e.shiftKey) {
+                toggleRelation(mindMapState.draggedNodeId, mindMapState.dropTargetId);
+            } else {
+                moveNodeTo(mindMapState.draggedNodeId, mindMapState.dropTargetId);
+            }
+        }
+        mindMapState.isNodeDragging = false;
+        mindMapState.draggedNodeId = null; mindMapState.dropTargetId = null;
+        mindMapState.dropTargetType = null; mindMapState.dropTargetIndex = -1;
+        mindMapState.potentialDragNodeId = null;
+        render();
     }
 
     function zoom(factor) {
@@ -2764,91 +2565,81 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function centerView() {
-        mindMapState.pan.x = window.innerWidth / 4; // Start a bit left so tree expands right
-        mindMapState.pan.y = window.innerHeight / 2;
+        if (!canvasContainer) return;
+        const width = canvasContainer.offsetWidth || 800;
+        const height = canvasContainer.offsetHeight || 600;
+        mindMapState.pan.x = width / 4;
+        mindMapState.pan.y = height / 2;
         mindMapState.scale = 1;
-        updateView(); // Efficient view update only
+        updateView();
     }
 
     // Print & View Management
     function fitToScreen(forPrint = false) {
-        // Calculate bounding box of all nodes AND images
+        if (!canvasContainer && !forPrint) return;
+
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        const padding = 50;
 
-        // Check nodes
-        const traverse = (node) => {
-            const width = node.customWidth || node.measuredWidth || CONFIG.nodeWidth;
-            const height = node.customHeight || node.measuredHeight || CONFIG.nodeHeight;
+        // Calculate bounding box of all nodes
+        function traverseNodes(node) {
+            const el = nodesLayer ? nodesLayer.querySelector(`[data-id="${node.id}"]`) : null;
+            const w = el ? el.offsetWidth : CONFIG.nodeWidth;
+            const h = el ? el.offsetHeight : 40;
 
-            // Node position (centered vertically, x is left)
             minX = Math.min(minX, node.x);
-            maxX = Math.max(maxX, node.x + width);
-            minY = Math.min(minY, node.y - height / 2);
-            maxY = Math.max(maxY, node.y + height / 2);
+            minY = Math.min(minY, node.y - h / 2);
+            maxX = Math.max(maxX, node.x + w);
+            maxY = Math.max(maxY, node.y + h / 2);
+            node.children.forEach(traverseNodes);
+        }
+        traverseNodes(mindMapState.root);
 
-            if (node.children) node.children.forEach(traverse);
-        };
-        traverse(mindMapState.root);
-
-        // Check images
+        // Include images in bounding box calculation
         mindMapState.images.forEach(img => {
             minX = Math.min(minX, img.x);
-            maxX = Math.max(maxX, img.x + img.width);
             minY = Math.min(minY, img.y);
+            maxX = Math.max(maxX, img.x + img.width);
             maxY = Math.max(maxY, img.y + img.height);
         });
 
-        if (minX === Infinity) return; // Empty
+        if (minX === Infinity) { // No nodes or images
+            console.log('MindMapModule: fitToScreen - No content to center.');
+            centerView(); // Fallback to center view
+            return;
+        }
 
-        // Add padding
-        const padding = 50;
         const contentWidth = maxX - minX + (padding * 2);
         const contentHeight = maxY - minY + (padding * 2);
 
         let targetWidth, targetHeight;
-
-        if (forPrint) {
-            // Assume A4 Landscape: 297mm x 210mm (approx 1123px x 794px at 96dpi)
-            // Or simply use a generic landscape aspect ratio 1.414
-            // Use a large enough pixel value for high quality
-            targetWidth = 1123;
-            targetHeight = 794;
+        if (canvasContainer) {
+            targetWidth = canvasContainer.offsetWidth;
+            targetHeight = canvasContainer.offsetHeight;
         } else {
             targetWidth = window.innerWidth;
             targetHeight = window.innerHeight;
         }
 
-        // Calculate scale to fit
+        // If target dimensions are 0 (hidden container), use defaults to avoid NaN
+        if (targetWidth <= 0) targetWidth = isEmbedded ? 800 : window.innerWidth;
+        if (targetHeight <= 0) targetHeight = isEmbedded ? 480 : window.innerHeight;
+
         const scaleX = targetWidth / contentWidth;
         const scaleY = targetHeight / contentHeight;
         let scale = Math.min(scaleX, scaleY);
 
-        // Clamp scale (loosen limit for print)
-        if (forPrint) {
-            scale = Math.min(Math.max(scale, 0.1), 5);
-        } else {
-            scale = Math.min(Math.max(scale, 0.1), 2);
-        }
-
-        // Calculate center of content
-        const centerX = minX - padding + (contentWidth / 2);
-        const centerY = minY - padding + (contentHeight / 2);
+        // Clamp scale — more aggressive limit for embedded to prevent huge nodes
+        const maxScale = isEmbedded ? 1.0 : 1.2;
+        const minScale = 0.1;
+        scale = Math.max(minScale, Math.min(maxScale, scale));
 
         mindMapState.scale = scale;
-
-        if (forPrint) {
-            // For print, center in the target area
-            // Note: CSS @page size landscape handles the rotation, 
-            // we just need to position content to fit smoothly.
-            // We set pan so that (centerX, centerY) is at (targetWidth/2, targetHeight/2)
-            mindMapState.pan.x = (targetWidth / 2) - (centerX * scale);
-            mindMapState.pan.y = (targetHeight / 2) - (centerY * scale);
-        } else {
-            mindMapState.pan.x = (targetWidth / 2) - (centerX * scale);
-            mindMapState.pan.y = (targetHeight / 2) - (centerY * scale);
-        }
+        mindMapState.pan.x = (targetWidth / 2) - ((minX + maxX) / 2) * scale;
+        mindMapState.pan.y = (targetHeight / 2) - ((minY + maxY) / 2) * scale;
 
         updateView();
+        if (zoomLevelEl) zoomLevelEl.textContent = `${Math.round(mindMapState.scale * 100)}%`;
     }
 
     // Print Events
@@ -3130,67 +2921,71 @@ var MindMapModule = window.MindMapModule = (() => {
             isTouchMove = false;
         }, { passive: false });
 
-        // Prevent default touch behaviors on interactive elements
-        document.addEventListener('touchstart', (e) => {
-            const target = e.target;
-            if (target.closest('.node') ||
-                target.closest('.handle') ||
-                target.closest('.image-frame') ||
-                target.closest('.connection-handle-group') ||
-                target.closest('.resize-handle') ||
-                target.closest('.image-resizer')) {
-                // Allow touch on interactive elements
-                const touch = e.touches[0];
+        if (!isTouchEventsAdded) {
+            // Prevent default touch behaviors on interactive elements
+            document.addEventListener('touchstart', (e) => {
+                const target = e.target;
+                if (target.closest('.node') ||
+                    target.closest('.handle') ||
+                    target.closest('.image-frame') ||
+                    target.closest('.connection-handle-group') ||
+                    target.closest('.resize-handle') ||
+                    target.closest('.image-resizer')) {
+                    // Allow touch on interactive elements
+                    const touch = e.touches[0];
 
-                // Create and dispatch synthetic mousedown
-                const mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    bubbles: true,
-                    cancelable: true
-                });
-                target.dispatchEvent(mouseEvent);
-            }
-        }, { passive: false });
+                    // Create and dispatch synthetic mousedown
+                    const mouseEvent = new MouseEvent('mousedown', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    target.dispatchEvent(mouseEvent);
+                }
+            }, { passive: false });
 
-        // Touch move for draggable elements
-        document.addEventListener('touchmove', (e) => {
-            if (mindMapState.isNodeDragging ||
-                mindMapState.imageDrag.active ||
-                mindMapState.imageResize.active ||
-                mindMapState.connectionDrag.active ||
-                mindMapState.archDrag.active ||
-                mindMapState.nodeResize.active) {
-                e.preventDefault();
+            // Touch move for draggable elements
+            document.addEventListener('touchmove', (e) => {
+                if (mindMapState.isNodeDragging ||
+                    mindMapState.imageDrag.active ||
+                    mindMapState.imageResize.active ||
+                    mindMapState.connectionDrag.active ||
+                    mindMapState.archDrag.active ||
+                    mindMapState.nodeResize.active) {
+                    e.preventDefault();
 
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    bubbles: true
-                });
-                window.dispatchEvent(mouseEvent);
-            }
-        }, { passive: false });
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousemove', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        bubbles: true
+                    });
+                    window.dispatchEvent(mouseEvent);
+                }
+            }, { passive: false });
 
-        // Touch end for draggable elements
-        document.addEventListener('touchend', (e) => {
-            if (mindMapState.isNodeDragging ||
-                mindMapState.imageDrag.active ||
-                mindMapState.imageResize.active ||
-                mindMapState.connectionDrag.active ||
-                mindMapState.archDrag.active ||
-                mindMapState.nodeResize.active) {
+            // Touch end for draggable elements
+            document.addEventListener('touchend', (e) => {
+                if (mindMapState.isNodeDragging ||
+                    mindMapState.imageDrag.active ||
+                    mindMapState.imageResize.active ||
+                    mindMapState.connectionDrag.active ||
+                    mindMapState.archDrag.active ||
+                    mindMapState.nodeResize.active) {
 
-                const touch = e.changedTouches[0];
-                const mouseEvent = new MouseEvent('mouseup', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                    bubbles: true
-                });
-                window.dispatchEvent(mouseEvent);
-            }
-        }, { passive: false });
+                    const touch = e.changedTouches[0];
+                    const mouseEvent = new MouseEvent('mouseup', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                        bubbles: true
+                    });
+                    window.dispatchEvent(mouseEvent);
+                }
+            }, { passive: false });
+
+            isTouchEventsAdded = true;
+        }
 
         // Pinch to zoom
         let lastTouchDistance = 0;
@@ -3230,9 +3025,106 @@ var MindMapModule = window.MindMapModule = (() => {
         }, { passive: true });
     }
 
+    function exportData() {
+        return {
+            root: JSON.parse(JSON.stringify(mindMapState.root)),
+            images: JSON.parse(JSON.stringify(mindMapState.images)),
+            columnLabels: JSON.parse(JSON.stringify(mindMapState.columnLabels)),
+            pan: { ...mindMapState.pan },
+            scale: mindMapState.scale
+        };
+    }
+
+    function loadData(data, defaultText) {
+        console.log('MindMapModule: loadData called', { hasData: !!data, defaultText });
+        const resolvedText = defaultText || '\u30bf\u30b9\u30af\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044';
+
+        // Calculate canvas center for initial pan (so root node at y=0 appears in center)
+        const canvasW = (canvasContainer && canvasContainer.offsetWidth > 0)
+            ? canvasContainer.offsetWidth
+            : (isEmbedded ? 800 : window.innerWidth);
+        const canvasH = (canvasContainer && canvasContainer.offsetHeight > 0)
+            ? canvasContainer.offsetHeight
+            : (isEmbedded ? 480 : window.innerHeight);
+
+        if (!data || !data.root) {
+            const newRootId = generateUUID();
+            mindMapState.root = { id: newRootId, text: resolvedText, x: 0, y: 0, column: 0, children: [] };
+            mindMapState.images = [];
+            mindMapState.columnLabels = {};
+            // Place root at horizontal 1/4, vertical center
+            mindMapState.pan = { x: canvasW / 4, y: canvasH / 2 };
+            mindMapState.scale = 1;
+        } else {
+            mindMapState.root = data.root;
+            // Always sync text with task name
+            mindMapState.root.text = resolvedText;
+            mindMapState.images = data.images || [];
+            mindMapState.columnLabels = data.columnLabels || {};
+            mindMapState.pan = data.pan || { x: canvasW / 4, y: canvasH / 2 };
+            mindMapState.scale = data.scale || 1;
+        }
+        mindMapState.selectedNodeId = mindMapState.root.id;
+        mindMapState.history = [];
+        mindMapState.future = [];
+        updateLayout();
+        render();
+        updateUndoRedoButtons();
+
+        // Use ResizeObserver to center reliably once the canvas has real dimensions
+        // (The modal CSS animation may delay layout until after the transition ends)
+        if (canvasContainer && typeof ResizeObserver !== 'undefined') {
+            let centered = false;
+            const ro = new ResizeObserver((entries) => {
+                for (const entry of entries) {
+                    const { width, height } = entry.contentRect;
+                    if (width > 0 && height > 0 && !centered) {
+                        centered = true;
+                        ro.disconnect();
+                        fitToScreen();
+                        // Second pass after child nodes settle
+                        setTimeout(() => fitToScreen(), 300);
+                    }
+                }
+            });
+            ro.observe(canvasContainer);
+            // Safety fallback in case ResizeObserver never fires
+            setTimeout(() => {
+                if (!centered) {
+                    centered = true;
+                    ro.disconnect();
+                    fitToScreen();
+                }
+            }, 1500);
+        } else {
+            // Fallback for environments without ResizeObserver
+            setTimeout(() => fitToScreen(), 300);
+            setTimeout(() => fitToScreen(), 800);
+        }
+    }
+
+    function setRootText(text) {
+        if (mindMapState.root) {
+            mindMapState.root.text = text || '';
+            render();
+        }
+    }
+
     // Start
     return {
-        init: init
+        init: init,
+        loadData: loadData,
+        setRootText: setRootText,
+        exportData: exportData,
+        addChildToRoot: () => {
+            if (mindMapState.root) {
+                addNode(mindMapState.root.id, 'ステップ');
+            }
+        },
+        resetToGlobal: () => {
+            isEmbedded = false;
+            init();
+        }
     };
 })();
 
