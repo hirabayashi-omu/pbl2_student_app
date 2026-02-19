@@ -151,6 +151,12 @@ function updateDisplayInfo() {
     updateLogo('team-logo-img', 'team-logo-placeholder', true);
     updateLogo('gantt-team-logo', 'gantt-team-logo-placeholder', false);
 
+    const btnDelLogo = document.getElementById('btn-delete-team-logo');
+    if (btnDelLogo) {
+        btnDelLogo.style.display = state.groupLogo ? 'flex' : 'none';
+        if (state.groupLogo && window.lucide) lucide.createIcons();
+    }
+
 
     document.getElementById('input-theme-name').value = state.themeName || '';
     document.getElementById('select-group-symbol').value = state.groupSymbol || '';
@@ -303,6 +309,18 @@ function initEventListeners() {
             }
         });
     }
+
+    const btnDelLogo = document.getElementById('btn-delete-team-logo');
+    if (btnDelLogo) {
+        btnDelLogo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('チームロゴを削除しますか？')) {
+                state.groupLogo = '';
+                saveState();
+                if (logoInput) logoInput.value = '';
+            }
+        });
+    }
     document.getElementById('input-group-name').addEventListener('input', (e) => {
         state.groupName = e.target.value;
         saveState();
@@ -448,18 +466,21 @@ function renderMemberList() {
         const avatarBg = hasImage ? 'transparent' : avatarColor;
         const avatarShadow = hasImage ? '0 2px 8px rgba(0,0,0,0.3)' : `0 2px 8px ${avatarColor}55`;
 
+        const deleteBtn = hasImage ? `<button onclick="removeAvatarImage(${index}); event.stopPropagation();" style="position:absolute; top:-2px; right:-2px; width:18px; height:18px; border-radius:50%; background:#ef4444; color:white; border:2px solid var(--bg-card); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; padding:0;"><i data-lucide="x" style="width:10px;height:10px;"></i></button>` : '';
+
         card.innerHTML = `
             <input type="file" id="avatar-input-${index}" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
             <div class="member-card-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="member-avatar" style="
-                        width:44px; height:44px; border-radius:50%;
-                        background:${avatarBg};
-                        display:flex; align-items:center; justify-content:center;
-                        font-size:1.2rem; font-weight:700; color:white;
-                        cursor:pointer; flex-shrink:0; position:relative; overflow:hidden;
-                        box-shadow: ${avatarShadow};
-                        transition: transform 0.15s;
+                    <div style="position:relative;">
+                        <div class="member-avatar" style="
+                            width:44px; height:44px; border-radius:50%;
+                            background:${avatarBg};
+                            display:flex; align-items:center; justify-content:center;
+                            font-size:1.2rem; font-weight:700; color:white;
+                            cursor:pointer; flex-shrink:0; position:relative; overflow:hidden;
+                            box-shadow: ${avatarShadow};
+                            transition: transform 0.15s;
                     " onclick="document.getElementById('avatar-input-${index}').click()"
                        oncontextmenu="clearAvatarImage(${index}); return false;"
                        title="クリックで画像を変更 / 右クリックで削除">
@@ -2949,6 +2970,15 @@ function handleWrImageFiles(files, section) {
         };
         reader.readAsDataURL(file);
     });
+}
+
+// Remove avatar for specific member
+function removeAvatarImage(index) {
+    if (confirm('画像を削除しますか？')) {
+        state.members[index].avatarImage = null;
+        saveState();
+        renderMemberList();
+    }
 }
 
 function renderWrImages(containerId, images, section) {
