@@ -57,6 +57,77 @@
     animation: mmFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+@keyframes dash-animation {
+    to {
+        stroke-dashoffset: -20;
+    }
+}
+
+/* Print Styles */
+@media print {
+    @page {
+        size: landscape;
+        margin: 0;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    #view-mindmap,
+    #view-mindmap * {
+        visibility: visible;
+    }
+
+    #view-mindmap {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .mindmap-toolbar,
+    .mindmap-controls,
+    .top-bar,
+    .sidebar {
+        display: none !important;
+    }
+
+    #view-mindmap {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Keep the connections visible in PDF */
+    .mm-connections-layer path:not(.hit-path) {
+        /* stroke: #333 !important; removed to keep custom colors */
+        fill: none !important;
+        /* Force dark lines and ensure they are not filled */
+    }
+
+    /* Hide transparent hit paths in PDF and text handles */
+    .hit-path {
+        display: none !important;
+    }
+
+    /* Keep node colors, text backgrounds, SVG strokes/fills */
+    .node,
+    .node-text,
+    .mm-text-annotation,
+    svg,
+    svg *,
+    path,
+    marker,
+    g {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
 @keyframes mmFadeIn {
     from {
         opacity: 0;
@@ -180,13 +251,19 @@
     z-index: 5;
 }
 
+.mm-annotations-layer {
+    z-index: 6;
+}
+
 .mm-foreground-layer {
     z-index: 20;
 }
 
 .mm-grid-layer,
+.mm-drawing-layer,
 .mm-connections-layer,
 .mm-images-layer,
+.mm-annotations-layer,
 .mm-nodes-layer,
 .mm-foreground-layer {
     position: absolute;
@@ -198,11 +275,73 @@
     transform-origin: 0 0;
 }
 
+.mm-drawing-layer {
+    z-index: 2;
+}
+
+.mm-draw-btn.active {
+    background: var(--mm-primary-color) !important;
+    color: white !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.mm-shape-btn.active {
+    background: var(--mm-primary-color) !important;
+    color: white !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.mm-canvas-container.drawing-mode,
+.mm-canvas-container.shape-mode {
+    cursor: crosshair !important;
+}
+
+.draw-color-swatch.active,
+.shape-color-swatch.active {
+    box-shadow: 0 0 0 2px white, 0 0 4px rgba(0, 0, 0, 0.5);
+    transform: scale(1.2);
+}
+
+.draw-select option {
+    background: #1e293b;
+    color: white;
+}
+
+.mm-annotations-layer {
+    pointer-events: none;
+    /* Default to none, individual annotations will override */
+}
+
+.mm-text-annotation {
+    position: absolute;
+    border-radius: 6px;
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    box-shadow: var(--mm-shadow);
+    background: rgba(30, 41, 59, 0.8);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--mm-text-color);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-width: 100px;
+    outline: none;
+    cursor: grab;
+}
+
+.mm-text-annotation.selected {
+    border-color: var(--mm-primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), var(--mm-shadow);
+}
+
 /* Ensure children can receive pointer events even if parent is none */
 .mm-connections-layer *,
 .mm-foreground-layer *,
 .mm-nodes-layer *,
-.mm-images-layer * {
+.mm-images-layer *,
+.mm-drawing-layer * {
     pointer-events: auto;
 }
 

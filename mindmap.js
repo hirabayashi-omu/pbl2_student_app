@@ -91,6 +91,29 @@ var MindMapModule = window.MindMapModule = (() => {
             startH: 0
         },
 
+        drawings: [],
+        shapes: [], // Geometric shapes
+        annotations: [], // Text annotations
+        drawingMode: false,
+        drawingState: {
+            active: false,
+            points: [],
+            color: '#fbbf24', // Default amber
+            width: 4,
+            lineType: 'solid' // solid, dashed, dotted
+        },
+        shapeMode: false,
+        shapeState: {
+            active: false,
+            type: 'rect', // rect, ellipse, line, polyline
+            color: '#fbbf24',
+            width: 4,
+            lineType: 'solid',
+            startX: 0,
+            startY: 0,
+            currentId: null
+        },
+
         selectedConnection: null, // { sourceId, targetId }
         selectedNodeId: rootId,
 
@@ -111,6 +134,9 @@ var MindMapModule = window.MindMapModule = (() => {
         const snapshot = {
             root: JSON.parse(JSON.stringify(mindMapState.root)),
             images: JSON.parse(JSON.stringify(mindMapState.images)),
+            drawings: JSON.parse(JSON.stringify(mindMapState.drawings)),
+            shapes: JSON.parse(JSON.stringify(mindMapState.shapes)),
+            annotations: JSON.parse(JSON.stringify(mindMapState.annotations)),
             columnLabels: JSON.parse(JSON.stringify(mindMapState.columnLabels))
         };
         mindMapState.history.push(snapshot);
@@ -127,6 +153,9 @@ var MindMapModule = window.MindMapModule = (() => {
             version: 1,
             root: mindMapState.root,
             images: mindMapState.images,
+            drawings: mindMapState.drawings,
+            shapes: mindMapState.shapes,
+            annotations: mindMapState.annotations,
             columnLabels: mindMapState.columnLabels,
             pan: mindMapState.pan,
             scale: mindMapState.scale
@@ -143,6 +172,9 @@ var MindMapModule = window.MindMapModule = (() => {
                 if (data.version && data.root) {
                     mindMapState.root = data.root;
                     mindMapState.images = data.images || [];
+                    mindMapState.drawings = data.drawings || [];
+                    mindMapState.shapes = data.shapes || [];
+                    mindMapState.annotations = data.annotations || [];
                     mindMapState.columnLabels = data.columnLabels || {};
 
                     // Restore pan and scale
@@ -173,6 +205,9 @@ var MindMapModule = window.MindMapModule = (() => {
                 children: []
             };
             mindMapState.images = [];
+            mindMapState.drawings = [];
+            mindMapState.shapes = [];
+            mindMapState.annotations = [];
             mindMapState.columnLabels = {};
 
             mindMapState.history = [];
@@ -193,6 +228,9 @@ var MindMapModule = window.MindMapModule = (() => {
         const current = {
             root: JSON.parse(JSON.stringify(mindMapState.root)),
             images: JSON.parse(JSON.stringify(mindMapState.images)),
+            drawings: JSON.parse(JSON.stringify(mindMapState.drawings)),
+            shapes: JSON.parse(JSON.stringify(mindMapState.shapes)),
+            annotations: JSON.parse(JSON.stringify(mindMapState.annotations)),
             columnLabels: JSON.parse(JSON.stringify(mindMapState.columnLabels))
         };
         mindMapState.future.push(current);
@@ -200,6 +238,9 @@ var MindMapModule = window.MindMapModule = (() => {
         const previous = mindMapState.history.pop();
         mindMapState.root = previous.root;
         mindMapState.images = previous.images || [];
+        mindMapState.drawings = previous.drawings || [];
+        mindMapState.shapes = previous.shapes || [];
+        mindMapState.annotations = previous.annotations || [];
         mindMapState.columnLabels = previous.columnLabels || {};
 
         updateLayout();
@@ -215,6 +256,9 @@ var MindMapModule = window.MindMapModule = (() => {
         const current = {
             root: JSON.parse(JSON.stringify(mindMapState.root)),
             images: JSON.parse(JSON.stringify(mindMapState.images)),
+            drawings: JSON.parse(JSON.stringify(mindMapState.drawings)),
+            shapes: JSON.parse(JSON.stringify(mindMapState.shapes)),
+            annotations: JSON.parse(JSON.stringify(mindMapState.annotations)),
             columnLabels: JSON.parse(JSON.stringify(mindMapState.columnLabels))
         };
         mindMapState.history.push(current);
@@ -222,6 +266,9 @@ var MindMapModule = window.MindMapModule = (() => {
         const next = mindMapState.future.pop();
         mindMapState.root = next.root;
         mindMapState.images = next.images || [];
+        mindMapState.drawings = next.drawings || [];
+        mindMapState.shapes = next.shapes || [];
+        mindMapState.annotations = next.annotations || [];
         mindMapState.columnLabels = next.columnLabels || {};
 
         updateLayout();
@@ -357,6 +404,8 @@ var MindMapModule = window.MindMapModule = (() => {
         if (!isEmbedded) {
             updateLayout();
             render();
+            // Important: we need to update the instance buttons correctly
+            updateUndoRedoButtons();
         }
     }
 
@@ -376,15 +425,131 @@ var MindMapModule = window.MindMapModule = (() => {
                 const centerY = (rect.height / 2 - mindMapState.pan.y) / mindMapState.scale;
                 addImage(centerX - 100, centerY - 75);
             },
+            '.mm-add-text-btn': () => {
+                const rect = canvasContainer.getBoundingClientRect();
+                const centerX = (rect.width / 2 - mindMapState.pan.x) / mindMapState.scale;
+                const centerY = (rect.height / 2 - mindMapState.pan.y) / mindMapState.scale;
+                addAnnotation(centerX - 50, centerY - 20);
+            },
             '.mm-clear-all-btn': clearAll,
             '.mm-move-up-btn': () => moveNodeUp(mindMapState.selectedNodeId),
             '.mm-move-down-btn': () => moveNodeDown(mindMapState.selectedNodeId),
             '.mm-export-btn': saveMap,
+            '.mm-export-pdf-btn': exportPDF,
             '.mm-import-btn-trigger': () => {
                 const inp = currentBase.querySelector('.mm-import-input') || currentBase.querySelector('#mm-import-input') || document.getElementById('mm-import-input');
                 if (inp) inp.click();
-            }
+            },
+            '.mm-draw-btn': toggleDrawingMode,
+            '.mm-shape-btn': toggleShapeMode
         };
+
+        function toggleDrawingMode() {
+            mindMapState.drawingMode = !mindMapState.drawingMode;
+            const btn = currentBase.querySelector('.mm-draw-btn') || document.getElementById('mm-draw-btn');
+            const options = currentBase.querySelector('#mm-draw-options') || document.getElementById('mm-draw-options');
+
+            if (btn) btn.classList.toggle('active', mindMapState.drawingMode);
+            if (options) options.style.display = mindMapState.drawingMode ? 'flex' : 'none';
+            if (mindMapState.drawingMode && mindMapState.shapeMode) {
+                toggleShapeMode(); // turn off shape mode
+            }
+
+            if (canvasContainer) {
+                canvasContainer.classList.toggle('drawing-mode', mindMapState.drawingMode);
+            }
+            if (!mindMapState.drawingMode) {
+                mindMapState.drawingState.active = false;
+            } else {
+                setupDrawingOptionListeners();
+            }
+            showToast(mindMapState.drawingMode ? '描画モード: ON（ドラッグで描画）' : '描画モード: OFF');
+        }
+
+        function setupDrawingOptionListeners() {
+            const options = currentBase.querySelector('#mm-draw-options') || document.getElementById('mm-draw-options');
+            if (!options || options.dataset.listenersAdded) return;
+
+            // Color swatches
+            options.querySelectorAll('.draw-color-swatch').forEach(swatch => {
+                swatch.onclick = (e) => {
+                    const color = e.target.getAttribute('data-color');
+                    mindMapState.drawingState.color = color;
+                    options.querySelectorAll('.draw-color-swatch').forEach(s => s.classList.remove('active'));
+                    e.target.classList.add('active');
+                };
+            });
+
+            // Width select
+            const widthSelect = options.querySelector('#mm-draw-width');
+            if (widthSelect) {
+                widthSelect.onchange = (e) => {
+                    mindMapState.drawingState.width = parseInt(e.target.value);
+                };
+            }
+
+            // Type select
+            const typeSelect = options.querySelector('#mm-draw-type');
+            if (typeSelect) {
+                typeSelect.onchange = (e) => {
+                    mindMapState.drawingState.lineType = e.target.value;
+                };
+            }
+
+            options.dataset.listenersAdded = 'true';
+        }
+
+        function toggleShapeMode() {
+            mindMapState.shapeMode = !mindMapState.shapeMode;
+            const btn = currentBase.querySelector('.mm-shape-btn') || document.getElementById('mm-shape-btn');
+            const options = currentBase.querySelector('#mm-shape-options') || document.getElementById('mm-shape-options');
+
+            if (btn) btn.classList.toggle('active', mindMapState.shapeMode);
+            if (options) options.style.display = mindMapState.shapeMode ? 'flex' : 'none';
+            if (mindMapState.shapeMode && mindMapState.drawingMode) {
+                toggleDrawingMode(); // turn off drawing mode
+            }
+
+            if (canvasContainer) {
+                canvasContainer.classList.toggle('shape-mode', mindMapState.shapeMode);
+            }
+            if (!mindMapState.shapeMode) {
+                mindMapState.shapeState.active = false;
+            } else {
+                setupShapeOptionListeners();
+            }
+            showToast(mindMapState.shapeMode ? '図形モード: ON（ドラッグで描画）' : '図形モード: OFF');
+        }
+
+        function setupShapeOptionListeners() {
+            const options = currentBase.querySelector('#mm-shape-options') || document.getElementById('mm-shape-options');
+            if (!options || options.dataset.listenersAdded) return;
+
+            options.querySelectorAll('.shape-color-swatch').forEach(swatch => {
+                swatch.onclick = (e) => {
+                    const color = e.target.getAttribute('data-color');
+                    mindMapState.shapeState.color = color;
+                    options.querySelectorAll('.shape-color-swatch').forEach(s => s.classList.remove('active'));
+                    e.target.classList.add('active');
+                };
+            });
+
+            const typeSelect = options.querySelector('#mm-shape-type');
+            if (typeSelect) {
+                typeSelect.onchange = (e) => {
+                    mindMapState.shapeState.type = e.target.value;
+                };
+            }
+
+            const lineTypeSelect = options.querySelector('#mm-shape-line-type');
+            if (lineTypeSelect) {
+                lineTypeSelect.onchange = (e) => {
+                    mindMapState.shapeState.lineType = e.target.value;
+                };
+            }
+
+            options.dataset.listenersAdded = 'true';
+        }
 
         console.log('MindMapModule: Setting up buttons for', isEmbedded ? 'Embedded content' : 'Global content');
         for (const [selector, handler] of Object.entries(btnMap)) {
@@ -603,6 +768,306 @@ var MindMapModule = window.MindMapModule = (() => {
         });
     }
 
+    // Annotations
+    function addAnnotation(x, y) {
+        let newX = x;
+        let newY = y;
+        let overlap = true;
+        let offsetStep = 0;
+
+        while (overlap && offsetStep < 20) {
+            overlap = false;
+            // Check existing annotations
+            for (const a of mindMapState.annotations) {
+                if (Math.abs(a.x - newX) < 50 && Math.abs(a.y - newY) < 30) {
+                    overlap = true;
+                    break;
+                }
+            }
+
+            // Check nodes
+            if (!overlap) {
+                const checkNode = (n) => {
+                    if (Math.abs(n.x - newX) < 100 && Math.abs(n.y - newY) < 50) overlap = true;
+                    if (!overlap && n.children) n.children.forEach(checkNode);
+                };
+                if (mindMapState.root) checkNode(mindMapState.root);
+            }
+
+            if (overlap) {
+                newX += 30;
+                newY += 30;
+                offsetStep++;
+            }
+        }
+
+        saveState();
+        const id = generateUUID();
+        mindMapState.annotations.push({
+            id: id,
+            x: newX,
+            y: newY,
+            width: 200,
+            text: 'テキスト', // Fixed string encoding/escape
+            isEditing: false
+        });
+        mindMapState.selectedAnnotationId = id;
+        render();
+        // focus logic will happen inside renderAnnotations if isEditing
+    }
+
+    function renderAnnotations() {
+        const layer = document.getElementById('mm-annotations-layer') || currentBase.querySelector('.mm-annotations-layer');
+        if (!layer) return;
+        layer.innerHTML = '';
+
+        mindMapState.annotations.forEach(ann => {
+            const el = document.createElement('div');
+            el.className = 'mm-text-annotation';
+            if (mindMapState.selectedAnnotationId === ann.id) el.classList.add('selected');
+
+            el.style.left = `${ann.x}px`;
+            el.style.top = `${ann.y}px`;
+            el.style.width = `${ann.width}px`;
+
+            if (ann.bgColor) el.style.background = ann.bgColor;
+
+            el.innerHTML = ann.text;
+
+            // Events
+            el.onmousedown = (e) => {
+                hideContextMenu();
+                e.stopPropagation();
+
+                // Prevent dragging while text is actively being edited/selected
+                if (el.contentEditable === 'true') {
+                    return;
+                }
+
+                if (mindMapState.selectedAnnotationId !== ann.id) {
+                    mindMapState.selectedAnnotationId = ann.id;
+                    render();
+                }
+
+                // Set annotation dragging
+                mindMapState.annotationDrag = {
+                    active: true,
+                    id: ann.id,
+                    lastX: e.clientX,
+                    lastY: e.clientY
+                };
+            };
+
+            el.ondblclick = (e) => {
+                e.stopPropagation();
+                if (mindMapState.annotationDrag) mindMapState.annotationDrag.active = false;
+
+                el.contentEditable = true;
+                el.style.cursor = 'text';
+                el.focus();
+
+                // Add formatting toolbar
+                showAnnotationFormatToolbar(el, ann, el);
+
+                el.onblur = () => {
+                    const popup = el.querySelector('.mm-annotation-format-popup');
+                    if (popup && popup.contains(document.activeElement)) return; // Don't blur if clicking toolbar
+
+                    el.contentEditable = false;
+                    el.style.cursor = 'grab';
+
+                    if (popup) popup.remove();
+
+                    if (el.innerHTML !== ann.text) {
+                        saveState();
+                        ann.text = el.innerHTML;
+                    }
+                };
+            };
+
+            el.oncontextmenu = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                mindMapState.selectedAnnotationId = ann.id;
+                render();
+
+                const menu = document.createElement('div');
+                menu.style.position = 'fixed';
+                menu.style.left = `${e.clientX}px`;
+                menu.style.top = `${e.clientY}px`;
+                menu.style.background = '#1e293b';
+                menu.style.border = '1px solid #334155';
+                menu.style.borderRadius = '6px';
+                menu.style.padding = '5px 0';
+                menu.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+                menu.style.zIndex = '9999';
+                menu.style.minWidth = '160px';
+
+                const itemStyle = 'padding: 8px 16px; cursor: pointer; font-size: 14px; user-select: none; color: #f8fafc; transition: background 0.15s;';
+                const hoverBg = '#334155';
+
+                const createItem = (text, onClick, isDestructive = false) => {
+                    const item = document.createElement('div');
+                    item.innerText = text;
+                    item.style.cssText = itemStyle;
+                    if (isDestructive) item.style.color = '#ef4444';
+                    item.onmouseover = () => item.style.backgroundColor = hoverBg;
+                    item.onmouseout = () => item.style.backgroundColor = 'transparent';
+                    item.onclick = (ev) => {
+                        ev.stopPropagation();
+                        menu.remove();
+                        document.removeEventListener('mousedown', closeMenu, true);
+                        onClick();
+                    };
+                    return item;
+                };
+
+                const deleteItem = createItem('削除 (Delete)', () => {
+                    const idx = mindMapState.annotations.findIndex(a => a.id === ann.id);
+                    if (idx !== -1) {
+                        saveState();
+                        mindMapState.annotations.splice(idx, 1);
+                        mindMapState.selectedAnnotationId = null;
+                        render();
+                    }
+                }, true);
+
+                const colorTitle = document.createElement('div');
+                colorTitle.innerText = '背景色';
+                colorTitle.style.cssText = 'padding: 4px 16px; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;';
+                menu.appendChild(colorTitle);
+
+                const colorGrid = document.createElement('div');
+                colorGrid.style.display = 'grid';
+                colorGrid.style.gridTemplateColumns = 'repeat(5, 1fr)';
+                colorGrid.style.gap = '4px';
+                colorGrid.style.padding = '8px 16px';
+
+                const colors = [
+                    'rgba(30, 41, 59, 0.8)', // default dark
+                    '#dbeafe', // light blue
+                    '#fee2e2', // light red
+                    '#d1fae5', // light green
+                    '#fef3c7', // light amber
+                    '#ffffff'  // white (useful for printing)
+                ];
+                colors.forEach(color => {
+                    const swatch = document.createElement('div');
+                    swatch.style.width = '20px'; swatch.style.height = '20px';
+                    swatch.style.borderRadius = '50%'; swatch.style.background = color;
+                    swatch.style.cursor = 'pointer'; swatch.style.border = '1px solid rgba(255,255,255,0.1)';
+                    swatch.onmouseover = () => swatch.style.transform = 'scale(1.1)';
+                    swatch.onmouseout = () => swatch.style.transform = 'scale(1)';
+                    swatch.onclick = (ev) => {
+                        ev.stopPropagation();
+                        menu.remove();
+                        document.removeEventListener('mousedown', closeMenu, true);
+                        saveState();
+                        ann.bgColor = color;
+                        render();
+                    };
+                    colorGrid.appendChild(swatch);
+                });
+                menu.appendChild(colorGrid);
+
+                const div = document.createElement('div');
+                div.style.height = '1px'; div.style.background = 'rgba(255,255,255,0.1)'; div.style.margin = '4px 0';
+                menu.appendChild(div);
+
+                menu.appendChild(deleteItem);
+
+                const closeMenu = (ev) => {
+                    if (!menu.contains(ev.target)) {
+                        menu.remove();
+                        document.removeEventListener('mousedown', closeMenu, true);
+                    }
+                };
+
+                document.body.appendChild(menu);
+                // Add click listener to close menu when clicking outside
+                setTimeout(() => document.addEventListener('mousedown', closeMenu, true), 0);
+            };
+
+            layer.appendChild(el);
+        });
+    }
+
+    function showAnnotationFormatToolbar(el, ann, contentEl) {
+        const existing = el.querySelector('.mm-annotation-format-popup');
+        if (existing) return;
+
+        const popup = document.createElement('div');
+        popup.className = 'mm-annotation-format-popup';
+        popup.contentEditable = false; // Toolbar itself is not editable
+        popup.style.position = 'absolute';
+        popup.style.top = `-40px`; // Above the text
+        popup.style.left = `0`;
+        popup.style.background = '#1e293b';
+        popup.style.border = '1px solid #334155';
+        popup.style.borderRadius = '6px';
+        popup.style.padding = '4px';
+        popup.style.display = 'flex';
+        popup.style.gap = '4px';
+        popup.style.boxShadow = '0 4px 10px rgba(0,0,0,0.3)';
+        popup.style.zIndex = '9999';
+
+        const createBtn = (icon, command, title) => {
+            const btn = document.createElement('button');
+            btn.innerHTML = `<i class="fas fa-${icon}"></i>`;
+            btn.title = title;
+            btn.style.background = 'transparent';
+            btn.style.color = '#cbd5e1';
+            btn.style.border = 'none';
+            btn.style.cursor = 'pointer';
+            btn.style.padding = '4px 6px';
+            btn.style.borderRadius = '4px';
+
+            btn.onmousedown = (e) => {
+                e.preventDefault(); // Prevent losing focus on the text
+                document.execCommand(command, false, null);
+            };
+
+            btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.onmouseout = () => btn.style.background = 'transparent';
+            return btn;
+        };
+
+        popup.appendChild(createBtn('bold', 'bold', '太字'));
+        popup.appendChild(createBtn('italic', 'italic', '斜体'));
+        popup.appendChild(createBtn('align-left', 'justifyLeft', '左揃え'));
+        popup.appendChild(createBtn('align-center', 'justifyCenter', '中央揃え'));
+        popup.appendChild(createBtn('align-right', 'justifyRight', '右揃え'));
+
+        // Color palette for Text Color
+        const colorPalette = document.createElement('div');
+        colorPalette.style.display = 'flex';
+        colorPalette.style.gap = '4px';
+        colorPalette.style.alignItems = 'center';
+        colorPalette.style.padding = '0 4px';
+        colorPalette.style.borderLeft = '1px solid rgba(255,255,255,0.1)';
+
+        const colors = ['#f8fafc', '#0f172a', '#ef4444', '#3b82f6', '#10b981', '#fbbf24'];
+        colors.forEach(col => {
+            const btn = document.createElement('button');
+            btn.style.width = '14px'; btn.style.height = '14px';
+            btn.style.borderRadius = '50%'; btn.style.background = col;
+            btn.style.border = '1px solid rgba(255,255,255,0.2)';
+            btn.style.cursor = 'pointer';
+            btn.title = '文字色変更';
+
+            btn.onmousedown = (e) => {
+                e.preventDefault();
+                document.execCommand('foreColor', false, col);
+                contentEl.focus();
+            };
+            btn.onmouseover = () => btn.style.transform = 'scale(1.2)';
+            btn.onmouseout = () => btn.style.transform = 'scale(1)';
+            colorPalette.appendChild(btn);
+        });
+
+        popup.appendChild(colorPalette);
+        el.appendChild(popup);
+    }
 
     // Data Handling
     function findNode(id, node = mindMapState.root) {
@@ -955,6 +1420,8 @@ var MindMapModule = window.MindMapModule = (() => {
         const swatchContainer = document.createElement('div');
         swatchContainer.className = 'color-swatch-container';
 
+        const COLOR_PALETTE = ['#0f172a', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b', '#ffffff'];
+
         COLOR_PALETTE.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
@@ -1261,11 +1728,15 @@ var MindMapModule = window.MindMapModule = (() => {
         const cssTransform = `translate(${mindMapState.pan.x}px, ${mindMapState.pan.y}px) scale(${mindMapState.scale})`;
         const svgTransform = `translate(${mindMapState.pan.x}, ${mindMapState.pan.y}) scale(${mindMapState.scale})`;
 
+        const annotationsLayer = document.getElementById('mm-annotations-layer') || currentBase.querySelector('.mm-annotations-layer');
         nodesLayer.style.transform = cssTransform;
         if (imagesLayer) imagesLayer.style.transform = cssTransform;
+        if (annotationsLayer) annotationsLayer.style.transform = cssTransform;
 
         // Update SVG transforms
-        [connectionsLayer, foregroundLayer, gridLayer].forEach(layer => {
+        const drawingLayer = document.getElementById('mm-drawing-layer') || currentBase.querySelector('.mm-drawing-layer');
+        [connectionsLayer, foregroundLayer, gridLayer, drawingLayer].forEach(layer => {
+            if (!layer) return;
             const g = layer.querySelector('g');
             if (g) g.setAttribute('transform', svgTransform);
         });
@@ -1286,6 +1757,8 @@ var MindMapModule = window.MindMapModule = (() => {
         }
 
         renderImages(); // Render Images Layer
+        renderDrawings(); // Render Free Draw Layer
+        renderAnnotations(); // Render Text Annotations Layer
 
         // 1. Initial Render Nodes (To get them into DOM for measurement)
         nodesLayer.innerHTML = '';
@@ -1324,97 +1797,7 @@ var MindMapModule = window.MindMapModule = (() => {
         const bgG = layers[1].g;
         const fgG = layers[2].g;
 
-        // Render Grid Lines (Generations)
-        if (mindMapState.columnOffsets) {
-            const cols = Object.keys(mindMapState.columnOffsets).map(Number).sort((a, b) => a - b);
-            const gapBetween = 100;
-
-            cols.forEach((col, i) => {
-                if (i > 0) {
-                    const prevCol = cols[i - 1];
-                    const x = mindMapState.columnOffsets[col] - (gapBetween / 2);
-
-                    // Vertical Line
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('class', 'generation-line');
-                    line.setAttribute('x1', x);
-                    line.setAttribute('y1', -5000);
-                    line.setAttribute('x2', x);
-                    line.setAttribute('y2', 5000);
-                    gridG.appendChild(line);
-
-                    // Generation Label
-                    const labelY = -mindMapState.root.subtreeHeight / 2 - 60;
-
-                    if (mindMapState.editingLabelColumn === col) {
-                        // Editable Input Mode using ForeignObject
-                        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-                        fo.setAttribute('x', x - 60);
-                        fo.setAttribute('y', labelY - 15);
-                        fo.setAttribute('width', 120);
-                        fo.setAttribute('height', 40);
-
-                        const input = document.createElement('input');
-                        input.value = (mindMapState.columnLabels && mindMapState.columnLabels[col]) || `GEN ${col}`;
-                        input.className = 'generation-label-input'; // define in CSS
-                        input.style.width = '100%';
-                        input.style.height = '100%';
-                        input.style.textAlign = 'center';
-                        input.style.background = 'rgba(15, 23, 42, 0.9)';
-                        input.style.color = '#fff';
-                        input.style.border = '1px solid #3b82f6';
-                        input.style.borderRadius = '4px';
-
-                        // Save on blur or enter
-                        const saveLabel = () => {
-                            if (!mindMapState.columnLabels) mindMapState.columnLabels = {};
-                            mindMapState.columnLabels[col] = input.value;
-                            mindMapState.editingLabelColumn = null;
-                            render();
-                        };
-
-                        input.addEventListener('blur', saveLabel);
-                        input.addEventListener('keydown', (e) => {
-                            if (e.key === 'Enter') {
-                                saveLabel();
-                            }
-                            e.stopPropagation();
-                        });
-
-                        // Auto-focus logic
-                        setTimeout(() => {
-                            input.focus();
-                            input.select();
-                        }, 0);
-
-                        fo.appendChild(input);
-                        gridG.appendChild(fo);
-
-                    } else {
-                        // Display Mode
-                        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                        label.setAttribute('class', 'generation-label');
-                        label.setAttribute('x', x);
-                        label.setAttribute('y', labelY);
-                        label.textContent = (mindMapState.columnLabels && mindMapState.columnLabels[col]) || `GEN ${col}`;
-
-                        // Double click to edit
-                        label.addEventListener('dblclick', (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            mindMapState.editingLabelColumn = col;
-                            render();
-                        });
-
-                        // Make it really clickable
-                        label.style.pointerEvents = 'auto';
-                        label.style.cursor = 'text';
-
-                        gridG.appendChild(label);
-                    }
-                }
-            });
-        }
+        // Render Grid Lines (Generations) - removed per request
 
         // Regular Tree Connections
         renderConnectionsRecursive(mindMapState.root, bgG, fgG);
@@ -1866,6 +2249,7 @@ var MindMapModule = window.MindMapModule = (() => {
             hitPath.setAttribute('fill', 'none');
             hitPath.setAttribute('stroke', 'transparent');
             hitPath.setAttribute('stroke-width', '15');
+            hitPath.setAttribute('class', 'hit-path');
             hitPath.style.cursor = 'pointer';
             hitPath.style.pointerEvents = 'stroke';
 
@@ -1892,11 +2276,11 @@ var MindMapModule = window.MindMapModule = (() => {
 
             const handleBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             handleBg.setAttribute('r', '8');
-            handleBg.setAttribute('class', 'connection-handle-bg');
+            handleBg.setAttribute('class', 'connection-handle-bg hit-path');
 
             const plus = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             plus.setAttribute('d', 'M -4 0 L 4 0 M 0 -4 L 0 4');
-            plus.setAttribute('class', 'connection-handle-icon');
+            plus.setAttribute('class', 'connection-handle-icon hit-path');
             plus.setAttribute('fill', 'none');
             plus.setAttribute('stroke', '#64748b');
             plus.setAttribute('stroke-width', '1.5');
@@ -2210,6 +2594,8 @@ var MindMapModule = window.MindMapModule = (() => {
         el.innerHTML = '';
 
         const input = document.createElement('input');
+        input.id = `node-edit-input-${id}`;
+        input.setAttribute('aria-label', 'ノードのテキストを編集');
         input.type = 'text';
         input.className = 'node-input';
         input.value = currentText;
@@ -2302,6 +2688,55 @@ var MindMapModule = window.MindMapModule = (() => {
         // Per-container interaction
         if (canvasContainer) {
             canvasContainer.onmousedown = (e) => {
+                if (mindMapState.drawingMode) {
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const worldX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+                    const worldY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+                    mindMapState.drawingState.active = true;
+                    mindMapState.drawingState.points = [{ x: worldX, y: worldY }];
+                    return;
+                }
+
+                if (mindMapState.shapeMode) {
+                    if (e.button !== 0) return;
+                    const rect = canvasContainer.getBoundingClientRect();
+                    const worldX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+                    const worldY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+
+                    if (mindMapState.shapeState.type === 'polyline') {
+                        if (!mindMapState.shapeState.active) {
+                            mindMapState.shapeState.active = true;
+                            mindMapState.shapeState.currentId = generateUUID();
+                            mindMapState.shapes.push({
+                                id: mindMapState.shapeState.currentId,
+                                type: 'polyline',
+                                color: mindMapState.shapeState.color,
+                                lineType: mindMapState.shapeState.lineType,
+                                width: mindMapState.shapeState.width,
+                                points: [{ x: worldX, y: worldY }, { x: worldX, y: worldY }]
+                            });
+                        } else {
+                            const shape = mindMapState.shapes.find(s => s.id === mindMapState.shapeState.currentId);
+                            if (shape) shape.points.push({ x: worldX, y: worldY });
+                        }
+                    } else {
+                        mindMapState.shapeState.active = true;
+                        mindMapState.shapeState.currentId = generateUUID();
+                        mindMapState.shapeState.startX = worldX;
+                        mindMapState.shapeState.startY = worldY;
+                        mindMapState.shapes.push({
+                            id: mindMapState.shapeState.currentId,
+                            type: mindMapState.shapeState.type,
+                            color: mindMapState.shapeState.color,
+                            lineType: mindMapState.shapeState.lineType,
+                            width: mindMapState.shapeState.width,
+                            x: worldX, y: worldY, w: 0, h: 0,
+                            x1: worldX, y1: worldY, x2: worldX, y2: worldY
+                        });
+                    }
+                    return;
+                }
+
                 if (!e.target.closest('.connection-handle-group') && !e.target.closest('.node')) {
                     if (mindMapState.selectedConnection) {
                         mindMapState.selectedConnection = null;
@@ -2314,6 +2749,15 @@ var MindMapModule = window.MindMapModule = (() => {
                 mindMapState.lastMousePos = { x: e.clientX, y: e.clientY };
                 canvasContainer.style.cursor = 'grabbing';
                 hideContextMenu();
+            };
+
+            canvasContainer.ondblclick = (e) => {
+                if (mindMapState.shapeMode && mindMapState.shapeState.type === 'polyline' && mindMapState.shapeState.active) {
+                    mindMapState.shapeState.active = false;
+                    saveState();
+                    e.stopPropagation();
+                    return;
+                }
             };
 
             canvasContainer.onwheel = (e) => {
@@ -2336,6 +2780,10 @@ var MindMapModule = window.MindMapModule = (() => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true') return;
 
         switch (e.key) {
+            case 'p':
+            case 'P':
+                toggleDrawingMode();
+                break;
             case 'Tab':
                 e.preventDefault();
                 if (mindMapState.selectedNodeId) addNode(mindMapState.selectedNodeId);
@@ -2358,6 +2806,14 @@ var MindMapModule = window.MindMapModule = (() => {
                     }
                 } else if (mindMapState.selectedImageId) {
                     deleteImage(mindMapState.selectedImageId);
+                } else if (mindMapState.selectedAnnotationId) {
+                    const idx = mindMapState.annotations.findIndex(a => a.id === mindMapState.selectedAnnotationId);
+                    if (idx !== -1) {
+                        saveState();
+                        mindMapState.annotations.splice(idx, 1);
+                        mindMapState.selectedAnnotationId = null;
+                        render();
+                    }
                 }
                 break;
             case 'ArrowUp':
@@ -2378,14 +2834,163 @@ var MindMapModule = window.MindMapModule = (() => {
     function handleGlobalMouseMove(e) {
         if (!canvasContainer) return;
 
-        if (mindMapState.archDrag.active) handleArchDragMouseMove(e);
+        if (mindMapState.drawingMode && mindMapState.drawingState.active) handleDrawingMouseMove(e);
+        else if (mindMapState.shapeMode && mindMapState.shapeState.active) handleShapeMouseMove(e);
+        else if (mindMapState.archDrag.active) handleArchDragMouseMove(e);
         else if (mindMapState.connectionDrag.active) handleConnectionDragMouseMove(e);
         else if (mindMapState.potentialDragNodeId && !mindMapState.isNodeDragging) handlePotentialNodeDragMouseMove(e);
         else if (mindMapState.isNodeDragging) handleNodeDragMouseMove(e);
         else if (mindMapState.imageDrag.active) handleImageDragMouseMove(e);
+        else if (mindMapState.annotationDrag && mindMapState.annotationDrag.active) handleAnnotationDragMouseMove(e);
         else if (mindMapState.imageResize.active) handleImageResizeMouseMove(e);
         else if (mindMapState.isDragging) handleCanvasPanMouseMove(e);
         else if (mindMapState.nodeResize.active) handleNodeResizeMouseMove(e);
+    }
+    function handleShapeMouseMove(e) {
+        if (!mindMapState.shapeState.active) return;
+        const shape = mindMapState.shapes.find(s => s.id === mindMapState.shapeState.currentId);
+        if (!shape) return;
+
+        const rect = canvasContainer.getBoundingClientRect();
+        const curX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+        const curY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+
+        if (shape.type === 'polyline') {
+            shape.points[shape.points.length - 1] = { x: curX, y: curY };
+        } else {
+            shape.x2 = curX;
+            shape.y2 = curY;
+            shape.x = Math.min(mindMapState.shapeState.startX, curX);
+            shape.y = Math.min(mindMapState.shapeState.startY, curY);
+            shape.w = Math.abs(curX - mindMapState.shapeState.startX);
+            shape.h = Math.abs(curY - mindMapState.shapeState.startY);
+        }
+
+        renderDrawings();
+    }
+
+    function handleDrawingMouseMove(e) {
+        if (!mindMapState.drawingState.active) return;
+        const rect = canvasContainer.getBoundingClientRect();
+        const worldX = (e.clientX - rect.left - mindMapState.pan.x) / mindMapState.scale;
+        const worldY = (e.clientY - rect.top - mindMapState.pan.y) / mindMapState.scale;
+
+        const points = mindMapState.drawingState.points;
+        const lastPoint = points[points.length - 1];
+
+        // Only add if moved enough to avoid redundant points
+        if (Math.hypot(worldX - lastPoint.x, worldY - lastPoint.y) > 2) {
+            points.push({ x: worldX, y: worldY });
+            renderDrawings(); // Live update
+        }
+    }
+
+    function finishDrawing() {
+        if (!mindMapState.drawingState.active) return;
+        mindMapState.drawingState.active = false;
+
+        if (mindMapState.drawingState.points.length > 1) {
+            saveState();
+            mindMapState.drawings.push({
+                points: mindMapState.drawingState.points,
+                color: mindMapState.drawingState.color,
+                width: mindMapState.drawingState.width,
+                lineType: mindMapState.drawingState.lineType
+            });
+            render();
+        }
+    }
+
+    function renderDrawings() {
+        const drawingLayer = document.getElementById('mm-drawing-layer') || currentBase.querySelector('.mm-drawing-layer');
+        if (!drawingLayer) return;
+
+        // Clear if not just live update? 
+        // For performance, we could only append, but simple is clear and redraw.
+        drawingLayer.innerHTML = '';
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const svgTransform = `translate(${mindMapState.pan.x}, ${mindMapState.pan.y}) scale(${mindMapState.scale})`;
+        g.setAttribute('transform', svgTransform);
+
+        const allDrawings = [...mindMapState.drawings];
+        if (mindMapState.drawingState.active) {
+            allDrawings.push({
+                points: mindMapState.drawingState.points,
+                color: mindMapState.drawingState.color,
+                width: mindMapState.drawingState.width,
+                lineType: mindMapState.drawingState.lineType
+            });
+        }
+
+        allDrawings.forEach(draw => {
+            if (draw.points.length < 2) return;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const d = draw.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', draw.color);
+            path.setAttribute('stroke-width', draw.width);
+
+            // Set dash array based on lineType
+            if (draw.lineType === 'dashed') {
+                path.setAttribute('stroke-dasharray', `${draw.width * 2}, ${draw.width * 2}`);
+            } else if (draw.lineType === 'dotted') {
+                path.setAttribute('stroke-dasharray', `${draw.width}, ${draw.width * 2}`);
+            }
+
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.setAttribute('fill', 'none');
+            g.appendChild(path);
+        });
+
+        // Render shapes
+        if (mindMapState.shapes) {
+            mindMapState.shapes.forEach(shape => {
+                let el;
+                if (shape.type === 'rect') {
+                    el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    el.setAttribute('x', shape.x); el.setAttribute('y', shape.y);
+                    el.setAttribute('width', shape.w); el.setAttribute('height', shape.h);
+                } else if (shape.type === 'ellipse') {
+                    el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                    el.setAttribute('cx', shape.x + shape.w / 2); el.setAttribute('cy', shape.y + shape.h / 2);
+                    el.setAttribute('rx', shape.w / 2); el.setAttribute('ry', shape.h / 2);
+                } else if (shape.type === 'line') {
+                    el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    el.setAttribute('x1', shape.x1); el.setAttribute('y1', shape.y1);
+                    el.setAttribute('x2', shape.x2); el.setAttribute('y2', shape.y2);
+                } else if (shape.type === 'polyline') {
+                    el = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    const points = shape.points.map(p => `${p.x},${p.y}`).join(' ');
+                    el.setAttribute('points', points);
+                }
+
+                if (el) {
+                    el.setAttribute('stroke', shape.color || '#fbbf24');
+                    el.setAttribute('stroke-width', shape.width || 2);
+                    el.setAttribute('fill', 'none');
+                    el.style.pointerEvents = 'stroke'; // Allow clicking on stroke
+                    if (shape.lineType === 'dashed') el.setAttribute('stroke-dasharray', '8,8');
+                    if (shape.lineType === 'dotted') el.setAttribute('stroke-dasharray', '2,4');
+
+                    el.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        mindMapState.contextMenu.active = true;
+                        if (confirm('この図形を削除しますか？ (Delete this shape?)')) {
+                            saveState();
+                            mindMapState.shapes = mindMapState.shapes.filter(s => s.id !== shape.id);
+                            render();
+                        }
+                    };
+
+                    g.appendChild(el);
+                }
+            });
+        }
+
+        drawingLayer.appendChild(g);
     }
 
     function handleArchDragMouseMove(e) {
@@ -2533,6 +3138,19 @@ var MindMapModule = window.MindMapModule = (() => {
         }
     }
 
+    function handleAnnotationDragMouseMove(e) {
+        const ann = mindMapState.annotations.find(a => a.id === mindMapState.annotationDrag.id);
+        if (ann) {
+            const dx = (e.clientX - mindMapState.annotationDrag.lastX) / mindMapState.scale;
+            const dy = (e.clientY - mindMapState.annotationDrag.lastY) / mindMapState.scale;
+            ann.x += dx;
+            ann.y += dy;
+            mindMapState.annotationDrag.lastX = e.clientX;
+            mindMapState.annotationDrag.lastY = e.clientY;
+            renderAnnotations(); // Fast update
+        }
+    }
+
     function handleCanvasPanMouseMove(e) {
         const dx = e.clientX - mindMapState.lastMousePos.x;
         const dy = e.clientY - mindMapState.lastMousePos.y;
@@ -2556,14 +3174,39 @@ var MindMapModule = window.MindMapModule = (() => {
     }
 
     function handleGlobalMouseUp(e) {
+        if (mindMapState.drawingMode && mindMapState.drawingState.active) {
+            finishDrawing();
+            return;
+        }
+
+        if (mindMapState.shapeState && mindMapState.shapeState.active && mindMapState.shapeState.type !== 'polyline') {
+            mindMapState.shapeState.active = false;
+            if (canvasContainer) canvasContainer.style.cursor = 'crosshair';
+
+            const shape = mindMapState.shapes.find(s => s.id === mindMapState.shapeState.currentId);
+            if (shape) {
+                // Remove empty shapes generated by pure clicks without dragging
+                if ((shape.type === 'rect' || shape.type === 'ellipse') && (shape.w < 5 && shape.h < 5)) {
+                    mindMapState.shapes = mindMapState.shapes.filter(s => s.id !== shape.id);
+                } else if (shape.type === 'line' && Math.abs(shape.x1 - shape.x2) < 5 && Math.abs(shape.y1 - shape.y2) < 5) {
+                    mindMapState.shapes = mindMapState.shapes.filter(s => s.id !== shape.id);
+                } else {
+                    saveState();
+                }
+                renderDrawings();
+            }
+            return;
+        }
+
         if (mindMapState.nodeResize.active) {
             mindMapState.nodeResize.active = false;
             if (canvasContainer) canvasContainer.style.cursor = 'grab';
             return;
         }
 
-        if (mindMapState.imageDrag.active || mindMapState.imageResize.active) {
+        if (mindMapState.imageDrag.active || mindMapState.imageResize.active || (mindMapState.annotationDrag && mindMapState.annotationDrag.active)) {
             mindMapState.imageDrag.active = false; mindMapState.imageResize.active = false;
+            if (mindMapState.annotationDrag) mindMapState.annotationDrag.active = false;
             persistState(); return;
         }
 
@@ -2707,6 +3350,37 @@ var MindMapModule = window.MindMapModule = (() => {
             maxY = Math.max(maxY, img.y + img.height);
         });
 
+        if (mindMapState.drawings) {
+            mindMapState.drawings.forEach(d => {
+                d.points.forEach(p => {
+                    minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+                });
+            });
+        }
+        if (mindMapState.shapes) {
+            mindMapState.shapes.forEach(s => {
+                if (s.type === 'polyline') {
+                    s.points.forEach(p => {
+                        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+                        maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+                    });
+                } else if (s.type === 'line') {
+                    minX = Math.min(minX, s.x1, s.x2); minY = Math.min(minY, s.y1, s.y2);
+                    maxX = Math.max(maxX, s.x1, s.x2); maxY = Math.max(maxY, s.y1, s.y2);
+                } else {
+                    minX = Math.min(minX, s.x); minY = Math.min(minY, s.y);
+                    maxX = Math.max(maxX, s.x + s.w); maxY = Math.max(maxY, s.y + s.h);
+                }
+            });
+        }
+        if (mindMapState.annotations) {
+            mindMapState.annotations.forEach(a => {
+                minX = Math.min(minX, a.x); minY = Math.min(minY, a.y);
+                maxX = Math.max(maxX, a.x + a.width); maxY = Math.max(maxY, a.y + Math.max(40, a.height || 40));
+            });
+        }
+
         if (minX === Infinity) { // No nodes or images
             console.log('MindMapModule: fitToScreen - No content to center.');
             centerView(); // Fallback to center view
@@ -2717,7 +3391,10 @@ var MindMapModule = window.MindMapModule = (() => {
         const contentHeight = maxY - minY + (padding * 2);
 
         let targetWidth, targetHeight;
-        if (canvasContainer) {
+        if (forPrint) {
+            targetWidth = 1123; // A4 landscape at 96dpi
+            targetHeight = 794;
+        } else if (canvasContainer) {
             targetWidth = canvasContainer.offsetWidth;
             targetHeight = canvasContainer.offsetHeight;
         } else {
@@ -2769,6 +3446,13 @@ var MindMapModule = window.MindMapModule = (() => {
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
         showToast('Map saved to file');
+    }
+
+    function exportPDF() {
+        fitToScreen(true);
+        setTimeout(() => {
+            window.print();
+        }, 500);
     }
 
     function loadMap(event) {
@@ -3133,6 +3817,8 @@ var MindMapModule = window.MindMapModule = (() => {
         return {
             root: JSON.parse(JSON.stringify(mindMapState.root)),
             images: JSON.parse(JSON.stringify(mindMapState.images)),
+            drawings: JSON.parse(JSON.stringify(mindMapState.drawings)),
+            annotations: JSON.parse(JSON.stringify(mindMapState.annotations)),
             columnLabels: JSON.parse(JSON.stringify(mindMapState.columnLabels)),
             pan: { ...mindMapState.pan },
             scale: mindMapState.scale
@@ -3155,6 +3841,9 @@ var MindMapModule = window.MindMapModule = (() => {
             const newRootId = generateUUID();
             mindMapState.root = { id: newRootId, text: resolvedText, x: 0, y: 0, column: 0, children: [] };
             mindMapState.images = [];
+            mindMapState.drawings = [];
+            mindMapState.shapes = [];
+            mindMapState.annotations = [];
             mindMapState.columnLabels = {};
             // Place root at horizontal 1/4, vertical center
             mindMapState.pan = { x: canvasW / 4, y: canvasH / 2 };
@@ -3164,6 +3853,9 @@ var MindMapModule = window.MindMapModule = (() => {
             // Always sync text with task name
             mindMapState.root.text = resolvedText;
             mindMapState.images = data.images || [];
+            mindMapState.drawings = data.drawings || [];
+            mindMapState.shapes = data.shapes || [];
+            mindMapState.annotations = data.annotations || [];
             mindMapState.columnLabels = data.columnLabels || {};
             mindMapState.pan = data.pan || { x: canvasW / 4, y: canvasH / 2 };
             mindMapState.scale = data.scale || 1;
@@ -3232,6 +3924,9 @@ var MindMapModule = window.MindMapModule = (() => {
         },
         resetToGlobal: () => {
             isEmbedded = false;
+            // Force re-initialization and restoration of global state
+            isInitialized = false;
+            currentBase = document;
             init();
         }
     };

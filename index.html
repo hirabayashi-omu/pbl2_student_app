@@ -38,6 +38,9 @@
                     <i data-lucide="message-circle"></i> <span>伝言板</span>
                     <span id="msg-badge" class="notification-badge" style="display:none;">0</span>
                 </button>
+                <button class="nav-item" data-view="bookmarks">
+                    <i data-lucide="bookmark"></i> <span>ブックマーク</span>
+                </button>
                 <button class="nav-item" data-view="members">
                     <i data-lucide="users"></i> <span>メンバー・テーマ</span>
                 </button>
@@ -45,7 +48,7 @@
                     <i data-lucide="database"></i> <span>データ管理</span>
                 </button>
                 <button class="nav-item" data-view="mindmap">
-                    <i data-lucide="network"></i> <span>思考整理 (Mind Map)</span>
+                    <i data-lucide="network"></i> <span>マインドマップ</span>
                 </button>
             </nav>
             <div class="sidebar-footer">
@@ -454,88 +457,201 @@
             <section id="view-members" class="view">
                 <div class="settings-grid">
                     <div class="card">
-                        <h2>テーマ・グループ設定</h2>
-                        <div class="form-group">
-                            <label for="input-theme-name">選択テーマ</label>
-                            <input type="text" id="input-theme-name" name="themeName" placeholder="例: カネカテーマ">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="select-group-symbol">グループ記号</label>
-                                <select id="select-group-symbol" name="groupSymbol">
-                                    <option value="">選択...</option>
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                    <option value="E">E</option>
-                                    <option value="F">F</option>
-                                    <option value="G">G</option>
-                                    <option value="H">H</option>
-                                    <option value="I">I</option>
-                                    <option value="J">J</option>
-                                </select>
+                        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: start;">
+                            <!-- Left: Project Info -->
+                            <div>
+                                <h2 style="margin-bottom: 1.5rem;">テーマ・グループ設定</h2>
+                                <div class="form-group">
+                                    <label for="input-theme-name">テーマ名</label>
+                                    <input type="text" id="input-theme-name" name="themeName"
+                                        placeholder="例: 循環型AIによる地域課題解決">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 0.5;">
+                                        <label for="select-group-symbol">グループ記号</label>
+                                        <select id="select-group-symbol" name="groupSymbol">
+                                            <option value="">選択...</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                            <option value="C">C</option>
+                                            <option value="D">D</option>
+                                            <option value="E">E</option>
+                                            <option value="F">F</option>
+                                            <option value="G">G</option>
+                                            <option value="H">H</option>
+                                            <option value="I">I</option>
+                                            <option value="J">J</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 2;">
+                                        <label for="input-group-name">チーム名</label>
+                                        <input type="text" id="input-group-name" name="groupName"
+                                            placeholder="例: チーム・イノベーション">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group" style="flex: 2;">
-                                <label for="input-group-name">キャッチーなグループ名</label>
-                                <input type="text" id="input-group-name" name="groupName" placeholder="例: チーム・イノベーション">
+
+                            <!-- Right: Instructor Info -->
+                            <div style="border-left: 1px solid var(--border); padding-left: 2rem;">
+                                <h2 style="margin-bottom: 1.5rem;">指導教員</h2>
+                                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <!-- Instructor 1 -->
+                                    <div
+                                        style="background: rgba(255,255,255,0.02); padding: 0.85rem; border-radius: 12px; border: 1px solid var(--border);">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                            <span
+                                                style="font-size: 0.75rem; font-weight: 600; color: var(--primary);">教員１</span>
+                                            <a id="prof-1-teams" href="#" target="_blank"
+                                                class="btn btn-secondary btn-sm"
+                                                style="display: none; padding: 2px 8px; font-size: 10px; height: 24px; gap: 4px; border-radius: 6px;">
+                                                <i data-lucide="messages-square" style="width: 12px; height: 12px;"></i>
+                                                Teams
+                                            </a>
+                                        </div>
+                                        <div class="form-row"
+                                            style="margin-bottom: 0.75rem; gap: 0.5rem; grid-template-columns: 1fr 1fr;">
+                                            <input type="text" id="prof-1-last" aria-label="指導教員1 苗字" placeholder="氏"
+                                                style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                                            <input type="text" id="prof-1-first" aria-label="指導教員1 名前" placeholder="名"
+                                                style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                                        </div>
+                                        <div
+                                            style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-main); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border);">
+                                            <i data-lucide="mail"
+                                                style="width:14px;height:14px; color: var(--text-dim);"></i>
+                                            <input type="text" id="prof-1-email" aria-label="指導教員1 メールアドレス(ID部分)"
+                                                placeholder="メールID"
+                                                style="background: transparent; border: none; font-size: 0.85rem; padding: 0; flex: 1; outline: none; color: var(--text-main);">
+                                            <span style="font-size: 0.8rem; color: var(--text-dim);">@omu.ac.jp</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Instructor 2 -->
+                                    <div
+                                        style="background: rgba(255,255,255,0.02); padding: 0.85rem; border-radius: 12px; border: 1px solid var(--border);">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                            <span
+                                                style="font-size: 0.75rem; font-weight: 600; color: var(--primary);">教員２</span>
+                                            <a id="prof-2-teams" href="#" target="_blank"
+                                                class="btn btn-secondary btn-sm"
+                                                style="display: none; padding: 2px 8px; font-size: 10px; height: 24px; gap: 4px; border-radius: 6px;">
+                                                <i data-lucide="messages-square" style="width: 12px; height: 12px;"></i>
+                                                Teams
+                                            </a>
+                                        </div>
+                                        <div class="form-row"
+                                            style="margin-bottom: 0.75rem; gap: 0.5rem; grid-template-columns: 1fr 1fr;">
+                                            <input type="text" id="prof-2-last" aria-label="指導教員2 苗字" placeholder="氏"
+                                                style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                                            <input type="text" id="prof-2-first" aria-label="指導教員2 名前" placeholder="名"
+                                                style="padding: 0.5rem 0.75rem; font-size: 0.9rem;">
+                                        </div>
+                                        <div
+                                            style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-main); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border);">
+                                            <i data-lucide="mail"
+                                                style="width:14px;height:14px; color: var(--text-dim);"></i>
+                                            <input type="text" id="prof-2-email" aria-label="指導教員2 メールアドレス(ID部分)"
+                                                placeholder="メールID"
+                                                style="background: transparent; border: none; font-size: 0.85rem; padding: 0; flex: 1; outline: none; color: var(--text-main);">
+                                            <span style="font-size: 0.8rem; color: var(--text-dim);">@omu.ac.jp</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h2>メンバー登録</h2>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>メンバー登録</h2>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-secondary btn-sm" id="btn-lock-members" title="編集を固定/解除">
+                                <i data-lucide="unlock"></i> <span id="lock-btn-text">固定する</span>
+                            </button>
                             <button class="btn btn-secondary btn-sm" id="btn-add-member">
                                 <i data-lucide="user-plus"></i> メンバー追加
                             </button>
                         </div>
-                        <div id="member-list-container" class="member-grid mt-1">
-                            <!-- Member Cards will be rendered here -->
-                        </div>
                     </div>
+                    <div id="member-list-container" class="member-grid mt-1">
+                        <!-- Member Cards will be rendered here -->
+                    </div>
+                </div>
 
-                    <div class="card">
-                        <h2>役割の定義・説明</h2>
-                        <div id="role-guide-list" class="role-guide-list mt-1">
-                            <!-- Role descriptions will be rendered here -->
-                        </div>
+                <div class="card">
+                    <h2>役割の定義・説明</h2>
+                    <div id="role-guide-list" class="role-guide-list mt-1">
+                        <!-- Role descriptions will be rendered here -->
                     </div>
                 </div>
             </section>
 
             <section id="view-data" class="view">
-                <div class="data-actions card">
-                    <h2>教員への提出</h2>
-                    <p>現在のデータをJSON形式で書き出します。このファイルを教員に提出してください。</p>
-                    <button class="btn btn-primary" id="btn-export-json">
-                        <i data-lucide="download"></i> JSONを書き出す
-                    </button>
-                </div>
-                <div class="data-actions card mt-2">
-                    <h2>データの復元</h2>
-                    <p>保存したJSONファイルを読み込んでデータを復元します。</p>
-                    <input type="file" id="import-json-file" name="importJsonFile" aria-label="JSONファイルのインポート" hidden
-                        accept=".json">
-                    <button class="btn btn-secondary" id="btn-trigger-import">
-                        <i data-lucide="upload"></i> JSONを読み込む
-                    </button>
-                </div>
+                <div class="data-grid">
+                    <div class="data-actions card">
+                        <h2>教員・メンバーへの共有</h2>
+                        <p>現在のデータをJSON形式で書き出します。このファイルを教員・メンバーに共有してください。</p>
+                        <button class="btn btn-primary" id="btn-export-json">
+                            <i data-lucide="download"></i> JSONを書き出す
+                        </button>
+                    </div>
+                    <div class="data-actions card">
+                        <h2>データの復元</h2>
+                        <p>受け取ったJSONファイルを読み込んでデータを復元します。</p>
+                        <input type="file" id="import-json-file" name="importJsonFile" aria-label="JSONファイルのインポート"
+                            hidden accept=".json">
+                        <button class="btn btn-secondary" id="btn-trigger-import">
+                            <i data-lucide="upload"></i> JSONを読み込む
+                        </button>
+                    </div>
 
-                <div class="data-actions card mt-2" style="border-left-color: var(--warning);">
-                    <h2 style="color:var(--warning);"><i data-lucide="zap"></i> 容量節約（データの軽量化）</h2>
-                    <p>過去にアップロードした大きな画像（伝言板、報告書、スライドなど）を、一括で現在の高圧縮設定にリサイズします。保存容量エラーの解消に効果的です。</p>
-                    <button class="btn" id="btn-compress-all-images"
-                        style="background:var(--warning); color:black; border:none;">
-                        <i data-lucide="maximize-2"></i> 既存データを一括圧縮する
-                    </button>
-                </div>
+                    <div class="data-actions card" style="border-left-color: var(--warning);">
+                        <h2 style="color:var(--warning);"><i data-lucide="zap"></i> 容量節約（データの軽量化）</h2>
+                        <p>過去にアップロードした大きな画像（伝言板、報告書、スライドなど）を、一括で現在の高圧縮設定にリサイズします。保存容量エラーの解消に効果的です。</p>
+                        <button class="btn" id="btn-compress-all-images"
+                            style="background:var(--warning); color:black; border:none;">
+                            <i data-lucide="maximize-2"></i> 既存データを一括圧縮する
+                        </button>
+                    </div>
 
-                <div class="data-actions card mt-2 danger-zone">
-                    <h2 class="text-danger">初期化</h2>
-                    <p>すべてのデータを削除して初期状態に戻します。</p>
-                    <button class="btn btn-danger" id="btn-reset-data">
-                        <i data-lucide="trash-2"></i> データをリセット
-                    </button>
+                    <div class="data-actions card danger-zone">
+                        <h2 class="text-danger">初期化</h2>
+                        <p>すべてのデータを削除して初期状態に戻します。</p>
+                        <button class="btn btn-danger" id="btn-reset-data">
+                            <i data-lucide="trash-2"></i> データをリセット
+                        </button>
+                    </div>
+
+                    <div class="data-actions card data-full" style="background: rgba(255,255,255,0.03);">
+                        <h3><i data-lucide="info" style="vertical-align: middle; margin-right: 5px;"></i>
+                            保存されるデータとマージルール</h3>
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-dim);">
+                            <div>
+                                <strong style="color: var(--text-main); display: block; margin-bottom: 0.5rem;">📁
+                                    保存されるデータ</strong>
+                                <ul style="padding-left: 1.2rem; line-height: 1.6;">
+                                    <li>メンバー情報（指名・役割・アイコン等）</li>
+                                    <li>プロジェクト設定（テーマ名・グループ名）</li>
+                                    <li>ガントチャート（タスク・進捗状況）</li>
+                                    <li>全メッセージ履歴・添付ファイル</li>
+                                    <li>作成した全報告書・成果物スライド等</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-main); display: block; margin-bottom: 0.5rem;">🔄
+                                    マージ（統合）のルール</strong>
+                                <p style="margin-bottom: 0.5rem;">読み込み時に「マージ」を選択した場合、以下のルールで統合されます：</p>
+                                <ul style="padding-left: 1.2rem; line-height: 1.6;">
+                                    <li><strong>新しい方を採用:</strong> 同じ項目が重複する場合、最終更新日時が新しいデータが優先されます。</li>
+                                    <li><strong>差分を追加:</strong> 片方にしかないデータ（新しいメッセージ等）は、既存のデータに追加されます。</li>
+                                    <li><strong>上書きとの違い:</strong> 「上書き」は現在のデータを全て消去して、ファイルの内容で完全に置き換えます。</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -568,27 +684,111 @@
 
                     <div id="mindmap-toolbar" class="mindmap-toolbar">
                         <div class="actions">
+                            <!-- 履歴 -->
                             <button id="mm-undo-btn" class="mm-undo-btn" title="元に戻す (Ctrl+Z)"><i
                                     class="fas fa-undo"></i></button>
                             <button id="mm-redo-btn" class="mm-redo-btn" title="やり直し (Ctrl+Y)"><i
                                     class="fas fa-redo"></i></button>
                             <div class="divider"></div>
+
+                            <!-- ノード操作 -->
                             <button id="mm-add-child-btn" class="mm-add-child-btn" title="子ノード追加 (Tab)"><i
                                     class="fas fa-level-down-alt"></i><span class="btn-text"> 子</span></button>
                             <button id="mm-add-sibling-btn" class="mm-add-sibling-btn" title="兄弟ノード追加 (Enter)"><i
                                     class="fas fa-plus"></i><span class="btn-text"> 兄弟</span></button>
-                            <button id="mm-add-image-btn" class="mm-add-image-btn" title="画像フレーム追加"><i
-                                    class="fas fa-image"></i><span class="btn-text">
-                                    画像</span></button>
-                            <button id="mm-delete-btn" class="mm-delete-btn" title="削除 (Del)"><i
-                                    class="fas fa-trash"></i><span class="btn-text">
-                                    削除</span></button>
-                            <div class="divider"></div>
                             <button id="mm-move-up-btn" class="mm-move-up-btn" title="上に移動 (Alt+Up)"><i
                                     class="fas fa-arrow-up"></i></button>
                             <button id="mm-move-down-btn" class="mm-move-down-btn" title="下に移動 (Alt+Down)"><i
                                     class="fas fa-arrow-down"></i></button>
+                            <button id="mm-delete-btn" class="mm-delete-btn" title="削除 (Del)"><i
+                                    class="fas fa-trash"></i><span class="btn-text"> 削除</span></button>
                             <div class="divider"></div>
+
+                            <!-- 作図・装飾 -->
+                            <button id="mm-add-image-btn" class="mm-add-image-btn" title="画像フレーム追加"><i
+                                    class="fas fa-image"></i><span class="btn-text"> 画像</span></button>
+                            <button id="mm-add-text-btn" class="mm-add-text-btn" title="テキスト追加"><i
+                                    class="fas fa-font"></i><span class="btn-text"> テキスト</span></button>
+                            <button id="mm-draw-btn" class="mm-draw-btn" title="自由描画モード (P)"><i
+                                    class="fas fa-pen-nib"></i><span class="btn-text"> 描画</span></button>
+                            <div id="mm-draw-options" class="mm-draw-options"
+                                style="display:none; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; margin:0 4px;">
+                                <div class="draw-colors" style="display:flex; gap:4px;">
+                                    <div class="draw-color-swatch active" data-color="#fbbf24"
+                                        style="background:#fbbf24; width:16px; height:16px; border-radius:50%; cursor:pointer; border:1px solid rgba(255,255,255,0.2);">
+                                    </div>
+                                    <div class="draw-color-swatch" data-color="#3b82f6"
+                                        style="background:#3b82f6; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="draw-color-swatch" data-color="#ef4444"
+                                        style="background:#ef4444; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="draw-color-swatch" data-color="#10b981"
+                                        style="background:#10b981; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="draw-color-swatch" data-color="#f8fafc"
+                                        style="background:#f8fafc; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                </div>
+                                <div class="divider" style="width:1px; height:12px; background:rgba(255,255,255,0.1);">
+                                </div>
+                                <select id="mm-draw-width" class="draw-select"
+                                    style="background:transparent; color:white; border:none; font-size:11px; cursor:pointer;">
+                                    <option value="2">細</option>
+                                    <option value="4" selected>中</option>
+                                    <option value="8">太</option>
+                                </select>
+                                <div class="divider" style="width:1px; height:12px; background:rgba(255,255,255,0.1);">
+                                </div>
+                                <select id="mm-draw-type" class="draw-select"
+                                    style="background:transparent; color:white; border:none; font-size:11px; cursor:pointer;">
+                                    <option value="solid">実線</option>
+                                    <option value="dashed">破線</option>
+                                    <option value="dotted">点線</option>
+                                </select>
+                            </div>
+                            <button id="mm-shape-btn" class="mm-shape-btn" title="図形描画モード"><i
+                                    class="fas fa-shapes"></i><span class="btn-text"> 図形</span></button>
+                            <div id="mm-shape-options" class="mm-shape-options"
+                                style="display:none; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; margin:0 4px;">
+                                <div class="shape-colors" style="display:flex; gap:4px;">
+                                    <div class="shape-color-swatch active" data-color="#fbbf24"
+                                        style="background:#fbbf24; width:16px; height:16px; border-radius:50%; cursor:pointer; border:1px solid rgba(255,255,255,0.2);">
+                                    </div>
+                                    <div class="shape-color-swatch" data-color="#3b82f6"
+                                        style="background:#3b82f6; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="shape-color-swatch" data-color="#ef4444"
+                                        style="background:#ef4444; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="shape-color-swatch" data-color="#10b981"
+                                        style="background:#10b981; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                    <div class="shape-color-swatch" data-color="#f8fafc"
+                                        style="background:#f8fafc; width:16px; height:16px; border-radius:50%; cursor:pointer;">
+                                    </div>
+                                </div>
+                                <div class="divider" style="width:1px; height:12px; background:rgba(255,255,255,0.1);">
+                                </div>
+                                <select id="mm-shape-type" class="draw-select"
+                                    style="background:transparent; color:white; border:none; font-size:11px; cursor:pointer;">
+                                    <option value="rect">長方形</option>
+                                    <option value="ellipse">楕円</option>
+                                    <option value="line">直線</option>
+                                    <option value="polyline">折れ線</option>
+                                </select>
+                                <div class="divider" style="width:1px; height:12px; background:rgba(255,255,255,0.1);">
+                                </div>
+                                <select id="mm-shape-line-type" class="draw-select"
+                                    style="background:transparent; color:white; border:none; font-size:11px; cursor:pointer;">
+                                    <option value="solid">実線</option>
+                                    <option value="dashed">破線</option>
+                                    <option value="dotted">点線</option>
+                                </select>
+                            </div>
+                            <div class="divider"></div>
+
+                            <!-- 保存・復元 -->
                             <button id="mm-clear-all-btn" title="すべてクリア" style="color: #ef4444;"><i
                                     class="fas fa-bomb"></i><span class="btn-text"> クリア</span></button>
                             <button id="mm-export-btn" title="JSON保存"><i class="fas fa-download"></i><span
@@ -609,7 +809,10 @@
                     <div class="mindmap-canvas-wrapper">
                         <div id="mm-canvas-container" class="mm-canvas-container">
                             <svg id="mm-grid-layer" class="mm-grid-layer"></svg>
+                            <svg id="mm-drawing-layer" class="mm-drawing-layer"
+                                style="position: absolute; width: 100%; height: 100%; pointer-events: none;"></svg>
                             <div id="mm-images-layer" class="mm-images-layer"></div>
+                            <div id="mm-annotations-layer" class="mm-annotations-layer"></div>
                             <svg id="mm-connections-layer" class="mm-connections-layer"></svg>
                             <div id="mm-nodes-layer" class="mm-nodes-layer"></div>
                             <svg id="mm-foreground-layer" class="mm-foreground-layer"></svg>
@@ -687,6 +890,59 @@
                     </div>
                 </div>
             </section>
+
+            <section id="view-bookmarks" class="view">
+                <div class="bookmark-section card">
+                    <div class="card-header">
+                        <h2 style="font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="bookmark" style="color:var(--accent);"></i> ブックマーク・参考ソース
+                        </h2>
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">URL入力時にタイトルを自動取得します</div>
+                    </div>
+                    <div class="table-wrapper" style="margin-top: 1rem; overflow-x: auto;">
+                        <table class="bookmark-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 250px;">URL (登録・更新)</th>
+                                    <th style="width: 200px;">タイトル</th>
+                                    <th style="width: 150px;">説明・メモ</th>
+                                    <th style="width: 100px;">記録者 / 役割</th>
+                                    <th style="width: 100px;">日付</th>
+                                    <th style="width: 60px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookmark-table-body">
+                                <!-- Bookmark rows will be rendered here -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="new-bookmark-row">
+                                    <td>
+                                        <input type="url" id="new-bm-url" placeholder="https://..." class="table-input">
+                                    </td>
+                                    <td>
+                                        <input type="text" id="new-bm-title" placeholder="自動取得されます" class="table-input">
+                                    </td>
+                                    <td>
+                                        <textarea id="new-bm-desc" placeholder="メモ" class="table-input"
+                                            rows="1"></textarea>
+                                    </td>
+                                    <td id="new-bm-recorder-info" style="font-size: 0.8rem; color: var(--text-dim);">
+                                        --
+                                    </td>
+                                    <td id="new-bm-date" style="font-size: 0.8rem; color: var(--text-dim);">
+                                        --
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="addNewBookmark()" title="追加">
+                                            <i data-lucide="plus"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -722,7 +978,7 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>担当者 (複数選択可)</label>
+                        <span class="label-text">担当者 (複数選択可)</span>
                         <div class="bulk-assignee-btns">
                             <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('all')">全員</button>
                             <button type="button" class="btn-bulk" onclick="bulkSelectAssignees('マーケティング')">マーケ</button>
@@ -748,7 +1004,7 @@
                 <div class="modal-editor-side">
                     <div id="task-process-flow-section" class="form-group">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label>プロセスフロー (思考整理)</label>
+                            <span class="label-text">プロセスフロー</span>
                             <div class="wr-author-area"
                                 style="background:transparent; padding:0; border:none; margin:0;">
                                 <span class="wr-meta-label" style="font-size:0.75rem;"><i data-lucide="users"
@@ -974,6 +1230,50 @@
 
     <script src="mindmap.js"></script>
     <script src="app.js"></script>
+    <!-- Bookmark Modal -->
+    <div id="modal-bookmark" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header-section">
+                <h2 id="bookmark-modal-title">ブックマーク登録</h2>
+            </div>
+            <div class="modal-body p-2">
+                <form id="bookmark-form">
+                    <input type="hidden" id="bookmark-id">
+                    <div class="form-group">
+                        <label for="bookmark-title">ページタイトル</label>
+                        <input type="text" id="bookmark-title" placeholder="例: 参考サイト名">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-url">URL</label>
+                        <input type="url" id="bookmark-url" placeholder="https://...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bookmark-date">閲覧日</label>
+                            <input type="date" id="bookmark-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="bookmark-recorder">記録者</label>
+                            <input type="text" id="bookmark-recorder" readonly
+                                style="background:rgba(255,255,255,0.05);">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-role">担当分野</label>
+                        <input type="text" id="bookmark-role" readonly style="background:rgba(255,255,255,0.05);">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-description">説明記入欄</label>
+                        <textarea id="bookmark-description" rows="3" placeholder="このソースから得られる知見やメモ"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-close-bookmark-modal">キャンセル</button>
+                <button class="btn btn-primary" id="btn-save-bookmark">保存する</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

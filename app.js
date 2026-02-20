@@ -27,7 +27,13 @@ let state = {
         { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
     ],
     lastMessagesCheckTime: 0, // Timestamp when user last viewed the message board
-    currentTopicId: 'general'
+    currentTopicId: 'general',
+    supervisingInstructors: [
+        { lastName: '', firstName: '', emailLocal: '' },
+        { lastName: '', firstName: '', emailLocal: '' }
+    ],
+    membersLocked: false,
+    bookmarks: []
 };
 
 // --- Mention State ---
@@ -286,6 +292,30 @@ function updateDisplayInfo() {
     document.getElementById('select-group-symbol').value = state.groupSymbol || '';
     document.getElementById('input-group-name').value = state.groupName || '';
 
+    // Supervising Instructors
+    if (state.supervisingInstructors) {
+        state.supervisingInstructors.forEach((prof, idx) => {
+            const i = idx + 1;
+            const lastEl = document.getElementById(`prof-${i}-last`);
+            const firstEl = document.getElementById(`prof-${i}-first`);
+            const emailEl = document.getElementById(`prof-${i}-email`);
+            const teamsEl = document.getElementById(`prof-${i}-teams`);
+
+            if (lastEl) lastEl.value = prof.lastName || '';
+            if (firstEl) firstEl.value = prof.firstName || '';
+            if (emailEl) emailEl.value = prof.emailLocal || '';
+
+            if (teamsEl) {
+                if (prof.emailLocal) {
+                    teamsEl.href = `https://teams.microsoft.com/l/chat/0/0?users=${prof.emailLocal}@omu.ac.jp`;
+                    teamsEl.style.display = 'flex';
+                } else {
+                    teamsEl.style.display = 'none';
+                }
+            }
+        });
+    }
+
     // Dynamic Teams Group Chat Link (includes all members)
     const teamsBtn = document.getElementById('btn-group-teams');
     const memberEmails = state.members
@@ -430,8 +460,35 @@ function initEventListeners() {
         saveState();
     });
 
+    // Supervising Instructors listeners
+    document.getElementById('prof-1-last').addEventListener('input', (e) => {
+        state.supervisingInstructors[0].lastName = e.target.value;
+        saveState();
+    });
+    document.getElementById('prof-1-first').addEventListener('input', (e) => {
+        state.supervisingInstructors[0].firstName = e.target.value;
+        saveState();
+    });
+    document.getElementById('prof-2-last').addEventListener('input', (e) => {
+        state.supervisingInstructors[1].lastName = e.target.value;
+        saveState();
+    });
+    document.getElementById('prof-2-first').addEventListener('input', (e) => {
+        state.supervisingInstructors[1].firstName = e.target.value;
+        saveState();
+    });
+    document.getElementById('prof-1-email').addEventListener('input', (e) => {
+        state.supervisingInstructors[0].emailLocal = e.target.value;
+        saveState();
+    });
+    document.getElementById('prof-2-email').addEventListener('input', (e) => {
+        state.supervisingInstructors[1].emailLocal = e.target.value;
+        saveState();
+    });
+
     // Members
     document.getElementById('btn-add-member').addEventListener('click', addMemberRow);
+    document.getElementById('btn-lock-members').addEventListener('click', toggleMembersLock);
 
     document.getElementById('btn-close-modal').addEventListener('click', () => closeModal());
     document.getElementById('btn-save-task').addEventListener('click', saveTask);
@@ -502,6 +559,8 @@ function initEventListeners() {
         document.getElementById('message-file-input').click();
     });
     document.getElementById('message-file-input').addEventListener('change', handleFileSelect);
+
+    // Bookmarks - Handled via direct table interaction
 }
 
 function switchView(viewId) {
@@ -519,19 +578,20 @@ function switchView(viewId) {
         reports: '報告書・レポート作成',
         members: 'メンバー・テーマ設定',
         data: 'データ管理',
-        mindmap: '思考整理 (Mind Map)',
+        mindmap: 'マインドマップ',
         messages: 'メンバー伝言板',
+        bookmarks: 'ブックマーク・参考ソース',
         deliverables: '成果物フォルダ'
     };
     document.getElementById('view-title').textContent = titles[viewId] || 'PBL2 Manager';
 
     if (viewId === 'mindmap' && typeof MindMapModule !== 'undefined') {
-        // Load global mindmap
         const savedGlobal = localStorage.getItem('mindmap_data_v1');
-        MindMapModule.init();
+        MindMapModule.resetToGlobal();
         if (!savedGlobal) {
-            // First time - initialize with theme name and center it
             MindMapModule.loadData(null, state.themeName || 'プロジェクトテーマ');
+        } else {
+            MindMapModule.init();
         }
     }
     if (viewId === 'gantt') renderGantt();
@@ -557,6 +617,9 @@ function switchView(viewId) {
         renderMessages(); // This will render messages for currentTopicId
         scrollToBottomMessages();
     }
+    if (viewId === 'bookmarks') {
+        renderBookmarks();
+    }
 }
 
 function switchTab(tabId) {
@@ -572,10 +635,58 @@ function switchTab(tabId) {
     else if (tabId === 'contribution') loadContributionSurvey();
 }
 
+function toggleMembersLock() {
+    if (state.membersLocked) {
+        // Unlocking requires password
+        const pass = prompt('編集ロックを解除するにはパスワードを入力してください (パスワード: pbl2)');
+        if (pass === 'pbl2') {
+            state.membersLocked = false;
+        } else {
+            alert('パスワードが違います');
+            return;
+        }
+    } else {
+        // Locking
+        if (confirm('メンバー登録を固定しますか？固定すると編集ができなくなります。')) {
+            state.membersLocked = true;
+        }
+    }
+    saveState();
+    renderMemberList();
+    updateLockUI();
+}
+
+function updateLockUI() {
+    const btnText = document.getElementById('lock-btn-text');
+    const btnIcon = document.querySelector('#btn-lock-members i');
+    const lockBtn = document.getElementById('btn-lock-members');
+    const addBtn = document.getElementById('btn-add-member');
+
+    if (state.membersLocked) {
+        if (btnText) btnText.textContent = '解除する';
+        if (btnIcon) {
+            btnIcon.setAttribute('data-lucide', 'lock');
+            if (window.lucide) lucide.createIcons();
+        }
+        lockBtn.classList.replace('btn-secondary', 'btn-primary');
+        addBtn.style.display = 'none';
+    } else {
+        if (btnText) btnText.textContent = '固定する';
+        if (btnIcon) {
+            btnIcon.setAttribute('data-lucide', 'unlock');
+            if (window.lucide) lucide.createIcons();
+        }
+        lockBtn.classList.replace('btn-primary', 'btn-secondary');
+        addBtn.style.display = 'flex';
+    }
+}
+
 // --- Member Logic ---
 function renderMemberList() {
     const listContainer = document.getElementById('member-list-container');
     listContainer.innerHTML = '';
+
+    updateLockUI();
 
     state.members.forEach((member, index) => {
         const card = document.createElement('div');
@@ -607,49 +718,52 @@ function renderMemberList() {
 
         const deleteBtn = hasImage ? `<button onclick="removeAvatarImage(${index}); event.stopPropagation();" style="position:absolute; top:-2px; right:-2px; width:18px; height:18px; border-radius:50%; background:#ef4444; color:white; border:2px solid var(--bg-card); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; padding:0;"><i data-lucide="x" style="width:10px;height:10px;"></i></button>` : '';
 
+        const isLocked = state.membersLocked;
+
         card.innerHTML = `
             <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
-            <div class="member-card-smart">
+            <div class="member-card-smart ${isLocked ? 'locked' : ''}">
                 <div class="smart-row-top">
-                    <div class="smart-avatar-container" onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;">
+                    <div class="smart-avatar-container" ${!isLocked ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
                         <div class="smart-avatar" style="background:${avatarBg};">
                             ${avatarInner}
+                            ${!isLocked ? `
                             <div class="smart-avatar-hover">
                                 <i data-lucide="camera" style="width:10px;height:10px;color:white;"></i>
                             </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div class="smart-identity-area">
                         <div class="smart-name-line">
                             <div class="smart-name-inputs">
-                                <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" placeholder="姓" class="smart-name-input">
-                                <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" placeholder="名" class="smart-name-input">
+                                <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" aria-label="苗字" placeholder="姓" class="smart-name-input" ${isLocked ? 'readonly' : ''}>
+                                <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" aria-label="名前" placeholder="名" class="smart-name-input" ${isLocked ? 'readonly' : ''}>
                             </div>
                             <div class="smart-actions-mini">
                                 ${teamsLink ? `<a href="${teamsLink}" target="_blank" class="mini-btn teams"><i data-lucide="messages-square"></i></a>` : ''}
-                                <button class="mini-btn delete" onclick="removeMember(${index})"><i data-lucide="trash-2"></i></button>
+                                ${!isLocked ? `<button class="mini-btn delete" onclick="removeMember(${index})"><i data-lucide="trash-2"></i></button>` : ''}
                             </div>
-                        </div>
-                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" onclick="setSelf(${index})">
-                            ${member.isSelf ? '★ 自分' : 'メンバー'}
                         </div>
                     </div>
                 </div>
 
                 <div class="smart-row-middle">
                     <div class="smart-email-field">
-                        <i data-lucide="mail" style="width:10px;height:10px;"></i>
-                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" placeholder="学籍番号">
+                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" ${!isLocked ? `onclick="setSelf(${index})"` : ''} style="border: 1px solid var(--border); padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.2); cursor: ${isLocked ? 'default' : 'pointer'};">
+                            ${member.isSelf ? '自分' : '他'}
+                        </div>
+                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" aria-label="学籍番号(ID部分)" placeholder="学籍番号" style="margin-left: 4px;" ${isLocked ? 'readonly' : ''}>
                         <span class="email-domain">@st.omu.ac.jp</span>
                     </div>
                 </div>
 
                 <div class="smart-row-bottom">
-                    <select class="smart-select" onchange="updateMember(${index}, 'course', this.value)">
+                    <select class="smart-select" onchange="updateMember(${index}, 'course', this.value)" aria-label="コース選択" ${isLocked ? 'disabled' : ''}>
                         <option value="">コース選択</option>
                         ${courseOptions}
                     </select>
-                    <select class="smart-select" onchange="updateMember(${index}, 'role', this.value)">
+                    <select class="smart-select" onchange="updateMember(${index}, 'role', this.value)" aria-label="役割選択" ${isLocked ? 'disabled' : ''}>
                         <option value="">役割選択</option>
                         ${roleOptions}
                     </select>
@@ -702,6 +816,10 @@ function clearAvatarImage(index) {
 }
 
 function addMemberRow() {
+    if (state.membersLocked) {
+        alert('メンバー登録は固定されています。解除してから操作してください。');
+        return;
+    }
     state.members.push({
         id: generateId(),
         lastName: '',
@@ -755,6 +873,7 @@ function renderRoleGuide() {
 }
 
 window.updateMember = (index, key, value) => {
+    if (state.membersLocked) return;
     state.members[index][key] = value;
     state.members[index].updatedAt = new Date().toISOString();
     saveState();
@@ -763,6 +882,7 @@ window.updateMember = (index, key, value) => {
 };
 
 window.removeMember = (index) => {
+    if (state.membersLocked) return;
     state.members.splice(index, 1);
     renderMemberList();
     saveState();
@@ -1336,6 +1456,22 @@ function migrateData(data) {
             }
         });
     }
+    // Supervising Instructors
+    if (!data.supervisingInstructors || !Array.isArray(data.supervisingInstructors)) {
+        data.supervisingInstructors = [
+            { lastName: '', firstName: '', emailLocal: '' },
+            { lastName: '', firstName: '', emailLocal: '' }
+        ];
+    } else {
+        // Ensure it has 2 entries and fields
+        while (data.supervisingInstructors.length < 2) {
+            data.supervisingInstructors.push({ lastName: '', firstName: '', emailLocal: '' });
+        }
+        data.supervisingInstructors.forEach(p => {
+            if (p.emailLocal === undefined) p.emailLocal = '';
+        });
+    }
+
     return data;
 }
 
@@ -2157,6 +2293,8 @@ function renderHotspots() {
         div.ondblclick = (e) => {
             e.stopPropagation();
             const input = document.createElement('input');
+            input.id = `hotspot-input-${idx}`;
+            input.setAttribute('aria-label', '箇所の説明を入力');
             input.type = 'text';
             input.className = 'hotspot-input';
             input.value = hs.text || '';
@@ -3837,7 +3975,7 @@ function renderMessages() {
     if (filteredMessages.length === 0) {
         list.innerHTML = `
             <div class="empty-messages">
-                <i data-lucide="message-square-dashed" style="width:48px;height:48px;opacity:0.5;"></i>
+                <i data-lucide="message-square-dashed" style="width:48px;height:48px;color:var(--primary);filter:drop-shadow(0 0 10px var(--primary-glow));"></i>
                 <p>この話題にはまだメッセージはありません</p>
                 <p style="font-size:0.8rem;">最初のメッセージを投稿しましょう</p>
             </div>`;
@@ -3893,6 +4031,11 @@ function renderMessages() {
         const readTooltip = readByNames.length > 0 ? `既読: ${readByNames.join(', ')}` : 'まだ誰も読んでいません';
         const readLabel = readCount > 0 ? `<span class="message-read-status" title="${readTooltip}">既読 ${readCount}</span>` : '';
 
+        const reactionsHtml = msg.reactions ? Object.entries(msg.reactions).map(([emoji, users]) => {
+            const hasReacted = selfKey && users.includes(selfKey);
+            return `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="addReaction('${msg.id}', '${emoji}')">${emoji} ${users.length}</div>`;
+        }).join('') : '';
+
         div.innerHTML = `
             <div class="message-avatar" style="background:${avatarBg};" title="${msg.senderName}">
                 ${avatarInner}
@@ -3903,6 +4046,12 @@ function renderMessages() {
                     <span>${timeStr}</span>
                 </div>
                 <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
+                <div class="message-reactions-wrapper">
+                    <div class="message-reactions">${reactionsHtml}</div>
+                    <button class="btn-add-reaction" onclick="toggleReactionPicker(event, '${msg.id}')" title="リアクションを追加">
+                        <i data-lucide="smile-plus" style="width:16px; height:16px;"></i>
+                    </button>
+                </div>
                 ${isMe ? `<div style="text-align:right; margin-top:2px;">${readLabel}</div>` : ''}
             </div>
         `;
@@ -4354,6 +4503,66 @@ function deleteTopic(topicId, e) {
     saveState();
 }
 
+
+/* --- Message Reaction Logic --- */
+window.toggleReactionPicker = (e, msgId) => {
+    e.stopPropagation();
+    const existing = document.querySelector('.reaction-picker');
+    if (existing) {
+        const same = existing.dataset.msgId === msgId;
+        existing.remove();
+        if (same) return;
+    }
+
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    picker.dataset.msgId = msgId;
+
+    const emojis = ['👍', '✔️', '😆', '😮', '😢', '🙏'];
+    emojis.forEach(emoji => {
+        const span = document.createElement('span');
+        span.className = 'emoji-option';
+        span.innerText = emoji;
+        span.onclick = (e) => {
+            e.stopPropagation();
+            addReaction(msgId, emoji);
+            picker.remove();
+        };
+        picker.appendChild(span);
+    });
+
+    e.currentTarget.parentElement.appendChild(picker);
+
+    // Close picker when clicking elsewhere
+    const closePicker = () => {
+        picker.remove();
+        document.removeEventListener('click', closePicker);
+    };
+    setTimeout(() => document.addEventListener('click', closePicker), 10);
+};
+
+window.addReaction = (msgId, emoji) => {
+    const msg = state.messages.find(m => m.id === msgId);
+    if (!msg) return;
+
+    if (!msg.reactions) msg.reactions = {};
+    if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
+
+    const selfMember = state.members.find(m => m.isSelf);
+    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : 'guest';
+
+    const index = msg.reactions[emoji].indexOf(selfKey);
+    if (index === -1) {
+        msg.reactions[emoji].push(selfKey);
+    } else {
+        msg.reactions[emoji].splice(index, 1);
+        if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+    }
+
+    saveState();
+    renderMessages();
+};
+
 function deleteMessage(msgId) {
     if (!confirm('このメッセージを削除しますか？')) return;
 
@@ -4361,17 +4570,15 @@ function deleteMessage(msgId) {
     const selfMember = state.members.find(m => m.isSelf);
     const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
 
-    if (!state.messages) return;
-
-    const msgIndex = state.messages.findIndex(m => m.id === msgId);
-    if (msgIndex === -1) return;
+    const msg = state.messages.find(m => m.id === msgId);
+    if (!msg) return;
 
     if (msg.senderKey !== selfKey) {
-        alert('自分のメッセージしか削除できません');
+        alert('自分のメッセージ以外は削除できません');
         return;
     }
 
-    state.messages.splice(msgIndex, 1);
+    state.messages = state.messages.filter(m => m.id !== msgId);
     saveState();
     renderMessages();
 }
@@ -4381,28 +4588,38 @@ function handleFileSelect(e) {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    // Limit file size or count if necessary
-    // For now, process all
     let processedCount = 0;
 
     files.forEach(file => {
-        // Warning for large files (> 2MB is risky for localStorage)
         const sizeMB = file.size / 1024 / 1024;
-        if (sizeMB > 1.5) {
-            const msg = sizeMB > 3
-                ? `❌ ファイル「${file.name}」(${sizeMB.toFixed(1)}MB) は大きすぎます。\nブラウザの制限により、3MB以上のファイルは送信できない可能性が高いです。`
-                : `⚠️ ファイル「${file.name}」(${sizeMB.toFixed(1)}MB) は比較的大きいです。\n複数を送信すると保存容量制限（5MB）を超えて送信できなくなる場合があります。`;
-            alert(msg);
-            if (sizeMB > 3.5) return; // Strict block for very large files to prevent crash
+        const isImage = file.type.startsWith('image/');
+
+        // Warning for large non-image files (risky for localStorage)
+        if (!isImage && sizeMB > 3) {
+            alert(`❌ ファイル「${file.name}」(${sizeMB.toFixed(1)}MB) は大きすぎます。\n画像以外のファイルは3MB以下にしてください。`);
+            processedCount++;
+            return;
         }
 
         const reader = new FileReader();
         reader.onload = async (ev) => {
             let dataUrl = ev.target.result;
-            const type = file.type.startsWith('image/') ? 'image' : 'file';
+            const type = isImage ? 'image' : 'file';
 
             if (type === 'image') {
-                dataUrl = await compressImage(dataUrl, 640, 640, 0.2);
+                // Tiered aggressive compression as requested (quality-degradation is OK)
+                let targetMax = 800;
+                let q = 0.25;
+
+                if (sizeMB > 10) {
+                    targetMax = 480; q = 0.08;
+                } else if (sizeMB > 5) {
+                    targetMax = 640; q = 0.12;
+                } else if (sizeMB > 2) {
+                    targetMax = 800; q = 0.18;
+                }
+
+                dataUrl = await compressImage(dataUrl, targetMax, targetMax, q);
             }
 
             pendingAttachments.push({
@@ -4597,3 +4814,188 @@ function createDeliverableItem(name, icon, desc, color, isCompleted = false) {
 
 
 
+/* --- Bookmark Logic --- */
+
+// Helper to fetch page title via public CORS proxy
+async function fetchPageTitle(url) {
+    if (!url || !url.startsWith('http')) return "";
+    try {
+        // Use allorigins.win as a proxy
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+        if (!response.ok) return "";
+        const data = await response.json();
+        if (!data || !data.contents) return "";
+        const html = data.contents;
+        // Basic Title regex
+        const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+        if (match && match[1]) {
+            return match[1].trim()
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'");
+        }
+        return "";
+    } catch (e) {
+        console.error("Title fetch failed:", e);
+        return "";
+    }
+}
+
+function renderBookmarks() {
+    const tbody = document.getElementById('bookmark-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (!state.bookmarks) state.bookmarks = [];
+
+    state.bookmarks.forEach((bm, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <a href="${bm.url}" target="_blank" class="bookmark-link-btn" title="リンクを開く">
+                        <i data-lucide="external-link" style="width:14px;height:14px;"></i> ${escapeHtml(bm.url.length > 30 ? bm.url.substring(0, 30) + '...' : bm.url)}
+                    </a>
+                    <input type="url" value="${bm.url}" onchange="updateBookmarkField(${index}, 'url', this.value, true)" class="table-input" style="font-size: 0.75rem;" placeholder="https://...">
+                </div>
+            </td>
+            <td>
+                <input type="text" id="bm-title-${index}" value="${escapeHtml(bm.title || "")}" onchange="updateBookmarkField(${index}, 'title', this.value)" class="table-input" placeholder="タイトル">
+            </td>
+            <td>
+                <textarea onchange="updateBookmarkField(${index}, 'description', this.value)" class="table-input" rows="1" placeholder="メモ">${escapeHtml(bm.description || "")}</textarea>
+            </td>
+            <td style="font-size: 0.8rem;">
+                <div style="font-weight:600;">${escapeHtml(bm.recorderName || "不明")}</div>
+                <div style="color:var(--text-dim); font-size:10px;">${escapeHtml(bm.role || "")}</div>
+            </td>
+            <td style="font-size: 0.8rem; color: var(--text-dim);">
+                ${bm.date || "--"}
+            </td>
+            <td>
+                <button class="mini-btn delete" onclick="deleteBookmark(${index})" title="削除">
+                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Reset Footer Data
+    const self = state.members.find(m => m.isSelf);
+    const recorderInfo = document.getElementById('new-bm-recorder-info');
+    if (recorderInfo) {
+        if (self) {
+            recorderInfo.innerHTML = `<div style="font-weight:600;">${escapeHtml((self.lastName || '') + (self.firstName || ''))}</div><div style="font-size:10px;">${escapeHtml(self.role || "")}</div>`;
+        } else {
+            recorderInfo.innerText = "自分未設定";
+        }
+    }
+    const dateInfo = document.getElementById('new-bm-date');
+    if (dateInfo) {
+        dateInfo.innerText = new Date().toISOString().split('T')[0];
+    }
+
+    // Add event listener to new URL field for auto-title (only if not already added)
+    const newUrlInput = document.getElementById('new-bm-url');
+    if (newUrlInput && !newUrlInput.dataset.listenerAdded) {
+        newUrlInput.addEventListener('blur', async () => {
+            const url = newUrlInput.value.trim();
+            if (url && url.startsWith('http')) {
+                newUrlInput.classList.add('loading');
+                const titleInput = document.getElementById('new-bm-title');
+                if (titleInput && !titleInput.value) {
+                    titleInput.placeholder = "タイトル取得中...";
+                    const title = await fetchPageTitle(url);
+                    if (title) {
+                        titleInput.value = title;
+                    }
+                    titleInput.placeholder = "自動取得されます";
+                }
+                newUrlInput.classList.add('success-flash'); // Visual cue
+                setTimeout(() => newUrlInput.classList.remove('success-flash'), 1000);
+                newUrlInput.classList.remove('loading');
+            }
+        });
+        newUrlInput.dataset.listenerAdded = "true";
+    }
+
+    if (window.lucide) lucide.createIcons();
+}
+
+window.addNewBookmark = async () => {
+    const urlInput = document.getElementById('new-bm-url');
+    const titleInput = document.getElementById('new-bm-title');
+    const descInput = document.getElementById('new-bm-desc');
+
+    const url = urlInput.value.trim();
+    let title = titleInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!url) {
+        alert('URLを入力してください');
+        return;
+    }
+
+    const self = state.members.find(m => m.isSelf);
+    const recorderName = self ? ((self.lastName || '') + (self.firstName || '')).trim() : 'ゲスト';
+    const role = self ? (self.role || '') : '';
+
+    const newBm = {
+        url: url,
+        title: title || url, // Default to URL if title not yet fetched
+        description: description,
+        recorderName: recorderName,
+        role: role,
+        date: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString()
+    };
+
+    if (!state.bookmarks) state.bookmarks = [];
+    state.bookmarks.push(newBm);
+
+    // If title was empty, and wasn't manually entered, try fetching
+    if (!title) {
+        fetchPageTitle(url).then(fetchedTitle => {
+            if (fetchedTitle) {
+                newBm.title = fetchedTitle;
+                saveState();
+                renderBookmarks();
+            }
+        });
+    }
+
+    urlInput.value = '';
+    titleInput.value = '';
+    descInput.value = '';
+
+    saveState();
+    renderBookmarks();
+};
+
+window.updateBookmarkField = async (index, field, value, triggerAutoTitle = false) => {
+    if (!state.bookmarks[index]) return;
+
+    state.bookmarks[index][field] = value;
+    state.bookmarks[index].updatedAt = new Date().toISOString();
+
+    if (triggerAutoTitle && field === 'url' && value.startsWith('http')) {
+        const title = await fetchPageTitle(value);
+        if (title) {
+            state.bookmarks[index].title = title;
+            renderBookmarks();
+        }
+    }
+
+    saveState();
+};
+
+window.deleteBookmark = (index) => {
+    if (confirm('このブックマークを削除しますか？')) {
+        state.bookmarks.splice(index, 1);
+        saveState();
+        renderBookmarks();
+    }
+};
