@@ -64,6 +64,11 @@ const BASE_COURSES = [
     '知能情報'
 ];
 
+const AVATAR_COLORS = [
+    '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b',
+    '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'
+];
+
 // Pre-parsed schedule data from CSV (2026 example)
 const DEFAULT_SCHEDULE = [
     { id: 1, date: '2026-04-15', label: 'ガイダンス（1回目・水1）' },
@@ -572,11 +577,6 @@ function renderMemberList() {
     const listContainer = document.getElementById('member-list-container');
     listContainer.innerHTML = '';
 
-    const AVATAR_COLORS = [
-        '#4f46e5', '#0ea5e9', '#10b981', '#f59e0b',
-        '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'
-    ];
-
     state.members.forEach((member, index) => {
         const card = document.createElement('div');
         card.className = 'member-card card';
@@ -609,85 +609,50 @@ function renderMemberList() {
 
         card.innerHTML = `
             <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
-            <div class="member-card-header">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="position:relative;">
-                        <div class="member-avatar" style="
-                            width:44px; height:44px; border-radius:50%;
-                            background:${avatarBg};
-                            display:flex; align-items:center; justify-content:center;
-                            font-size:1.2rem; font-weight:700; color:white;
-                            cursor:pointer; flex-shrink:0; position:relative; overflow:hidden;
-                            box-shadow: ${avatarShadow};
-                            transition: transform 0.15s;
-                    " onclick="document.getElementById('avatar-input-${index}').click()"
-                       oncontextmenu="clearAvatarImage(${index}); return false;"
-                       title="クリックで画像を変更 / 右クリックで削除">
-                        ${avatarInner}
-                        <div style="position:absolute;inset:0;background:rgba(0,0,0,0);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;" class="avatar-hover-overlay">
-                            <i data-lucide="camera" style="width:16px;height:16px;color:white;opacity:0;transition:opacity 0.2s;"></i>
+            <div class="member-card-smart">
+                <div class="smart-row-top">
+                    <div class="smart-avatar-container" onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;">
+                        <div class="smart-avatar" style="background:${avatarBg};">
+                            ${avatarInner}
+                            <div class="smart-avatar-hover">
+                                <i data-lucide="camera" style="width:10px;height:10px;color:white;"></i>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <div style="font-size:0.9rem; font-weight:600; color:var(--text-main);">
-                            ${fullName || '（未入力）'}
+                    <div class="smart-identity-area">
+                        <div class="smart-name-line">
+                            <div class="smart-name-inputs">
+                                <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" placeholder="姓" class="smart-name-input">
+                                <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" placeholder="名" class="smart-name-input">
+                            </div>
+                            <div class="smart-actions-mini">
+                                ${teamsLink ? `<a href="${teamsLink}" target="_blank" class="mini-btn teams"><i data-lucide="messages-square"></i></a>` : ''}
+                                <button class="mini-btn delete" onclick="removeMember(${index})"><i data-lucide="trash-2"></i></button>
+                            </div>
                         </div>
-                        <button onclick="setSelf(${index})" style="
-                            font-size:10px; padding:1px 7px; margin-top:3px;
-                            border-radius:10px; cursor:pointer; font-weight:600;
-                            border: 1px solid ${member.isSelf ? 'var(--primary)' : 'var(--border)'};
-                            background: ${member.isSelf ? 'var(--primary)' : 'transparent'};
-                            color: ${member.isSelf ? 'white' : 'var(--text-dim)'};
-                            transition: all 0.2s;
-                        ">
-                            ${member.isSelf ? '★自分' : 'メンバー'}
-                        </button>
+                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" onclick="setSelf(${index})">
+                            ${member.isSelf ? '★ 自分' : 'メンバー'}
+                        </div>
                     </div>
                 </div>
-                <div class="header-actions">
-                    ${teamsLink ? `
-                        <a href="${teamsLink}" target="_blank" class="btn-icon teams-link" title="Teamsでチャット">
-                            <i data-lucide="messages-square"></i>
-                        </a>
-                    ` : ''}
-                    <button class="btn-icon text-danger" style="background:none; border:none; cursor:pointer;" onclick="removeMember(${index})">
-                        <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="member-card-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="member-lastName-${index}">姓</label>
-                        <input id="member-lastName-${index}" name="lastName" type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" placeholder="姓">
-                    </div>
-                    <div class="form-group">
-                        <label for="member-firstName-${index}">名</label>
-                        <input id="member-firstName-${index}" name="firstName" type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" placeholder="名">
+
+                <div class="smart-row-middle">
+                    <div class="smart-email-field">
+                        <i data-lucide="mail" style="width:10px;height:10px;"></i>
+                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" placeholder="学籍番号">
+                        <span class="email-domain">@st.omu.ac.jp</span>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="member-email-${index}">メールアドレス</label>
-                    <div class="email-input-group">
-                        <input id="member-email-${index}" name="emailLocal" type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" placeholder="学籍番号など">
-                        <div class="email-suffix">@st.omu.ac.jp</div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="member-course-${index}">基盤コース</label>
-                        <select id="member-course-${index}" name="course" onchange="updateMember(${index}, 'course', this.value)">
-                            <option value="">選択してください</option>
-                            ${courseOptions}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="member-role-${index}">担当役割</label>
-                        <select id="member-role-${index}" name="role" onchange="updateMember(${index}, 'role', this.value)">
-                            <option value="">選択してください</option>
-                            ${roleOptions}
-                        </select>
-                    </div>
+
+                <div class="smart-row-bottom">
+                    <select class="smart-select" onchange="updateMember(${index}, 'course', this.value)">
+                        <option value="">コース選択</option>
+                        ${courseOptions}
+                    </select>
+                    <select class="smart-select" onchange="updateMember(${index}, 'role', this.value)">
+                        <option value="">役割選択</option>
+                        ${roleOptions}
+                    </select>
                 </div>
             </div>
         `;
@@ -764,7 +729,7 @@ function renderRoleGuide() {
             ? state.members.filter(m => m.emailLocal)
             : state.members.filter(m => m.role === role.title && m.emailLocal);
 
-        const emails = targetMembers.map(m => `${m.emailLocal}@st.omu.ac.jp`);
+        const emails = targetMembers.map(m => `${m.emailLocal} @st.omu.ac.jp`);
 
         const teamsLink = emails.length > 0
             ? `https://teams.microsoft.com/l/chat/0/0?users=${emails.join(',')}`
@@ -3866,7 +3831,6 @@ function renderMessages() {
 
     list.innerHTML = '';
 
-    // List of messages is filtered by current topic
     const currentTopicId = state.currentTopicId || 'general';
     const filteredMessages = state.messages ? state.messages.filter(m => (m.topicId || 'general') === currentTopicId) : [];
 
@@ -3881,14 +3845,12 @@ function renderMessages() {
         return;
     }
 
-    // Get current user info for "Self" determination
     const selfMember = state.members.find(m => m.isSelf);
     const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
 
     let lastDate = null;
 
     filteredMessages.forEach(msg => {
-        // Date Separator
         const dateObj = new Date(msg.timestamp);
         const dateStr = dateObj.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' });
 
@@ -3907,17 +3869,20 @@ function renderMessages() {
 
         const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
-        // Avatar
         const initials = msg.senderName ? msg.senderName.charAt(0) : '?';
+        const senderMember = state.members ? state.members.find(m => (m.emailLocal || (m.lastName + (m.firstName || ''))) === msg.senderKey) : null;
+        const senderIndex = senderMember ? state.members.indexOf(senderMember) : -1;
 
-        // Read Status Logic
+        const senderColor = senderMember
+            ? (senderMember.avatarColor || AVATAR_COLORS[senderIndex % AVATAR_COLORS.length])
+            : (msg.avatarColor || '#64748b');
+
+        const avatarSrc = senderMember ? senderMember.avatarImage : (msg.avatarData || null);
+        const avatarBg = senderMember ? (senderMember.avatarImage ? 'transparent' : senderColor) : senderColor;
+        const avatarInner = avatarSrc ? `<img src="${avatarSrc}" style="width:100%;height:100%;object-fit:cover;display:block;">` : initials;
+
         const readBy = msg.readBy || [];
         const readCount = readBy.length;
-        // Filter out sender from read count (optional, but usually "Read by 3" implies others)
-        // Let's just show total unique readers minus sender? 
-        // For simplicity: just show count of `readBy`.
-
-        // Tooltip for who read it
         const readByNames = [];
         if (readCount > 0 && state.members) {
             readBy.forEach(readerKey => {
@@ -3929,18 +3894,18 @@ function renderMessages() {
         const readLabel = readCount > 0 ? `<span class="message-read-status" title="${readTooltip}">既読 ${readCount}</span>` : '';
 
         div.innerHTML = `
-                                            <div class="message-avatar" style="background:${msg.avatarColor || '#64748b'};" title="${msg.senderName}">
-                                                ${initials}
-                                            </div>
-                                            <div class="message-content-wrapper">
-                                                <div class="message-meta">
-                                                    <span style="font-weight:600;">${msg.senderName}</span>
-                                                    <span>${timeStr}</span>
-                                                </div>
-                                                <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
-                                                ${isMe ? `<div style="text-align:right; margin-top:2px;">${readLabel}</div>` : ''}
-                                            </div>
-                                            `;
+            <div class="message-avatar" style="background:${avatarBg};" title="${msg.senderName}">
+                ${avatarInner}
+            </div>
+            <div class="message-content-wrapper">
+                <div class="message-meta">
+                    <span style="font-weight:600;">${msg.senderName}</span>
+                    <span>${timeStr}</span>
+                </div>
+                <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
+                ${isMe ? `<div style="text-align:right; margin-top:2px;">${readLabel}</div>` : ''}
+            </div>
+        `;
         list.appendChild(div);
     });
     if (window.lucide) lucide.createIcons();
@@ -4012,12 +3977,16 @@ function sendMessage() {
         ? (selfMember.emailLocal || `${selfMember.lastName || ''}${selfMember.firstName || ''}`)
         : 'guest_' + Date.now();
 
+    const senderIndex = selfMember ? state.members.indexOf(selfMember) : -1;
+    const defaultColor = senderIndex !== -1 ? AVATAR_COLORS[senderIndex % AVATAR_COLORS.length] : '#64748b';
+
     const newMessage = {
         id: Date.now().toString(36) + Math.random().toString(36).substr(2),
         senderKey: senderKey,
         senderName: senderName || 'ゲスト',
         senderRole: selfMember ? selfMember.role : '',
-        avatarColor: selfMember ? (selfMember.avatarColor || '#64748b') : '#64748b',
+        avatarColor: selfMember ? (selfMember.avatarColor || defaultColor) : '#64748b',
+        avatarData: selfMember ? selfMember.avatarImage : null,
         content: content,
         timestamp: new Date().toISOString(),
         readBy: [],
