@@ -1,4 +1,4 @@
-// PBL2 Student Manager - app.js
+﻿// PBL2 Student Manager - app.js
 
 // --- State Management ---
 let state = {
@@ -19,8 +19,28 @@ let state = {
         slides_25: false
     },
     schedule: [], // Loaded from CSV data
-    sidebarCollapsed: false
+    sidebarCollapsed: false,
+    sidebarCollapsed: false,
+    messages: [], // { id, topicId, senderName, senderRole, content, timestamp, color, readBy: [email/id] }
+    topics: [ // { id, name, createdBy, timestamp }
+        { id: 'general', name: '全般', createdBy: 'system', timestamp: 0 },
+        { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
+    ],
+    lastMessagesCheckTime: 0, // Timestamp when user last viewed the message board
+    currentTopicId: 'general'
 };
+
+// --- Mention State ---
+let mentionState = {
+    isActive: false,
+    query: '',
+    cursorPos: 0,
+    selectedIndex: 0,
+    filteredMembers: []
+};
+let pendingAttachments = [];
+
+
 
 const STORAGE_KEY = 'pbl2_student_manager_data';
 
@@ -32,8 +52,8 @@ let hotspotStartPos = { x: 0, y: 0 };
 
 const MEMBER_ROLES = [
     { title: 'プロジェクトリーダー', desc: 'プロジェクトの取りまとめ' },
-    { title: 'マーケティング', desc: '市場調査・競合などの現状分析、データの分析・可視化' },
-    { title: 'エンジニアリング', desc: '技術開発・仕様の決定、設計書の作成、モックアップ具体化' },
+    { title: 'マーケティング', desc: '市場調査・競合などの現状分析、データの収集・可視化' },
+    { title: 'エンジニアリング', desc: '技術開発・仕様の決定、設計書の作成、モックアップの具体化' },
     { title: 'プロモーション', desc: '製品サービスの情報発信、マーケティング資料のデザイン作成' }
 ];
 
@@ -48,26 +68,26 @@ const BASE_COURSES = [
 const DEFAULT_SCHEDULE = [
     { id: 1, date: '2026-04-15', label: 'ガイダンス（1回目・水1）' },
     { id: 2, date: '2026-04-22', label: '企業テーマ説明（2回目・水2）' },
-    { id: 3, date: '2026-04-29', label: 'グループ活動：分担決定（3回目・水3）' },
+    { id: 3, date: '2026-04-29', label: 'グループ活動（3回目・水3）' },
     { id: 4, date: '2026-05-13', label: 'グループ活動（4回目・水4）' },
     { id: 5, date: '2026-05-20', label: 'グループ活動（5回目・水5）' },
     { id: 6, date: '2026-05-27', label: 'グループ活動（6回目・水6）' },
-    { id: 7, date: '2026-06-03', label: 'グループ活動（7回目・水7）' },
-    { id: 8, date: '2026-06-17', label: 'グループ活動（9回目・水9）' },
-    { id: 9, date: '2026-06-24', label: 'グループ活動（10回目・水10）' },
-    { id: 10, date: '2026-07-01', label: 'グループ活動（11回目・水11）' },
-    { id: 11, date: '2026-07-08', label: 'グループ活動（12回目・水12）' },
-    { id: 12, date: '2026-07-15', label: 'グループ活動（13回目・水13）' },
-    { id: 13, date: '2026-07-22', label: '中間発表（夏休み前・14回目・水14）' },
+    { id: 7, date: '2026-06-03', label: 'グループ活動・中間発表（7回目・水7）' },
+    { id: 8, date: '2026-06-17', label: 'グループ活動（8回目・水8）' },
+    { id: 9, date: '2026-06-24', label: 'グループ活動（9回目・水9）' },
+    { id: 10, date: '2026-07-01', label: 'グループ活動（10回目・水10）' },
+    { id: 11, date: '2026-07-08', label: 'グループ活動（11回目・水11）' },
+    { id: 12, date: '2026-07-15', label: 'グループ活動（12回目・水12）' },
+    { id: 13, date: '2026-07-22', label: '中間発表（夏休み前の14回目・水14）' },
     { id: 14, date: '2026-09-16', label: '後期活動開始（15回目・水15）' },
-    { id: 15, date: '2026-09-30', label: '工学祭等調整（1回目・水1）' },
+    { id: 15, date: '2026-09-30', label: 'グループ活動（1回目・水1）' },
     { id: 16, date: '2026-10-07', label: 'グループ活動（2回目・水2）' },
     { id: 17, date: '2026-10-14', label: 'グループ活動（3回目・水3）' },
     { id: 18, date: '2026-10-21', label: 'グループ活動（4回目・水4）' },
     { id: 19, date: '2026-10-28', label: 'グループ活動（5回目・水5）' },
     { id: 20, date: '2026-11-04', label: 'グループ活動（6回目・水6）' },
     { id: 21, date: '2026-11-18', label: 'グループ活動（7回目・水7）' },
-    { id: 22, date: '2026-12-02', label: 'グループ活動（9回目・水9）' },
+    { id: 22, date: '2026-12-02', label: 'グループ活動（8回目・水8）' },
     { id: 23, date: '2026-12-09', label: 'グループ活動（10回目・水10）' },
     { id: 24, date: '2026-12-16', label: 'グループ活動（11回目・水11）' },
     { id: 25, date: '2026-12-23', label: 'グループ活動（12回目・水12）' },
@@ -88,15 +108,129 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    updateDisplayInfo();
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+        // Hide warning if save succeeds
+        const warn = document.getElementById('storage-quota-warning');
+        if (warn) warn.style.display = 'none';
+        updateDisplayInfo();
+        updateMessageNotification();
+        return true;
+    } catch (e) {
+        console.error('Save failed:', e);
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            showQuotaWarning();
+        }
+        return false;
+    }
+}
+
+function showQuotaWarning() {
+    // Check if we already show it
+    if (document.getElementById('storage-quota-warning')) {
+        document.getElementById('storage-quota-warning').style.display = 'block';
+        return;
+    }
+
+    const banner = document.createElement('div');
+    banner.id = 'storage-quota-warning';
+    banner.style = 'background:#ef4444; color:white; padding:10px 20px; text-align:center; font-weight:bold; position:fixed; top:0; left:0; right:0; z-index:9999; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer;';
+    banner.innerHTML = `
+        <i data-lucide="alert-triangle"></i>
+        <span>ブラウザの保存容量制限を超えました。最新の変更が保存されていません！</span>
+        <button onclick="this.parentElement.style.display='none'" style="background:rgba(0,0,0,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; font-size:12px; cursor:pointer;">閉じる</button>
+    `;
+    banner.onclick = () => {
+        switchView('data');
+        alert('対策：\n1. 不要な添付ファイル付きメッセージを削除する\n2. 「データ管理」から書き出し（バックアップ）を行い、一度リセットする');
+    };
+    document.body.prepend(banner);
+    if (window.lucide) lucide.createIcons();
+
+    alert('⚠️ 保存容量（localStorage）がいっぱいです！\n送信しようとした内容や変更が保存されませんでした。\n\n「データ管理」から「一括圧縮」を試すか、不要なデータを整理してください。');
+}
+
+/** Image Lightbox functionality */
+function openLightbox(src) {
+    let lightbox = document.getElementById('image-lightbox');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'image-lightbox';
+        lightbox.className = 'lightbox';
+        lightbox.innerHTML = `
+            <div class="lightbox-content">
+                <img id="lightbox-img" src="" alt="">
+                <button class="lightbox-close" onclick="closeLightbox()">×</button>
+            </div>
+        `;
+        lightbox.onclick = (e) => {
+            if (e.target.id === 'image-lightbox') closeLightbox();
+        };
+        document.body.appendChild(lightbox);
+    }
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Prevent scroll
+}
+
+window.closeLightbox = () => {
+    const lightbox = document.getElementById('image-lightbox');
+    if (lightbox) lightbox.style.display = 'none';
+    document.body.style.overflow = '';
+};
+
+/**
+ * Resizes and compresses an image (base64) to keep localStorage usage low.
+ * @param {string} dataUrl - The source image as DataURL.
+ * @param {number} maxWidth - Maximum width.
+ * @param {number} maxHeight - Maximum height.
+ * @param {number} quality - JPEG quality (0 to 1).
+ * @returns {Promise<string>} - The compressed DataURL.
+ */
+function compressImage(dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.25) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onerror = () => resolve(dataUrl); // Fallback to original
+        img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
+                }
+            } else {
+                // If already small, still re-encode to JPEG to potentially save space if it was a PNG
+                // but if quality loss is a concern, we could return dataUrl directly.
+                // Re-encoding is safer for storage.
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = dataUrl;
+    });
 }
 
 function updateDisplayInfo() {
-    document.getElementById('display-theme-name').textContent = state.themeName || '未設定のテーマ';
-    document.getElementById('gantt-theme-display').textContent = state.themeName || '未設定のテーマ';
+    document.getElementById('display-theme-name').textContent = state.themeName || '未設定のテーマ名';
+    document.getElementById('gantt-theme-display').textContent = state.themeName || '未設定のテーマ名';
 
-    const combinedGroupName = state.groupSymbol ? `グループ ${state.groupSymbol}${state.groupName ? ': ' + state.groupName : ''}` : (state.groupName || '未設定のグループ');
+    const combinedGroupName = state.groupSymbol ? `グループ${state.groupSymbol}${state.groupName ? ': ' + state.groupName : ''}` : (state.groupName || '未設定のグループ名');
     document.getElementById('display-group-name').textContent = combinedGroupName;
     document.getElementById('gantt-group-display').textContent = combinedGroupName;
 
@@ -117,7 +251,7 @@ function updateDisplayInfo() {
             logoImg.style.display = 'none';
             logoPlaceholder.style.display = 'flex';
 
-            // Symbol Logic: "未設定の場合は単色塗りでグループ記号"
+            // Symbol Logic: "未設定の場合単色塗りでグループ記号"
             if (state.groupSymbol) {
                 logoPlaceholder.style.background = '#4f46e5'; // Primary color (solid)
                 logoPlaceholder.innerText = state.groupSymbol;
@@ -153,20 +287,24 @@ function updateDisplayInfo() {
         .filter(m => m.emailLocal)
         .map(m => `${m.emailLocal}@st.omu.ac.jp`);
 
-    if (memberEmails.length > 0) {
-        state.teamsUrl = `https://teams.microsoft.com/l/chat/0/0?users=${memberEmails.join(',')}`;
-        teamsBtn.style.display = 'flex';
-        teamsBtn.title = `全員 (${memberEmails.length}名) とチャット`;
-        teamsBtn.onclick = () => window.open(state.teamsUrl, '_blank');
-    } else {
-        state.teamsUrl = '';
-        teamsBtn.style.display = 'none';
+    if (teamsBtn) {
+        if (memberEmails.length > 0) {
+            state.teamsUrl = `https://teams.microsoft.com/l/chat/0/0?users=${memberEmails.join(',')}`;
+            teamsBtn.style.display = 'flex';
+            teamsBtn.title = `全員 (${memberEmails.length}名) とチャット`;
+            teamsBtn.onclick = () => window.open(state.teamsUrl, '_blank');
+        } else {
+            state.teamsUrl = '';
+            teamsBtn.style.display = 'none';
+        }
     }
 
-    // Reports progress
-    const completedReports = Object.keys(state.reports).length;
+    // Reports progress (only submitted work reports)
+    const completedReports = Object.entries(state.reports).filter(([key, r]) => {
+        return !isNaN(key) && r.submitted; // Only count numbered work reports (sessions)
+    }).length;
     document.getElementById('completed-reports-count').textContent = completedReports;
-    const progressPercent = (completedReports / 25) * 100;
+    const progressPercent = (completedReports / 26) * 100; // There are 26 possible reports (sessions 3-28)
     document.getElementById('reports-progress').style.width = `${progressPercent}%`;
 
     // Tasks progress
@@ -176,74 +314,50 @@ function updateDisplayInfo() {
     document.getElementById('task-completion-rate').textContent = taskRate;
     document.getElementById('tasks-progress').style.width = `${taskRate}%`;
 
-    // Artifacts progress
+    // Artifacts progress (only final submitted)
     const artifactKeys = ['poster', 'leaflet', 'pamphlet_25', 'slides_25'];
-    const completedArtifacts = artifactKeys.filter(k => state.artifacts[k]).length;
+    const completedArtifacts = artifactKeys.filter(k => {
+        return state.artifactSettings && state.artifactSettings[k] && state.artifactSettings[k].submitted;
+    }).length;
     const artifactDisplay = document.getElementById('completed-artifacts-count');
     if (artifactDisplay) {
         artifactDisplay.textContent = completedArtifacts;
         const artPercent = (completedArtifacts / artifactKeys.length) * 100;
         document.getElementById('artifacts-progress').style.width = `${artPercent}%`;
     }
-    renderArtifactShortcuts();
+
+    // --- Storage Usage Update ---
+    updateStorageUsage();
 }
 
-/** Render artifact shortcut cards on the dashboard */
-function renderArtifactShortcuts() {
-    const container = document.getElementById('artifact-shortcut-cards');
-    if (!container) return;
+function updateStorageUsage() {
+    const bar = document.getElementById('storage-usage-bar');
+    const text = document.getElementById('storage-usage-text');
+    if (!bar || !text) return;
 
-    const ARTIFACT_DEFS = [
-        { key: 'poster', name: '事業企画ポスター', icon: 'image', color: '#4f46e5' },
-        { key: 'leaflet', name: '事業企画リーフレット', icon: 'file-text', color: '#0ea5e9' },
-        { key: 'pamphlet_25', name: '製品・サービスパンフレット', icon: 'book-open', color: '#10b981' },
-        { key: 'slides_25', name: '最終プレゼンスライド', icon: 'presentation', color: '#f59e0b' },
-    ];
+    try {
+        const json = JSON.stringify(state);
+        const charCount = json.length;
+        const quota = 5 * 1024 * 1024; // 5M characters is a standard limit for PC browsers
 
-    container.innerHTML = '';
-    ARTIFACT_DEFS.forEach(def => {
-        const settings = state.artifactSettings && state.artifactSettings[def.key];
-        const slideCount = settings && settings.slides ? settings.slides.length : 0;
-        const isSubmitted = state.artifacts[def.key];
+        let percent = Math.min(100, Math.round((charCount / quota) * 100));
 
-        const card = document.createElement('div');
-        card.style.cssText = `
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-left: 3px solid ${def.color};
-            border-radius: 10px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        `;
-        card.onmouseenter = () => card.style.background = 'var(--bg-hover)';
-        card.onmouseleave = () => card.style.background = 'var(--bg-card)';
-        card.onclick = () => openArtifactModal(def.key, def.name);
+        bar.style.width = `${percent}%`;
+        text.textContent = `${percent}%`;
 
-        const statusColor = isSubmitted ? 'var(--success)' : 'var(--text-dim)';
-        const statusLabel = isSubmitted ? '登録済み' : '未登録';
+        // Change color based on usage
+        if (percent > 90) bar.style.background = '#ef4444'; // Red
+        else if (percent > 70) bar.style.background = '#f59e0b'; // Amber
+        else bar.style.background = 'var(--primary)'; // Normal
 
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="width:36px;height:36px;border-radius:8px;background:${def.color}22;display:flex;align-items:center;justify-content:center;">
-                    <i data-lucide="${def.icon}" style="width:18px;height:18px;color:${def.color};"></i>
-                </div>
-                <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${isSubmitted ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)'};color:${statusColor};font-weight:600;">${statusLabel}</span>
-            </div>
-            <div style="font-size:0.85rem;font-weight:600;color:var(--text-main);line-height:1.3;">${def.name}</div>
-            <div style="font-size:11px;color:var(--text-dim);">
-                ${slideCount > 0 ? `スライド ${slideCount} 枚登録済み` : 'スライドPDF未登録'}
-            </div>
-            <div style="font-size:10px;color:${def.color};margin-top:auto;display:flex;align-items:center;gap:4px;">
-                <i data-lucide="settings" style="width:11px;height:11px;"></i> 詳細設定を開く
-            </div>
-        `;
-        container.appendChild(card);
-    });
-    if (window.lucide) lucide.createIcons();
+        const container = document.getElementById('storage-usage-container');
+        if (container) {
+            const sizeMB = (charCount / (1024 * 1024)).toFixed(1);
+            container.title = `現在の使用量: 約${sizeMB}M文字 / ブラウザ制限: 約5M文字`;
+        }
+    } catch (e) {
+        console.error('Usage calculation failed:', e);
+    }
 }
 
 // --- View Controller ---
@@ -285,9 +399,9 @@ function initEventListeners() {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (rev) => {
-                    // Simple DataURL save. For larger apps, resize on client side.
-                    state.groupLogo = rev.target.result;
+                reader.onload = async (rev) => {
+                    // Compress logo image
+                    state.groupLogo = await compressImage(rev.target.result, 600, 600, 0.8);
                     saveState();
                 };
                 reader.readAsDataURL(file);
@@ -314,9 +428,6 @@ function initEventListeners() {
     // Members
     document.getElementById('btn-add-member').addEventListener('click', addMemberRow);
 
-    // Task Modal
-    const btnAddTask = document.getElementById('btn-add-task');
-    if (btnAddTask) btnAddTask.addEventListener('click', () => openTaskModal());
     document.getElementById('btn-close-modal').addEventListener('click', () => closeModal());
     document.getElementById('btn-save-task').addEventListener('click', saveTask);
 
@@ -333,9 +444,13 @@ function initEventListeners() {
 
     // Artifact Detail Modal
     document.getElementById('btn-close-artifact-modal').addEventListener('click', closeArtifactModal);
-    document.getElementById('btn-save-artifact-data').addEventListener('click', saveArtifactData);
+    document.getElementById('btn-draft-artifact-data').addEventListener('click', saveArtifactData);
+    document.getElementById('btn-submit-artifact-data').addEventListener('click', submitArtifactData);
+    document.getElementById('artifact-unlock-btn').addEventListener('click', unlockArtifactData);
     document.getElementById('btn-add-artifact-slide').addEventListener('click', () => document.getElementById('artifact-slide-input').click());
     document.getElementById('artifact-slide-input').addEventListener('change', handleArtifactSlideUpload);
+    document.getElementById('btn-clear-all-slides').addEventListener('click', clearAllArtifactSlides);
+    document.getElementById('btn-compress-all-images').addEventListener('click', compressAllExistingImages);
     initHotspotLogic();
     initArtifactRichEditor();
     document.getElementById('btn-export-artifact-script').addEventListener('click', exportArtifactScript);
@@ -360,6 +475,28 @@ function initEventListeners() {
         saveState();
         alert('データを保存しました');
     });
+
+    // Message Board
+    document.getElementById('btn-send-message').addEventListener('click', sendMessage);
+    document.getElementById('message-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Mention Input Handler
+    document.getElementById('message-input').addEventListener('input', handleMentionInput);
+    document.getElementById('message-input').addEventListener('keydown', handleMentionKeydown);
+
+    // Message Topics
+    document.getElementById('btn-add-topic').addEventListener('click', createNewTopic);
+
+    // Attachments
+    document.getElementById('btn-attach-file').addEventListener('click', () => {
+        document.getElementById('message-file-input').click();
+    });
+    document.getElementById('message-file-input').addEventListener('change', handleFileSelect);
 }
 
 function switchView(viewId) {
@@ -377,7 +514,9 @@ function switchView(viewId) {
         reports: '報告書・レポート作成',
         members: 'メンバー・テーマ設定',
         data: 'データ管理',
-        mindmap: '思考整理 (Mind Map)'
+        mindmap: '思考整理 (Mind Map)',
+        messages: 'メンバー伝言板',
+        deliverables: '成果物フォルダ'
     };
     document.getElementById('view-title').textContent = titles[viewId] || 'PBL2 Manager';
 
@@ -391,12 +530,27 @@ function switchView(viewId) {
         }
     }
     if (viewId === 'gantt') renderGantt();
-    if (viewId === 'members') renderMemberList();
+    if (viewId === 'members') { renderMemberList(); renderRoleGuide(); }
+    if (viewId === 'deliverables') renderDeliverables('root');
+
     if (viewId === 'reports') {
         const currentTab = document.querySelector('.report-tab.active').getAttribute('data-report');
         if (currentTab === 'work-report') loadWorkReport();
         else if (currentTab === 'analysis-report') loadAnalysisReport();
         else if (currentTab === 'contribution') loadContributionSurvey();
+    }
+    if (viewId === 'messages') {
+        state.lastMessagesCheckTime = Date.now();
+        // Maybe default to 'general' if currentTopicId is invalid
+        if (!state.currentTopicId) state.currentTopicId = 'general';
+        if (!state.topics) state.topics = [{ id: 'general', name: '全般', createdBy: 'system', timestamp: 0 }];
+
+        markMessagesAsRead();
+        saveState();
+        updateMessageNotification();
+        renderTopics();
+        renderMessages(); // This will render messages for currentTopicId
+        scrollToBottomMessages();
     }
 }
 
@@ -454,7 +608,7 @@ function renderMemberList() {
         const deleteBtn = hasImage ? `<button onclick="removeAvatarImage(${index}); event.stopPropagation();" style="position:absolute; top:-2px; right:-2px; width:18px; height:18px; border-radius:50%; background:#ef4444; color:white; border:2px solid var(--bg-card); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; padding:0;"><i data-lucide="x" style="width:10px;height:10px;"></i></button>` : '';
 
         card.innerHTML = `
-            <input type="file" id="avatar-input-${index}" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
+            <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
             <div class="member-card-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div style="position:relative;">
@@ -486,7 +640,7 @@ function renderMemberList() {
                             color: ${member.isSelf ? 'white' : 'var(--text-dim)'};
                             transition: all 0.2s;
                         ">
-                            ${member.isSelf ? '✓ 自分' : 'メンバー'}
+                            ${member.isSelf ? '★自分' : 'メンバー'}
                         </button>
                     </div>
                 </div>
@@ -504,32 +658,32 @@ function renderMemberList() {
             <div class="member-card-body">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>姓</label>
-                        <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" placeholder="姓">
+                        <label for="member-lastName-${index}">姓</label>
+                        <input id="member-lastName-${index}" name="lastName" type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" placeholder="姓">
                     </div>
                     <div class="form-group">
-                        <label>名</label>
-                        <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" placeholder="名">
+                        <label for="member-firstName-${index}">名</label>
+                        <input id="member-firstName-${index}" name="firstName" type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" placeholder="名">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>メールアドレス</label>
+                    <label for="member-email-${index}">メールアドレス</label>
                     <div class="email-input-group">
-                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" placeholder="学籍番号など">
+                        <input id="member-email-${index}" name="emailLocal" type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" placeholder="学籍番号など">
                         <div class="email-suffix">@st.omu.ac.jp</div>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>基盤コース</label>
-                        <select onchange="updateMember(${index}, 'course', this.value)">
+                        <label for="member-course-${index}">基盤コース</label>
+                        <select id="member-course-${index}" name="course" onchange="updateMember(${index}, 'course', this.value)">
                             <option value="">選択してください</option>
                             ${courseOptions}
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>担当役割</label>
-                        <select onchange="updateMember(${index}, 'role', this.value)">
+                        <label for="member-role-${index}">担当役割</label>
+                        <select id="member-role-${index}" name="role" onchange="updateMember(${index}, 'role', this.value)">
                             <option value="">選択してください</option>
                             ${roleOptions}
                         </select>
@@ -567,8 +721,8 @@ function setAvatarImage(index, input) {
     const file = input.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = e => {
-        state.members[index].avatarImage = e.target.result;
+    reader.onload = async (e) => {
+        state.members[index].avatarImage = await compressImage(e.target.result, 300, 300, 0.4);
         saveState();
         renderMemberList();
     };
@@ -583,7 +737,16 @@ function clearAvatarImage(index) {
 }
 
 function addMemberRow() {
-    state.members.push({ lastName: '', firstName: '', email: '', course: '', role: '' });
+    state.members.push({
+        id: generateId(),
+        lastName: '',
+        firstName: '',
+        emailLocal: '',
+        course: '',
+        role: '',
+        isSelf: false,
+        updatedAt: new Date().toISOString()
+    });
     renderMemberList();
     renderRoleGuide();
     saveState();
@@ -628,6 +791,7 @@ function renderRoleGuide() {
 
 window.updateMember = (index, key, value) => {
     state.members[index][key] = value;
+    state.members[index].updatedAt = new Date().toISOString();
     saveState();
     renderMemberList();
     updateDisplayInfo();
@@ -729,7 +893,7 @@ function renderGantt() {
             else if (event.label.includes('中間発表')) shortLabel = '中間発表';
             else if (event.label.includes('最終発表')) shortLabel = '最終発表';
             else if (event.label.includes('予備日')) shortLabel = '予備日';
-            else if (event.label.includes('分担決定')) shortLabel = '分担決定';
+            else if (event.label.includes('テーマ決定')) shortLabel = 'テーマ決定';
 
             // Explicit logic for specified sessions
             if (i === 26 || i === 27) shortLabel = '最終発表';
@@ -803,7 +967,7 @@ function renderGantt() {
         ganttTable.appendChild(headerLabel);
 
         const headerGrid = document.createElement('div');
-        headerGrid.className = 'gantt-grid category-header-grid';
+        headerGrid.className = 'gantt-grid bg-white/5';
         for (let i = 1; i <= 28; i++) {
             const cell = document.createElement('div');
             cell.className = 'gantt-cell';
@@ -811,20 +975,16 @@ function renderGantt() {
             if (i === 12) cell.classList.add('exam-border-final');
             if (i === 7 || i === 20) cell.classList.add('exam-border-mid');
             if (i === 27) cell.classList.add('exam-border-final');
-            if (i === currentIteration) cell.classList.add('is-today');
             headerGrid.appendChild(cell);
         }
         ganttTable.appendChild(headerGrid);
 
-        // Render Items in this Group (Deliverables)
-        group.items.forEach(it => {
+        // Render Pre-defined Deliverables for this category
+        group.items.forEach(item => {
             const labelCell = document.createElement('div');
-            labelCell.className = `gantt-label deliverable-label label-${group.id}`;
-            labelCell.style.color = group.color;
-            labelCell.innerHTML = `
-                <i data-lucide="file-check-2" style="width:14px; height:14px; margin-right:8px; flex-shrink:0;"></i>
-                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${it.name}</span>
-            `;
+            labelCell.className = 'gantt-label deliverable-label';
+            labelCell.style.borderLeftColor = group.color;
+            labelCell.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.name}">${item.name}</span>`;
             ganttTable.appendChild(labelCell);
 
             const gridCell = document.createElement('div');
@@ -840,33 +1000,66 @@ function renderGantt() {
                 if (i === currentIteration) cell.classList.add('is-today');
 
                 // Logic for different item types
-                if (it.type === 'report') {
+                if (item.type === 'report') {
                     const iter = i; // iter = actual session number (matches DEFAULT_SCHEDULE id)
                     if (iter >= 3) { // Reports start from session 3 (sessions 1-2 have no reports)
-                        const hasReport = state.reports[iter] && state.reports[iter].content;
+                        const report = state.reports[iter];
+                        const isSubmitted = report && report.submitted;
+                        const hasDraft = report && report.content && !isSubmitted;
+
                         const marker = document.createElement('div');
-                        marker.className = `report-marker ${hasReport ? 'submitted' : 'pending'} category-effort`;
-                        marker.title = `第${iter}回 作業報告書: ${hasReport ? '提出済' : '未提出'}\nクリックで編集へ`;
+                        marker.className = `report-marker ${isSubmitted ? 'submitted' : (hasDraft ? 'draft' : 'pending')} category-effort`;
+
+                        if (isSubmitted) {
+                            marker.innerHTML = '<i data-lucide="check"></i>';
+                        } else if (hasDraft) {
+                            marker.innerHTML = '<span class="dot-icon">●</span>';
+                        }
+
+                        marker.title = `第${iter}回 作業報告書: ${isSubmitted ? '提出済' : (hasDraft ? '下書き保存中' : '未作成')}\nクリックで編集へ`;
                         marker.onclick = () => openWorkReport(iter);
                         cell.appendChild(marker);
                     }
                 } else {
-                    const isTarget = it.target === i || (it.targets && it.targets.includes(i));
+                    const isTarget = item.target === i || (item.targets && item.targets.includes(i));
                     if (isTarget) {
-                        const itKey = it.targets ? `${it.key}_${i}` : it.key;
+                        const itKey = item.targets ? `${item.key}_${i}` : item.key;
                         let isSubmitted = false;
-                        if (it.type === 'toggle') isSubmitted = state.artifacts[itKey];
-                        else isSubmitted = !!(state.reports[itKey] && state.reports[itKey].content);
+                        let hasDraft = false;
+
+                        if (item.type === 'toggle') {
+                            const settings = state.artifactSettings && state.artifactSettings[item.key];
+                            // Check if it's one of the complex artifacts
+                            if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
+                                isSubmitted = settings && settings.submitted;
+                                hasDraft = !isSubmitted && settings && settings.slides && settings.slides.length > 0;
+                            } else {
+                                // Simple toggle
+                                isSubmitted = state.artifacts[itKey];
+                                hasDraft = false;
+                            }
+                        } else {
+                            const report = state.reports[itKey];
+                            isSubmitted = report && report.submitted;
+                            hasDraft = !isSubmitted && report && report.content;
+                        }
 
                         const marker = document.createElement('div');
                         const catClass = group.id === 'effort' ? 'category-effort' : 'category-presentation';
-                        marker.className = `report-marker ${isSubmitted ? 'submitted' : 'pending'} ${catClass}`;
-                        marker.title = `${it.name} (${i}回目): ${isSubmitted ? '提出済' : '未提出'}\nクリックで編集・登録`;
+                        marker.className = `report-marker ${isSubmitted ? 'submitted' : (hasDraft ? 'draft' : 'pending')} ${catClass}`;
+
+                        if (isSubmitted) {
+                            marker.innerHTML = '<i data-lucide="check"></i>';
+                        } else if (hasDraft) {
+                            marker.innerHTML = '<span class="dot-icon">●</span>';
+                        }
+
+                        marker.title = `${item.name} (${i}回目): ${isSubmitted ? '提出済' : (hasDraft ? '作成中(下書きあり)' : '未着手')}\nクリックで編集・登録`;
                         marker.onclick = () => {
-                            if (it.type === 'toggle') {
-                                if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(it.key)) {
+                            if (item.type === 'toggle') {
+                                if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
                                     // Special interactive modal for detailed deliverables
-                                    openArtifactModal(itKey, it.name);
+                                    openArtifactModal(itKey, item.name);
                                 } else {
                                     // Simple toggle for others
                                     state.artifacts[itKey] = !state.artifacts[itKey];
@@ -875,11 +1068,11 @@ function renderGantt() {
                                 }
                             } else {
                                 switchView('reports');
-                                if (it.type === 'analysis') switchTab('analysis-report');
+                                if (item.type === 'analysis') switchTab('analysis-report');
                                 else {
                                     switchTab('contribution');
                                     currentContributionKey = itKey;
-                                    document.getElementById('contribution-label').textContent = `${it.name} (${i}回目) の内容`;
+                                    document.getElementById('contribution-label').textContent = `${item.name} (${i}回目) の内容`;
                                     loadContributionSurvey();
                                 }
                             }
@@ -904,11 +1097,13 @@ function renderGantt() {
             labelCell.className = `gantt-label user-task-label label-${group.id}`;
             labelCell.style.color = group.color;
             labelCell.innerHTML = `
-                <span class="task-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${task.name}">${task.name}</span>
-                <button class="btn-delete-task" title="削除" onclick="event.stopPropagation(); deleteTask(${taskIndex});">
-                    <i data-lucide="x" style="width:12px; height:12px;"></i>
-                </button>
-            `;
+                            <span class="task-name-text" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${task.name}">${task.name}</span>
+                                <button class="btn-delete-task" title="削除" onclick="event.stopPropagation(); deleteTask(${taskIndex});">
+                                    <i data-lucide="x" style="width:12px; height:12px;"></i>
+                                </button>
+                        `;
+            labelCell.onclick = () => openTaskModal(taskIndex);
+            labelCell.ondblclick = () => openTaskModal(taskIndex);
             ganttTable.appendChild(labelCell);
 
             const gridCell = document.createElement('div');
@@ -944,7 +1139,7 @@ function renderGantt() {
 
             const AVATAR_COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
             const makeAvatarHtml = (fullName, memberIdx) => {
-                const m = state.members.find(mb => `${mb.lastName || ''} ${mb.firstName || ''}`.trim() === fullName)
+                const m = state.members.find(mb => `${mb.lastName || ''} ${mb.firstName || ''} `.trim() === fullName)
                     || state.members[memberIdx];
                 if (!m) return `<span style="font-size:10px;">${fullName.split(' ')[0]}</span>`;
                 const idx = state.members.indexOf(m);
@@ -954,13 +1149,13 @@ function renderGantt() {
                     ? `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`
                     : `<span style="font-size:9px;font-weight:700;color:white;line-height:1;">${initial}</span>`;
                 return `<div title="${fullName}" style="
-                    width:22px;height:22px;border-radius:50%;
-                    background:${m.avatarImage ? 'transparent' : color};
-                    display:inline-flex;align-items:center;justify-content:center;
-                    border:2px solid rgba(255,255,255,0.3);
-                    overflow:hidden;flex-shrink:0;margin-left:-6px;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.4);
-                ">${inner}</div>`;
+                        width: 22px; height: 22px; border-radius: 50%;
+                        background:${m.avatarImage ? 'transparent' : color};
+                        display: inline-flex; align-items: center; justify-content: center;
+                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        overflow: hidden; flex-shrink: 0; margin-left: -6px;
+                        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+                        ">${inner}</div>`;
             };
 
             const assigneeList = Array.isArray(task.assignees) ? task.assignees : (task.assignee ? [task.assignee] : []);
@@ -977,6 +1172,7 @@ function renderGantt() {
             bar.style.paddingLeft = '6px';
 
             bar.onclick = () => openTaskModal(taskIndex);
+            bar.ondblclick = () => openTaskModal(taskIndex);
 
             gridCell.appendChild(bar);
             ganttTable.appendChild(gridCell);
@@ -1011,7 +1207,7 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
         const fullName = `${m.lastName || ''} ${m.firstName || ''}`.trim();
         if (fullName) {
             const roleInfo = MEMBER_ROLES.find(r => r.title === m.role);
-            const roleLabel = roleInfo ? roleInfo.title : (m.role || '役割未定');
+            const roleLabel = roleInfo ? roleInfo.title : (m.role || '役割未設定');
 
             const item = document.createElement('div');
             item.className = 'checkbox-item';
@@ -1019,9 +1215,9 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
             const isChecked = currentAssignees.includes(fullName);
 
             item.innerHTML = `
-                <input type="checkbox" id="assignee-${idx}" value="${fullName}" data-role="${m.role || ''}" ${isChecked ? 'checked' : ''}>
+                <input type="checkbox" id="assignee-${idx}" name="assignee" value="${fullName}" data-role="${m.role || ''}" ${isChecked ? 'checked' : ''}>
                 <label for="assignee-${idx}">${m.lastName || '未設定'} <span style="font-size:11px; color:var(--text-dim);">(${roleLabel})</span></label>
-            `;
+                    `;
             assigneesContainer.appendChild(item);
         }
     });
@@ -1046,18 +1242,14 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
             setTimeout(() => {
                 const container = document.getElementById('task-flow-editor');
                 if (container) {
-                    console.log('openTaskModal: init + loadData starting');
                     MindMapModule.init(container);
                     // Use task name if already entered, otherwise a placeholder
                     const taskName = nameInput.value.trim() || 'タスク名を入力してください';
                     MindMapModule.loadData(null, taskName);
                     // Auto-add first child node (as if user pressed Add Child)
                     setTimeout(() => {
-                        console.log('openTaskModal: addChildToRoot');
                         MindMapModule.addChildToRoot();
                     }, 400);
-                } else {
-                    console.warn('Task modal editor container not found yet.');
                 }
             }, 250);
         }
@@ -1085,12 +1277,12 @@ function openTaskModal(index = -1, defaultCategory = 'effort') {
                             // Map names back to indices
                             assigneeIndices = currentTask.assignees.map(name => {
                                 return state.members.findIndex(m =>
-                                    `${m.lastName || ''} ${m.firstName || ''}`.trim() === name
+                                    `${m.lastName || ''} ${m.firstName || ''} `.trim() === name
                                 );
                             }).filter(i => i !== -1);
                         } else if (currentTask.assignee) {
                             const idx = state.members.findIndex(m =>
-                                `${m.lastName || ''} ${m.firstName || ''}`.trim() === currentTask.assignee
+                                `${m.lastName || ''} ${m.firstName || ''} `.trim() === currentTask.assignee
                             );
                             if (idx !== -1) assigneeIndices.push(idx);
                         }
@@ -1147,7 +1339,16 @@ function generateId() {
 }
 
 function migrateData(data) {
+    if (!data) return data;
     const now = new Date().toISOString();
+
+    // Ensure state object structure
+    if (!data.tasks) data.tasks = [];
+    if (!data.members) data.members = [];
+    if (!data.artifacts) data.artifacts = {};
+    if (!data.reports) data.reports = {};
+    if (!data.artifactSettings) data.artifactSettings = {};
+
     // Tasks
     if (Array.isArray(data.tasks)) {
         data.tasks.forEach(t => {
@@ -1169,10 +1370,6 @@ function migrateData(data) {
                 data.reports[key].updatedAt = now;
             }
         });
-    }
-    // Analysis Report
-    if (data.analysisReport) {
-        if (!data.analysisReport.updatedAt) data.analysisReport.updatedAt = now;
     }
     return data;
 }
@@ -1277,8 +1474,9 @@ function openArtifactModal(key, name) {
     // Initialize data if not exists
     if (!state.artifactSettings) state.artifactSettings = {};
     if (!state.artifactSettings[key]) {
-        state.artifactSettings[key] = { slides: [] };
+        state.artifactSettings[key] = { slides: [], submitted: false };
     }
+    const data = state.artifactSettings[key];
 
     renderArtifactSlides();
     renderArtifactMemberList();
@@ -1288,9 +1486,47 @@ function openArtifactModal(key, name) {
     document.getElementById('presenters-section').style.display = 'none';
     document.getElementById('viewer-placeholder').style.display = 'block';
 
+    // Apply Locking
+    applyArtifactLockState(data.submitted, data.submittedAt);
+
     document.getElementById('modal-artifact-detail').classList.add('active');
     renderContributorChart();
     if (window.lucide) lucide.createIcons();
+}
+
+/** Apply or remove the locked state on the artifact modal */
+function applyArtifactLockState(isLocked, submittedAt) {
+    const modal = document.getElementById('modal-artifact-detail');
+    const banner = document.getElementById('artifact-submitted-banner');
+    const atEl = document.getElementById('artifact-submitted-at');
+    const footerBtns = document.getElementById('artifact-modal-footer-btns');
+
+    // Controls to disable
+    const controls = [
+        document.getElementById('btn-add-artifact-slide'),
+        document.getElementById('btn-draft-artifact-data'),
+        document.getElementById('btn-submit-artifact-data'),
+        document.getElementById('btn-clear-hotspots'),
+        document.getElementById('btn-clear-all-hotspots')
+    ];
+
+    if (isLocked) {
+        modal.classList.add('locked');
+        banner.style.display = 'flex';
+        if (atEl && submittedAt) {
+            atEl.textContent = `提出日時: ${new Date(submittedAt).toLocaleString('ja-JP')}`;
+        }
+        controls.forEach(c => { if (c) c.style.display = 'none'; });
+        // Enable Rich Editor readonly if possible, or just overlay
+        document.getElementById('artifact-presentation-script').contentEditable = "false";
+    } else {
+        modal.classList.remove('locked');
+        banner.style.display = 'none';
+        controls.forEach(c => { if (c) c.style.display = 'flex'; });
+        // Restore buttons that were 'flex' originally
+        document.getElementById('btn-add-artifact-slide').style.display = 'block';
+        document.getElementById('artifact-presentation-script').contentEditable = "true";
+    }
 }
 
 /** Close the artifact modal */
@@ -1300,8 +1536,10 @@ function closeArtifactModal() {
 
 /** Clear all presenter assignments for the current slide */
 function clearSlidePresenters() {
-    if (currentSlideIndex === -1) { alert('スライドを選択してください。'); return; }
-    if (!confirm('このスライドの発表者を全員クリアしますか？')) return;
+    if (currentSlideIndex === -1) {
+        alert('スライドを選択してください。'); return;
+    }
+    if (!confirm('このスライドの発表担当者を全員クリアしますか？')) return;
     const slide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
     slide.presenters = [];
     renderArtifactPresenterChecks();
@@ -1311,7 +1549,9 @@ function clearSlidePresenters() {
 
 /** Clear all hotspot assignments for the current slide */
 function clearSlideHotspots() {
-    if (currentSlideIndex === -1) { alert('スライドを選択してください。'); return; }
+    if (currentSlideIndex === -1) {
+        alert('スライドを選択してください。'); return;
+    }
     if (!confirm('このスライドの作成担当者（矩形）を全てクリアしますか？')) return;
     const slide = state.artifactSettings[currentArtifactKey].slides[currentSlideIndex];
     slide.hotspots = [];
@@ -1328,11 +1568,35 @@ function clearAllSlidesAssignments() {
         slide.hotspots = [];
         slide.presenters = [];
     });
-    // Refresh current slide view
-    renderHotspots();
     renderArtifactPresenterChecks();
     renderArtifactSlides();
     renderContributorChart();
+    renderHotspots();
+}
+
+/** Remove all slides from the current artifact */
+function clearAllArtifactSlides() {
+    if (!state.artifactSettings[currentArtifactKey] || !state.artifactSettings[currentArtifactKey].slides) return;
+    if (state.artifactSettings[currentArtifactKey].slides.length === 0) return;
+
+    if (!confirm('この成果物のすべてのスライドと担当設定を完全に削除しますか？\n(削除後、元に戻すことはできません)')) return;
+
+    state.artifactSettings[currentArtifactKey].slides = [];
+    currentSlideIndex = -1;
+
+    saveState();
+    renderArtifactSlides();
+    renderContributorChart();
+
+    // Reset viewer
+    const img = document.getElementById('artifact-current-image');
+    const container = document.getElementById('hotspot-container');
+    const placeholder = document.getElementById('viewer-placeholder');
+    if (img) img.src = '';
+    if (container) container.style.display = 'none';
+    const presSection = document.getElementById('presenters-section');
+    if (presSection) presSection.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'block';
 }
 
 /** Shared: build a small avatar circle for a member by index */
@@ -1366,9 +1630,10 @@ function renderArtifactMemberList() {
 
         const label = document.createElement('label');
         label.className = 'wr-author-item';
+        label.htmlFor = 'artifact-member-' + i;
         label.style.fontSize = '0.8rem';
         label.innerHTML = `
-            <input type="radio" name="artifact-member" value="${i}" ${i === 0 ? 'checked' : ''}>
+            <input type="radio" id="artifact-member-${i}" name="artifact-member" value="${i}" ${i === 0 ? 'checked' : ''}>
             <span>${m.lastName || 'メンバー'}</span>
         `;
         container.appendChild(label);
@@ -1392,9 +1657,10 @@ async function handleArtifactSlideUpload(e) {
         } else {
             await new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = async (ev) => {
+                    const compressed = await compressImage(ev.target.result, 800, 800, 0.3);
                     state.artifactSettings[key].slides.push({
-                        src: ev.target.result,
+                        src: compressed,
                         hotspots: []
                     });
                     resolve();
@@ -1416,7 +1682,7 @@ async function processPdfFile(file, artifactKey) {
 
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better quality
+            const viewport = page.getViewport({ scale: 1.2 }); // More aggressive compression
 
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -1426,7 +1692,7 @@ async function processPdfFile(file, artifactKey) {
             await page.render({ canvasContext: context, viewport: viewport }).promise;
 
             state.artifactSettings[artifactKey].slides.push({
-                src: canvas.toDataURL('image/jpeg', 0.8),
+                src: canvas.toDataURL('image/jpeg', 0.3), // High JPEG compression
                 hotspots: []
             });
         }
@@ -1470,7 +1736,7 @@ function exportArtifactScript() {
         // Hotspot labels
         const hotspotItems = (slide.hotspots || []).map(hs => {
             const author = state.members[hs.authorIdx];
-            const aName = author ? (author.lastName + (author.firstName || '')) : '担当';
+            const aName = author ? (author.lastName + (author.firstName || '')) : '不明';
             const label = hs.text ? `「${hs.text}」` : '';
             return `<li>${aName}${label}</li>`;
         }).join('');
@@ -1479,10 +1745,10 @@ function exportArtifactScript() {
         <div class="slide-page">
             <div class="slide-header">
                 <span class="slide-num">スライド ${num}</span>
-                ${presenterNames ? `<span class="presenter-names">発表担当: ${presenterNames}</span>` : ''}
+                ${presenterNames ? `<span class="presenter-names">発表者: ${presenterNames}</span>` : ''}
             </div>
             <div class="slide-image-wrap">
-                <img src="${slide.src}" alt="スライド${num}">
+                <img src="${slide.src}" alt="スライド ${num}">
                 ${hotspotItems ? `<ul class="hotspot-list">${hotspotItems}</ul>` : ''}
             </div>
             <div class="script-area">
@@ -1622,7 +1888,7 @@ function renderContributorChart() {
     const COLORS = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
     const slides = state.artifactSettings[currentArtifactKey].slides || [];
 
-    // ── 発表者割合（スライドの出演回数ベース） ──
+    // ── 発表老E合（スライドE出演回数ベEスEE──
     const presMap = {};
     slides.forEach(slide => {
         (slide.presenters || []).forEach(idx => {
@@ -1631,7 +1897,7 @@ function renderContributorChart() {
     });
     const presTotal = Object.values(presMap).reduce((s, v) => s + v, 0);
 
-    // ── 作成者割合（ホットスポット面積ベース） ──
+    // ── 作成担当割合（ホットスポット面積ベース）──
     const areaMap = {};
     slides.forEach(slide => {
         (slide.hotspots || []).forEach(hs => {
@@ -1761,8 +2027,9 @@ function renderArtifactPresenterChecks() {
         const isChecked = slide.presenters.includes(i);
         const label = document.createElement('label');
         label.className = 'wr-author-item';
+        label.htmlFor = 'artifact-presenter-' + i;
         label.innerHTML = `
-            <input type="checkbox" ${isChecked ? 'checked' : ''}>
+            <input type="checkbox" id="artifact-presenter-${i}" name="artifactPresenter" ${isChecked ? 'checked' : ''}>
             <span>${fullName}</span>
         `;
         const input = label.querySelector('input');
@@ -1781,7 +2048,7 @@ function renderArtifactPresenterChecks() {
 
 /** Remove a slide from the artifact */
 function removeArtifactSlide(idx) {
-    if (!confirm('このスライドを削除しますか？設定した担当範囲も消去されます。')) return;
+    if (!confirm('このスライドを削除しますか？設定した担当者等も消去されます。')) return;
     state.artifactSettings[currentArtifactKey].slides.splice(idx, 1);
     if (currentSlideIndex === idx) {
         currentSlideIndex = -1;
@@ -1958,23 +2225,73 @@ function deleteHotspot(idx) {
     renderContributorChart();
 }
 
-/** Save detailed artifact data and mark as submitted on Gantt */
+/** Save detailed artifact data as draft */
 function saveArtifactData() {
-    // If there's at least one slide with data, mark as submitted
+    if (!currentArtifactKey) return;
     const data = state.artifactSettings[currentArtifactKey];
-    const hasData = data && data.slides && data.slides.length > 0;
+    if (data && data.submitted) {
+        alert('この成果物はすでに提出済みです。');
+        return;
+    }
 
-    state.artifacts[currentArtifactKey] = hasData;
+    const hasData = data && data.slides && data.slides.length > 0;
+    state.artifacts[currentArtifactKey] = hasData; // Keep legacy flag for Gantt marking
+
     if (hasData) {
-        if (!state.artifactSettings[currentArtifactKey]) state.artifactSettings[currentArtifactKey] = {};
-        state.artifactSettings[currentArtifactKey].updatedAt = new Date().toISOString();
+        data.updatedAt = new Date().toISOString();
     }
     saveState();
-    closeArtifactModal();
+
+    // Visual feedback
+    const btn = document.getElementById('btn-draft-artifact-data');
+    const orig = btn.innerText;
+    btn.innerText = '保存しました';
+    btn.style.background = '#059669';
+    setTimeout(() => { btn.innerText = orig; btn.style.background = ''; }, 1500);
+
+    renderGantt();
+    updateDisplayInfo();
+}
+
+/** Final Submit for Artifacts */
+function submitArtifactData() {
+    if (!currentArtifactKey) return;
+    const data = state.artifactSettings[currentArtifactKey];
+
+    if (!data || !data.slides || data.slides.length === 0) {
+        alert('スライドやポスターが登録されていません。');
+        return;
+    }
+
+    if (!confirm('この成果物を「最終提出」しますか？\n提出後の編集はできなくなります（解除にはパスワードが必要です）。')) return;
+
+    data.submitted = true;
+    data.submittedAt = new Date().toISOString();
+    data.updatedAt = data.submittedAt;
+    state.artifacts[currentArtifactKey] = true;
+
+    saveState();
+    applyArtifactLockState(true, data.submittedAt);
     renderGantt();
     updateDisplayInfo();
     renderRecentActivity();
-    alert('設定を保存しました。ガントチャートのマークが登録済み（チェック付）になります。');
+    alert('最終提出が完了しました。');
+}
+
+/** Unlock Locked Artifact (Secret Operation) */
+function unlockArtifactData() {
+    const pw = prompt('提出済みロックを解除するには管理者パスワードを入力してください:');
+    if (pw === '9784563046378') {
+        if (currentArtifactKey && state.artifactSettings[currentArtifactKey]) {
+            state.artifactSettings[currentArtifactKey].submitted = false;
+            saveState();
+            applyArtifactLockState(false);
+            renderGantt();
+            alert('提出状態を解除しました。内容の編集が可能です。');
+        }
+    } else if (pw !== null) {
+        alert('パスワードが正しくありません。');
+    }
 }
 
 function buildTaskFlowAuthorChecks(task) {
@@ -1988,17 +2305,17 @@ function buildTaskFlowAuthorChecks(task) {
         const fullName = `${m.lastName || ''} ${m.firstName || ''}`.trim();
         if (!fullName) return; // Skip empty members
 
-        const isChecked = selectedAuthors.includes(i);
-
         const label = document.createElement('label');
         label.className = 'checkbox-item';
+        label.htmlFor = 'task-flow-author-' + i;
         // Adjust for small header area
         label.style.padding = '4px 8px';
         label.style.fontSize = '0.75rem';
         label.style.background = 'rgba(255,255,255,0.03)';
 
+        const isChecked = selectedAuthors.includes(fullName);
         label.innerHTML = `
-            <input type="checkbox" data-idx="${i}" ${isChecked ? 'checked' : ''}>
+            <input type="checkbox" id="task-flow-author-${i}" name="taskFlowAuthor" data-idx="${i}" ${isChecked ? 'checked' : ''}>
             <span>${m.lastName || 'メンバー'}</span>
         `;
         container.appendChild(label);
@@ -2013,7 +2330,7 @@ let currentContributionKey = '';
    WORK REPORT - Full Implementation
    ================================================================ */
 
-/** Called from Gantt marker onclick — iter is the DEFAULT_SCHEDULE session id (e.g. 5 → 第5回) */
+/** Called from Gantt marker onclick  Eiter is the DEFAULT_SCHEDULE session id (e.g. 5 ↁE第5囁E */
 function openWorkReport(iter) {
     switchView('reports');
     switchTab('work-report');
@@ -2095,11 +2412,11 @@ function setupWrCounter(textareaId, countId, statusId, min, max) {
         } else if (len < min * 0.8) {
             statusEl.classList.add('low'); statusEl.textContent = '不足';
         } else if (len >= min && len <= max) {
-            statusEl.classList.add('ok'); statusEl.textContent = '✓ 適正';
+            statusEl.classList.add('ok'); statusEl.textContent = '✁E適正';
         } else if (len < min) {
             statusEl.classList.add('low'); statusEl.textContent = 'もう少し';
         } else {
-            statusEl.classList.add('over'); statusEl.textContent = '超過';
+            statusEl.classList.add('over'); statusEl.textContent = '趁E��';
         }
     };
     ta.addEventListener('input', () => {
@@ -2121,15 +2438,15 @@ function buildCommTable() {
 
     MEMBER_ROLES.forEach((role, i) => {
         const member = state.members.find(m => m.role === role.title) || {};
-        const name = member.lastName ? `${member.lastName}` : '―';
+        const name = member.lastName ? `${member.lastName}` : '-';
         const savedComm = data.communications?.[i] || '';
-        const savedTime = commTimes[i] ? formattedTimestamp(commTimes[i]) : '―';
+        const savedTime = commTimes[i] ? formattedTimestamp(commTimes[i]) : '-';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><span class="wr-role-label">${role.title}</span></td>
             <td><span class="wr-member-name">${name}</span></td>
-            <td><input class="wr-comm-input" type="text" maxlength="100"
+            <td><input class="wr-comm-input" type="text" name="commInput${i}" aria-label="${role.title}からの伝達事項" maxlength="100"
                 data-role-idx="${i}"
                 placeholder="${role.title}からの伝達事項（100字以内）"
                 value="${savedComm}"></td>
@@ -2181,7 +2498,7 @@ function buildAuthorChecks() {
 }
 
 function formattedTimestamp(iso) {
-    if (!iso) return '―';
+    if (!iso) return '-';
     const d = new Date(iso);
     return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
@@ -2201,7 +2518,7 @@ function buildTaskCheckboxes() {
     container.innerHTML = '';
 
     if (!state.tasks || state.tasks.length === 0) {
-        container.innerHTML = '<p class="wr-hint">タスクが登録されていません（ガントチャートで追加してください）</p>';
+        container.innerHTML = '<p class="wr-hint">タスクが登録されてぁE��せん�E�ガントチャートで追加してください�E�E/p>';
         return;
     }
 
@@ -2210,7 +2527,7 @@ function buildTaskCheckboxes() {
 
     // Group tasks by category
     const groups = [
-        { id: 'effort', label: '取り組みタスク', color: '#6366f1', tasks: state.tasks.filter(t => !t.category || t.category === 'effort') },
+        { id: 'effort', label: '取り絁E��タスク', color: '#6366f1', tasks: state.tasks.filter(t => !t.category || t.category === 'effort') },
         { id: 'presentation', label: '発表・成果タスク', color: '#f59e0b', tasks: state.tasks.filter(t => t.category === 'presentation') }
     ];
 
@@ -2234,8 +2551,9 @@ function buildTaskCheckboxes() {
 
             const label = document.createElement('label');
             label.className = 'wr-task-item' + (isSelected ? ' selected' : '');
+            label.htmlFor = 'wr-task-' + taskIndex;
             label.innerHTML = `
-                <input type="checkbox" value="${taskIndex}" ${isSelected ? 'checked' : ''}>
+                <input type="checkbox" id="wr-task-${taskIndex}" name="wrTask" value="${taskIndex}" ${isSelected ? 'checked' : ''}>
                 <span class="wr-task-item-text">${task.name}</span>
             `;
             const cb = label.querySelector('input');
@@ -2264,7 +2582,7 @@ function renderProcessFlows() {
     const selectedIdxs = getSelectedTaskIds();
 
     if (selectedIdxs.length === 0) {
-        gallery.innerHTML = '<div class="wr-no-flow">タスクを選択するとプロセスフローが表示されます</div>';
+        gallery.innerHTML = '<div class="wr-no-flow">タスクを選択するとプロセスフローが表示されまぁE/div>';
         return;
     }
 
@@ -2285,7 +2603,7 @@ function renderProcessFlows() {
         } else {
             item.innerHTML = `
                 <div class="wr-process-flow-label">${task.name}</div>
-                <div class="wr-no-flow" style="padding:1rem;">プロセスフロー未登録<br><small>タスクを編集してマインドマップを保存してください</small></div>
+                <div class="wr-no-flow" style="padding:1rem;">プロセスフロー未登録<br><small>タスクを編雁E��てマインド�EチE�Eを保存してください</small></div>
             `;
         }
         gallery.appendChild(item);
@@ -2511,9 +2829,13 @@ function buildMindMapSvgForPrint(pf) {
 
     const children = root.children || [];
     // Count total rows needed (children + their grandchildren offsets)
-    let totalRows = Math.max(children.length, 1);
-    children.forEach(c => { if ((c.children || []).length > 1) totalRows += (c.children.length - 1) * 0.6; });
-    const H = Math.max(Math.ceil(totalRows) * ROW_H + PADDING * 2, 80);
+    let rowOffset = 0;
+    children.forEach(c => {
+        const gcCount = (c.children || []).slice(0, 4).length;
+        rowOffset += Math.max(gcCount, 1);
+    });
+    const totalRows = Math.max(rowOffset, 1);
+    const H = Math.max(totalRows * ROW_H + PADDING * 2, 80);
 
     const ns = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(ns, 'svg');
@@ -2584,13 +2906,13 @@ function buildMindMapSvgForPrint(pf) {
     nodeCoords[root.id] = { x: rootX, y: rootCY - 15, w: 124, h: 30 };
 
     // Children
-    let rowOffset = 0;
+    rowOffset = 0; // Reset for actual positioning
     children.forEach((child, i) => {
         const grandChildren = (child.children || []).slice(0, 4);
         const gcCount = Math.max(grandChildren.length, 1);
         const childCY = PADDING + (rowOffset + (gcCount - 1) / 2) * ROW_H + ROW_H / 2;
 
-        // Connector: root → child
+        // Connector: root ↁEchild
         svg.appendChild(mk('path', {
             d: `M ${rootX + 124} ${rootCY} C ${childX - 25} ${rootCY}, ${childX - 25} ${childCY}, ${childX} ${childCY}`,
             stroke: '#6366f1', 'stroke-width': '1.5', fill: 'none', 'stroke-opacity': '0.5'
@@ -2675,23 +2997,25 @@ function updateWrHeader() {
     const session = DEFAULT_SCHEDULE.find(s => s.id === iter);
 
     // Header card fields
-    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '―'; };
+    const setEl = (id, val) => {
+        const el = document.getElementById(id); if (el) el.textContent = val || '-';
+    };
     setEl('wr-group-symbol', state.groupSymbol);
     setEl('wr-group-name', state.groupName || state.themeName);
     setEl('wr-iter-label', session ? `第${session.id}回` : `第${iter}回`);
-    setEl('wr-iter-date', session ? formatDate(session.date) : '―');
+    setEl('wr-iter-date', session ? formatDate(session.date) : '-');
 
     // Session info bar
     const infoEl = document.getElementById('wr-session-info');
     if (infoEl && session) {
-        infoEl.textContent = `📅 ${formatDate(session.date)} ― ${session.label}`;
+        infoEl.textContent = `📅 ${formatDate(session.date)} - ${session.label}`;
     } else if (infoEl) {
         infoEl.textContent = `第${iter}回`;
     }
 }
 
 function formatDate(dateStr) {
-    if (!dateStr) return '―';
+    if (!dateStr) return '-';
     const d = new Date(dateStr);
     if (isNaN(d)) return dateStr;
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
@@ -2751,8 +3075,7 @@ function collectWrFormData() {
     return { ach, chal, comms, authors };
 }
 
-/** 一時保存 — saves without locking */
-/** 一時保存 — saves without locking */
+/** 一時保存 saves without locking */
 function saveDraftWorkReport(silent = false) {
     // If event object is passed (from click listener), treat as not silent
     if (silent && silent.type) silent = false;
@@ -2789,9 +3112,9 @@ function saveDraftWorkReport(silent = false) {
     renderGantt();
 }
 
-/** 提出解除 — Admin unlock with password */
+/** 提出解除 Admin unlock with password */
 function unlockWorkReport() {
-    const pw = prompt('提出済みロックを解除するには管理パスワードを入力してください:');
+    const pw = prompt('提出済みロックを解除するには管理者パスワードを入力してください:');
     if (pw === '9784563046378') {
         const iter = getWrIter();
         if (state.reports[iter]) {
@@ -2808,7 +3131,7 @@ function unlockWorkReport() {
     }
 }
 
-/** 提出 — confirms, locks, downloads PDF + JSON backup */
+/** 提出 confirms, locks, downloads PDF + JSON backup */
 function submitWorkReport() {
     const iter = getWrIter();
     if (state.reports[iter]?.submitted) {
@@ -2817,16 +3140,16 @@ function submitWorkReport() {
     }
 
     const session = DEFAULT_SCHEDULE.find(s => s.id === parseInt(iter));
-    const sessionLabel = session ? `第${session.id}回 (${formatDate(session.date)})` : `第${iter}回`;
+    const sessionLabel = session ? `第${session.id}回(${formatDate(session.date)})` : `第${iter}回`;
 
     // Content check
     const { ach, chal, comms } = collectWrFormData();
     const achLen = ach.trim().length;
     const chalLen = chal.trim().length;
     const warnings = [];
-    if (achLen < 160) warnings.push(`「できたこと」が不足しています（${achLen}字 / 基準200字）`);
-    if (chalLen < 160) warnings.push(`「新たな課題」が不足しています（${chalLen}字 / 基準200字）`);
-    if (comms.every(c => !c.trim())) warnings.push('伝達事項が未入力です');
+    if (achLen < 160) warnings.push(`「できたこと」が不足しています！(${achLen}文字 / 基準400字）`);
+    if (chalLen < 160) warnings.push(`「新たな課題」が不足しています！(${chalLen}文字 / 基準400字）`);
+    if (comms.every(c => !c.trim())) warnings.push('伝達事項が未入力です。');
 
     let confirmMsg = `【${sessionLabel}】の作業報告書を提出します。\n\n提出後は内容を変更できなくなります。\n`;
     if (warnings.length > 0) {
@@ -2874,7 +3197,7 @@ function submitWorkReport() {
     setTimeout(() => previewWorkReport(true), 500);
 }
 
-/** プレビュー — opens a print-ready window */
+/** プレビュー opens a print-ready window */
 function previewWorkReport(forSubmit = false) {
     const iter = getWrIter();
     const data = state.reports[iter] || {};
@@ -2891,7 +3214,7 @@ function previewWorkReport(forSubmit = false) {
 
     const commsHtml = MEMBER_ROLES.map((role, i) => {
         const member = state.members.find(m => m.role === role.title) || {};
-        const name = member.lastName || '―';
+        const name = member.lastName || '-';
         const comm = (data.communications || [])[i] || '';
         const time = (data.communicationTimes || [])[i] ? formattedTimestamp((data.communicationTimes || [])[i]) : '';
 
@@ -2939,7 +3262,7 @@ function previewWorkReport(forSubmit = false) {
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>作業報告書 第${iter}回 — ${state.groupName || ''}</title>
+<title>作業報告書 第${iter}回 - ${state.groupName || ''}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; margin: 0; padding: 2cm; color: #1a1a1a; font-size: 11pt; line-height: 1.6; }
@@ -2976,10 +3299,10 @@ function previewWorkReport(forSubmit = false) {
     ${data.submitted ? '<span class="submitted-stamp">提出済</span>' : ''}
   </h1>
   <div class="meta">
-    <div class="meta-item"><span class="meta-label">チーム記号</span><span class="meta-value">${state.groupSymbol || '―'}</span></div>
-    <div class="meta-item"><span class="meta-label">チーム名</span><span class="meta-value">${state.groupName || state.themeName || '―'}</span></div>
+    <div class="meta-item"><span class="meta-label">チーム記号</span><span class="meta-value">${state.groupSymbol || '-'}</span></div>
+    <div class="meta-item"><span class="meta-label">チーム名</span><span class="meta-value">${state.groupName || state.themeName || '-'}</span></div>
     <div class="meta-item"><span class="meta-label">実施回</span><span class="meta-value">第${iter}回</span></div>
-    <div class="meta-item"><span class="meta-label">実施日</span><span class="meta-value">${session ? formatDate(session.date) : '―'}</span></div>
+    <div class="meta-item"><span class="meta-label">実施日</span><span class="meta-value">${session ? formatDate(session.date) : '-'}</span></div>
     ${data.submittedAt ? `<div class="meta-item"><span class="meta-label">提出日時</span><span class="meta-value" style="font-size:10pt;">${new Date(data.submittedAt).toLocaleString('ja-JP')}</span></div>` : ''}
   </div>
 
@@ -2991,10 +3314,10 @@ function previewWorkReport(forSubmit = false) {
   <div class="section">
     <h2>② 実施内容</h2>
     <div style="margin-bottom:.5rem;">
-      <span style="font-size:9pt;font-weight:700;color:#666;">記入者:</span> ${authorsHtml || '―'}
+      <span style="font-size:9pt;font-weight:700;color:#666;">記入者:</span> ${authorsHtml || '-'}
       ${data.contentUpdatedAt ? `<span style="margin-left:1rem;font-size:8pt;color:#999;">最終更新: ${formattedTimestamp(data.contentUpdatedAt)}</span>` : ''}
     </div>
-    <p><span class="sub-label ach">✓ できたこと</span></p>
+    <p><span class="sub-label ach">「できたこと」</span></p>
     ${imagesHtml ? `<div class="images">${imagesHtml}</div>` : ''}
     <div class="text-box">${data.achievement || '（未記入）'}</div>
     <p style="margin-top:1rem;"><span class="sub-label chal">⚠ 新たな課題</span></p>
@@ -3004,13 +3327,20 @@ function previewWorkReport(forSubmit = false) {
   <div class="section">
     <h2>③ 各メンバーからの伝達事項</h2>
     <table>
-      <thead><tr><th>役名</th><th>担当者</th><th>伝達事項</th><th style="width:80px;">最終更新</th></tr></thead>
+      <thead>
+        <tr>
+          <th>役割</th>
+          <th>担当者</th>
+          <th>伝達事項</th>
+          <th style="width:80px;">最終更新</th>
+        </tr>
+      </thead>
       <tbody>${commsHtml}</tbody>
     </table>
   </div>
 
   <div class="footer">
-    生成日時: ${new Date().toLocaleString('ja-JP')} ／ PBL2 Student Manager
+    生成日時: ${new Date().toLocaleString('ja-JP')} - PBL2 Student Manager
   </div>
 </body>
 </html>`;
@@ -3024,6 +3354,89 @@ function previewWorkReport(forSubmit = false) {
     }
 }
 
+/** Batch compression for all existing images in state */
+async function compressAllExistingImages() {
+    if (!confirm('既存のすべての画像データを一括で再圧縮しますか？\nこれには数分かかる場合があり、完了まで画面が固まることがありますが正常な動作です。\n容量不足を解消するために非常に有効です。')) return;
+
+    try {
+        const btn = document.getElementById('btn-compress-all-images');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader"></i> 圧縮中...';
+        if (window.lucide) lucide.createIcons();
+
+        let count = 0;
+
+        // 1. Team Logo
+        if (state.groupLogo) {
+            state.groupLogo = await compressImage(state.groupLogo, 600, 600, 0.8);
+            count++;
+        }
+
+        // 2. Work Report Images
+        if (state.reports) {
+            for (const key in state.reports) {
+                const report = state.reports[key];
+                if (report.achievementImages && report.achievementImages.length > 0) {
+                    for (let i = 0; i < report.achievementImages.length; i++) {
+                        report.achievementImages[i] = await compressImage(report.achievementImages[i], 640, 640, 0.2);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        // 3. Artifact Slides
+        if (state.artifactSettings) {
+            for (const key in state.artifactSettings) {
+                const setting = state.artifactSettings[key];
+                if (setting.slides && setting.slides.length > 0) {
+                    for (let i = 0; i < setting.slides.length; i++) {
+                        setting.slides[i].src = await compressImage(setting.slides[i].src, 800, 800, 0.3);
+                        count++;
+                    }
+                }
+            }
+        }
+
+        // 4. Chat Messages
+        if (state.messages) {
+            for (const msg of state.messages) {
+                if (msg.attachments && msg.attachments.length > 0) {
+                    for (const att of msg.attachments) {
+                        if (att.type === 'image' && att.data) {
+                            att.data = await compressImage(att.data, 640, 640, 0.2);
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Member Avatars
+        if (state.members) {
+            for (const member of state.members) {
+                if (member.avatarImage) {
+                    member.avatarImage = await compressImage(member.avatarImage, 250, 250, 0.3);
+                    count++;
+                }
+            }
+        }
+
+        saveState();
+        alert(`${count}個の画像を再圧縮しました。保存容量がさらに改善されました！`);
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+        renderAll();
+
+    } catch (e) {
+        console.error('Batch compression failed:', e);
+        alert('圧縮中にエラーが発生しました。');
+    }
+}
+
 
 
 function handleWrImageFiles(files, section) {
@@ -3034,8 +3447,9 @@ function handleWrImageFiles(files, section) {
     Array.from(files).forEach(file => {
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
-        reader.onload = e => {
-            state.reports[iter].achievementImages.push(e.target.result);
+        reader.onload = async (e) => {
+            const compressed = await compressImage(e.target.result, 640, 640, 0.2);
+            state.reports[iter].achievementImages.push(compressed);
             saveState();
             renderWrImages('wr-achievement-images', state.reports[iter].achievementImages, 'achievement');
         };
@@ -3061,7 +3475,7 @@ function renderWrImages(containerId, images, section) {
         div.className = 'wr-img-item';
         div.innerHTML = `
             <img src="${src}" alt="画像${idx + 1}">
-            <button class="wr-img-remove" onclick="removeWrImage('${section}', ${idx})" title="削除">✕</button>
+            <button class="wr-img-remove" onclick="removeWrImage('${section}', ${idx})" title="削除">×</button>
         `;
         container.appendChild(div);
     });
@@ -3092,7 +3506,7 @@ function saveAnalysisReport() {
     const content = `${bg}\n${problem}\n${solution}`.trim();
     state.reports['analysis'] = { bg, problem, solution, content, updatedAt: new Date().toISOString() };
     saveState();
-    alert('課題設定レポートを保存しました');
+    alert('課題設定レポ�Eトを保存しました');
     renderGantt();
 }
 
@@ -3194,26 +3608,40 @@ function importData(e) {
                     });
                 }
 
-                // B. Members Merge
+                // B. Members Merge (By ID preferred)
                 if (imported.members && Array.isArray(imported.members)) {
                     imported.members.forEach(remoteMem => {
+                        const rId = remoteMem.id;
                         const rKey = remoteMem.emailLocal || `${remoteMem.lastName}${remoteMem.firstName}`;
-                        const localIndex = state.members.findIndex(m =>
-                            (m.emailLocal || `${m.lastName}${m.firstName}`) === rKey
-                        );
 
-                        if (localIndex !== -1) {
+                        let localIndex = -1;
+                        if (rId) {
+                            localIndex = state.members.findIndex(m => m.id === rId);
+                        }
+
+                        // Fallback to name/email if ID not found or missing
+                        if (localIndex === -1 && rKey) {
+                            localIndex = state.members.findIndex(m =>
+                                (m.emailLocal || `${m.lastName}${m.firstName}`) === rKey
+                            );
+                        }
+
+                        if (localIndex === -1) {
+                            // New Member: Add
+                            state.members.push(remoteMem);
+                        } else {
+                            // Existing Member: Update if remote is newer
                             const localMem = state.members[localIndex];
-                            // Update avatar if newer (simple check: if remote has image and local doesn't, or newer timestamp)
-                            // Since we didn't track member update time rigorously before, prioritize remote if it has info
-                            if (remoteMem.avatarImage && !localMem.avatarImage) {
-                                localMem.avatarImage = remoteMem.avatarImage;
-                            }
-                            if (remoteMem.updatedAt && localMem.updatedAt) {
-                                if (new Date(remoteMem.updatedAt) > new Date(localMem.updatedAt)) {
-                                    // Careful not to overwrite isSelf unless intended (usually keep local isSelf)
-                                    const wasSelf = localMem.isSelf;
-                                    state.members[localIndex] = { ...remoteMem, isSelf: wasSelf };
+                            const localTime = new Date(localMem.updatedAt || 0).getTime();
+                            const remoteTime = new Date(remoteMem.updatedAt || 0).getTime();
+
+                            if (remoteTime > localTime) {
+                                const wasSelf = localMem.isSelf;
+                                state.members[localIndex] = { ...remoteMem, isSelf: wasSelf };
+                            } else {
+                                // Even if older, maybe fill in missing avatar
+                                if (remoteMem.avatarImage && !localMem.avatarImage) {
+                                    localMem.avatarImage = remoteMem.avatarImage;
                                 }
                             }
                         }
@@ -3279,7 +3707,22 @@ function importData(e) {
 
             } else {
                 // --- OVERWRITE LOGIC ---
-                state = imported;
+                // Merge messages so we don't lose existing board data
+                const existingMessages = state.messages ? [...state.messages] : [];
+                state = migrateData(imported);
+                // Restore messages if import has none
+                if ((!state.messages || state.messages.length === 0) && existingMessages.length > 0) {
+                    state.messages = existingMessages;
+                }
+                // Ensure required defaults
+                if (!state.members) state.members = [];
+                if (!state.tasks) state.tasks = [];
+                if (!state.reports) state.reports = {};
+                if (!state.artifacts) state.artifacts = {};
+                if (!state.artifactSettings) state.artifactSettings = {};
+                if (!state.messages) state.messages = [];
+                if (!state.topics) state.topics = [{ id: 'general', name: '全般', createdBy: 'system', timestamp: 0 }];
+                if (!state.currentTopicId) state.currentTopicId = 'general';
             }
 
             // 3. Post-Merge/Overwrite Self Restoration Logic
@@ -3334,13 +3777,13 @@ function renderRecentActivity() {
         if (r.submittedAt) {
             activities.push({
                 date: new Date(r.submittedAt),
-                text: `第${iter}回 作業報告書を提出しました`,
+                text: `第${iter}回作業報告書を提出しました`,
                 icon: 'check-circle'
             });
         } else if (r.updatedAt) {
             activities.push({
                 date: new Date(r.updatedAt),
-                text: `第${iter}回 報告書の下書きを保存しました`,
+                text: `第${iter}回の報告書の下書きを保存しました`,
                 icon: 'edit'
             });
         }
@@ -3377,7 +3820,7 @@ function renderRecentActivity() {
         `).join('');
         if (window.lucide) lucide.createIcons();
     } else {
-        list.innerHTML = '<li class="empty-msg">活動はまだありません</li>';
+        list.innerHTML = '<li class="empty-msg">活動�Eまだありません</li>';
     }
 }
 
@@ -3398,3 +3841,790 @@ function renderUpcomingSchedule() {
         document.getElementById('next-event-date').textContent = upcoming[0].date;
     }
 }
+
+/* --- Message Board Functions --- */
+
+/** Render attachment thumbnails inside a message bubble (returns HTML string) */
+function renderAttachments(attachments) {
+    if (!attachments || attachments.length === 0) return '';
+    const html = attachments.map(att => {
+        if (att.type === 'image') {
+            return `<img src="${att.data}" class="message-thumbnail" alt="${escapeHtml(att.name || '')}" onclick="openLightbox('${att.data}')">`;
+        } else {
+            return `<a href="${att.data}" class="message-file-link" target="_blank" download="${escapeHtml(att.name || 'file')}">
+                <i data-lucide="file"></i>
+                <span>${escapeHtml(att.name || 'ファイル')}</span>
+            </a>`;
+        }
+    }).join('');
+    return `<div class="message-attachments">${html}</div>`;
+}
+
+function renderMessages() {
+    const list = document.getElementById('messages-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    // List of messages is filtered by current topic
+    const currentTopicId = state.currentTopicId || 'general';
+    const filteredMessages = state.messages ? state.messages.filter(m => (m.topicId || 'general') === currentTopicId) : [];
+
+    if (filteredMessages.length === 0) {
+        list.innerHTML = `
+            <div class="empty-messages">
+                <i data-lucide="message-square-dashed" style="width:48px;height:48px;opacity:0.5;"></i>
+                <p>この話題にはまだメッセージはありません</p>
+                <p style="font-size:0.8rem;">最初のメッセージを投稿しましょう</p>
+            </div>`;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    // Get current user info for "Self" determination
+    const selfMember = state.members.find(m => m.isSelf);
+    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+
+    let lastDate = null;
+
+    filteredMessages.forEach(msg => {
+        // Date Separator
+        const dateObj = new Date(msg.timestamp);
+        const dateStr = dateObj.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', weekday: 'short' });
+
+        if (dateStr !== lastDate) {
+            const sep = document.createElement('div');
+            sep.className = 'message-date-separator';
+            sep.innerHTML = `<span>${dateStr}</span>`;
+            list.appendChild(sep);
+            lastDate = dateStr;
+        }
+
+        const isMe = selfKey && (msg.senderKey === selfKey);
+
+        const div = document.createElement('div');
+        div.className = `message-item ${isMe ? 'self' : ''}`;
+
+        const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+
+        // Avatar
+        const initials = msg.senderName ? msg.senderName.charAt(0) : '?';
+
+        // Read Status Logic
+        const readBy = msg.readBy || [];
+        const readCount = readBy.length;
+        // Filter out sender from read count (optional, but usually "Read by 3" implies others)
+        // Let's just show total unique readers minus sender? 
+        // For simplicity: just show count of `readBy`.
+
+        // Tooltip for who read it
+        const readByNames = [];
+        if (readCount > 0 && state.members) {
+            readBy.forEach(readerKey => {
+                const m = state.members.find(mem => (mem.emailLocal || (mem.lastName + mem.firstName)) === readerKey);
+                if (m) readByNames.push((m.lastName || '') + (m.firstName || ''));
+            });
+        }
+        const readTooltip = readByNames.length > 0 ? `既読: ${readByNames.join(', ')}` : 'まだ誰も読んでいません';
+        const readLabel = readCount > 0 ? `<span class="message-read-status" title="${readTooltip}">既読 ${readCount}</span>` : '';
+
+        div.innerHTML = `
+                                            <div class="message-avatar" style="background:${msg.avatarColor || '#64748b'};" title="${msg.senderName}">
+                                                ${initials}
+                                            </div>
+                                            <div class="message-content-wrapper">
+                                                <div class="message-meta">
+                                                    <span style="font-weight:600;">${msg.senderName}</span>
+                                                    <span>${timeStr}</span>
+                                                </div>
+                                                <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
+                                                ${isMe ? `<div style="text-align:right; margin-top:2px;">${readLabel}</div>` : ''}
+                                            </div>
+                                            `;
+        list.appendChild(div);
+    });
+    if (window.lucide) lucide.createIcons();
+}
+
+function markMessagesAsRead() {
+    if (!state.messages) return;
+
+    const selfMember = state.members.find(m => m.isSelf);
+    if (!selfMember) return;
+
+    const selfKey = selfMember.emailLocal || (selfMember.lastName + selfMember.firstName);
+
+    let updated = false;
+    // Mark only visible messages in current topic as read? Or all?
+    // Let's mark ALL unread messages as read when opening board, regardless of topic, 
+    // OR just messages in the current topic when viewing it.
+    // LINE style: Opening a chat room marks messages in THAT room as read. 
+    // Here we have "Topics" which act like rooms. So mark only current topic messages.
+
+    const currentTopicId = state.currentTopicId || 'general';
+
+    state.messages.forEach(msg => {
+        if ((msg.topicId || 'general') !== currentTopicId) return;
+
+        // If I am the sender, I don't "read" it ensuring I don't increment my own count? 
+        // Usually chat apps count sender as "read" implicitly or just ignore. 
+        // Let's ignore sender reading their own message for the count display purposes, 
+        // OR add to readBy safely. 
+        // To behave like LINE: Sender sees "Read X" for OTHERS. 
+        // Receiver sees nothing special effectively.
+
+        if (msg.senderKey === selfKey) return; // Don't mark my own messages as read by me (redundant)
+
+        if (!msg.readBy) msg.readBy = [];
+        if (!msg.readBy.includes(selfKey)) {
+            msg.readBy.push(selfKey);
+            updated = true;
+        }
+    });
+}
+
+function sendMessage() {
+    const input = document.getElementById('message-input');
+    if (!input) return;
+    const content = input.value.trim();
+
+    // Allow empty text if there are attachments
+    if (!content && pendingAttachments.length === 0) return;
+
+    // Find self member - if none set, prompt but allow anonymous send
+    const selfMember = state.members ? state.members.find(m => m.isSelf) : null;
+    if (!selfMember) {
+        const proceed = confirm(
+            'メンバー設定で「自分」がまだ選択されていません。\n' +
+            '「ゲスト」として送信しますか？（OK）\n' +
+            '「キャンセル」でメンバー設定へ移動します。'
+        );
+        if (!proceed) {
+            switchView('members');
+            return;
+        }
+    }
+
+    const senderName = selfMember
+        ? ((selfMember.lastName || '') + ' ' + (selfMember.firstName || '')).trim()
+        : 'ゲスト';
+    const senderKey = selfMember
+        ? (selfMember.emailLocal || `${selfMember.lastName || ''}${selfMember.firstName || ''}`)
+        : 'guest_' + Date.now();
+
+    const newMessage = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+        senderKey: senderKey,
+        senderName: senderName || 'ゲスト',
+        senderRole: selfMember ? selfMember.role : '',
+        avatarColor: selfMember ? (selfMember.avatarColor || '#64748b') : '#64748b',
+        content: content,
+        timestamp: new Date().toISOString(),
+        readBy: [],
+        topicId: state.currentTopicId || 'general',
+        attachments: pendingAttachments.slice() // shallow copy
+    };
+
+    const originalMessages = state.messages ? [...state.messages] : [];
+    if (!state.messages) state.messages = [];
+    state.messages.push(newMessage);
+
+    // Reset inputs
+    input.value = '';
+    pendingAttachments = [];
+    renderAttachmentPreviews();
+
+    // Update check time so I don't notify myself
+    state.lastMessagesCheckTime = Date.now();
+
+    // Try to save
+    if (!saveState()) {
+        // Rollback on failure
+        state.messages = originalMessages;
+        renderMessages();
+        return;
+    }
+
+    renderMessages();
+    scrollToBottomMessages();
+}
+
+function scrollToBottomMessages() {
+    const list = document.getElementById('messages-list');
+    if (list) list.scrollTop = list.scrollHeight;
+}
+
+function updateMessageNotification() {
+    const badge = document.getElementById('msg-badge');
+    if (!badge) return;
+
+    if (!state.messages) {
+        badge.style.display = 'none';
+        return;
+    }
+
+    const selfMember = state.members.find(m => m.isSelf);
+    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+
+    // Count messages that are NEWER than last check time AND NOT sent by me
+    const lastCheck = state.lastMessagesCheckTime || 0;
+    const unreadCount = state.messages.filter(m => {
+        const isNew = new Date(m.timestamp).getTime() > lastCheck;
+        const isMe = selfKey && (m.senderKey === selfKey);
+        return isNew && !isMe;
+    }).length;
+
+    if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return text;
+    return text.replace(/[&<>"']/g, function (m) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[m];
+    });
+}
+
+function formatMessageContent(content) {
+    let escaped = escapeHtml(content);
+    // Linkify URLs - improved to handle ending punctuation and style
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+    escaped = escaped.replace(urlPattern, '<a href="$1" class="message-link" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // Highlight Mentions (@Name)
+    // Matches @FollowedByNonWhitespace
+    // We should ideally match against known member names, but simple highlighting is often enough.
+    // To match actual members:
+    if (state.members) {
+        state.members.forEach(m => {
+            const name = (m.lastName || '') + (m.firstName || '');
+            if (!name) return;
+            // Case insensitive replace
+            const regex = new RegExp(`@${name}`, 'gi');
+            escaped = escaped.replace(regex, `<span class="mention-highlight">@${name}</span>`);
+        });
+    }
+
+    // Also highlight generic @... if not caught above?
+    // escaped = escaped.replace(/(@[^\s<]+)/g, '<span class="mention-highlight">$1</span>');
+
+    return escaped;
+}
+
+/* --- Mention Logic --- */
+function handleMentionInput(e) {
+    const input = e.target;
+    const val = input.value;
+    const cursorPos = input.selectionStart;
+
+    // Check if we are potentially typing a mention
+    // Look for @ before cursor
+    const lastAtPos = val.lastIndexOf('@', cursorPos - 1);
+
+    if (lastAtPos !== -1) {
+        // text between @ and cursor
+        const query = val.substring(lastAtPos + 1, cursorPos);
+
+        // Ensure no spaces (simple mention rule)
+        if (!/\s/.test(query)) {
+            startMention(query, lastAtPos);
+            return;
+        }
+    }
+
+    closeMention();
+}
+
+function handleMentionKeydown(e) {
+    if (!mentionState.isActive) return;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        mentionState.selectedIndex = (mentionState.selectedIndex + 1) % mentionState.filteredMembers.length;
+        renderMentionSuggestions();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        mentionState.selectedIndex = (mentionState.selectedIndex - 1 + mentionState.filteredMembers.length) % mentionState.filteredMembers.length;
+        renderMentionSuggestions();
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        selectMention(mentionState.filteredMembers[mentionState.selectedIndex]);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeMention();
+    }
+}
+
+function startMention(query, atIndex) {
+    mentionState.isActive = true;
+    mentionState.query = query;
+    mentionState.cursorPos = atIndex;
+
+    // Filter members
+    const lowerQ = query.toLowerCase();
+    mentionState.filteredMembers = state.members.filter(m => {
+        const full = ((m.lastName || '') + (m.firstName || '')).toLowerCase();
+        return full.includes(lowerQ);
+    });
+
+    if (mentionState.filteredMembers.length === 0) {
+        closeMention();
+        return;
+    }
+
+    mentionState.selectedIndex = 0;
+    renderMentionSuggestions();
+}
+
+function closeMention() {
+    mentionState.isActive = false;
+    const box = document.getElementById('mention-suggestions');
+    if (box) {
+        box.classList.remove('active');
+        box.style.display = 'none';
+    }
+}
+
+function renderMentionSuggestions() {
+    const box = document.getElementById('mention-suggestions');
+    if (!box) return;
+
+    box.innerHTML = '';
+    box.classList.add('active');
+    box.style.display = 'flex';
+
+    mentionState.filteredMembers.forEach((m, idx) => {
+        const div = document.createElement('div');
+        div.className = `mention-item ${idx === mentionState.selectedIndex ? 'selected' : ''}`;
+
+        const initial = (m.lastName || '?').charAt(0);
+        const color = m.avatarColor || '#64748b';
+        const name = (m.lastName || '') + (m.firstName || '');
+
+        div.innerHTML = `
+                                                <div class="mention-avatar" style="background:${color};">${initial}</div>
+                                                <span>${name}</span>
+                                                <span style="font-size:0.75rem;color:var(--text-dim);margin-left:auto;">${m.role || ''}</span>
+                                                `;
+
+        div.onmousedown = (e) => {
+            e.preventDefault(); // Prevent blur
+            selectMention(m);
+        };
+
+        box.appendChild(div);
+    });
+}
+
+function selectMention(member) {
+    if (!member) return;
+
+    const input = document.getElementById('message-input');
+    const val = input.value;
+    const name = (member.lastName || '') + (member.firstName || '');
+
+    // Replace @query with @name + space
+    const before = val.substring(0, mentionState.cursorPos);
+    // Find end of current word/query
+    // actually, handleMentionInput logic assumes we are at the end of query cursor
+    // But if user moved cursor back, we might need adjustments. 
+    // For simplicity: replace from @ to cursor.
+
+    // We used handleMentionInput which tracks query from lastAtPos to SelectionStart.
+    // So we replace that range.
+
+    const after = val.substring(input.selectionStart);
+
+    const newValue = before + '@' + name + ' ' + after;
+
+    input.value = newValue;
+
+    // Move cursor
+    const newCursorPos = before.length + name.length + 2; // @ + name + space
+    input.setSelectionRange(newCursorPos, newCursorPos);
+    input.focus();
+
+    closeMention();
+}
+
+/* --- Topic Management --- */
+function renderTopics() {
+    const list = document.getElementById('topic-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (!state.topics) {
+        state.topics = [
+            { id: 'general', name: '全般', createdBy: 'system', timestamp: 0 },
+            { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
+        ];
+    }
+
+    // Ensure 'from_teacher' exists if legacy state
+    if (!state.topics.some(t => t.id === 'from_teacher')) {
+        state.topics.push({ id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 });
+    }
+
+    // Sort: Fixed topics first (general, then from_teacher), then others by timestamp
+    const fixedOrder = ['general', 'from_teacher'];
+
+    const fixedTopics = state.topics.filter(t => fixedOrder.includes(t.id));
+    // Sort fixed topics by fixedOrder
+    fixedTopics.sort((a, b) => fixedOrder.indexOf(a.id) - fixedOrder.indexOf(b.id));
+
+    const userTopics = state.topics.filter(t => !fixedOrder.includes(t.id));
+    userTopics.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+    // Render Function
+    const renderItem = (topic) => {
+        const isActive = (state.currentTopicId || 'general') === topic.id;
+
+        // Count unread
+        const selfMember = state.members.find(m => m.isSelf);
+        const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+        let unread = 0;
+        if (selfKey) {
+            unread = (state.messages || []).filter(m => {
+                return (m.topicId || 'general') === topic.id &&
+                    m.senderKey !== selfKey &&
+                    (!m.readBy || !m.readBy.includes(selfKey));
+            }).length;
+        }
+
+        const div = document.createElement('div');
+        div.className = `topic-item ${isActive ? 'active' : ''}`;
+        div.onclick = () => switchTopic(topic.id);
+
+        // Specific icon or style for fixed topics?
+        const isFixed = fixedOrder.includes(topic.id);
+        const deleteBtn = !isFixed && isActive ? `<button class="btn-delete-topic" onclick="deleteTopic('${topic.id}', event)" title="削除">×</button>` : '';
+
+        div.innerHTML = `
+                                                    <span class="topic-name">${isFixed ? (topic.id === 'from_teacher' ? '<i data-lucide="graduation-cap" style="width:14px;height:14px;vertical-align:middle;"></i> ' : '# ') : '# '}${escapeHtml(topic.name)}</span>
+                                                    ${unread > 0 ? `<span class="topic-badge">${unread > 99 ? '99+' : unread}</span>` : ''}
+                                                    ${deleteBtn}
+                                                    `;
+        list.appendChild(div);
+    };
+
+    // Render Fixed Topics
+    fixedTopics.forEach(renderItem);
+
+    // Render Divider if user topics exist
+    if (userTopics.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'topic-divider';
+        divider.innerText = '個別話題';
+        list.appendChild(divider);
+    }
+
+    // Render User Topics
+    userTopics.forEach(renderItem);
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function switchTopic(topicId) {
+    if (state.currentTopicId === topicId) return;
+
+    // Save current state first
+    saveState();
+
+    state.currentTopicId = topicId;
+
+    // Mark messages in new topic as read
+    markMessagesAsRead();
+    saveState();
+
+    renderTopics();
+    renderMessages();
+    scrollToBottomMessages();
+}
+
+function createNewTopic() {
+    const name = prompt('新しい話題の名称を入力してください:');
+    if (!name || !name.trim()) return;
+
+    const id = 'topic_' + Date.now().toString(36);
+    const newTopic = {
+        id: id,
+        name: name.trim(),
+        createdBy: 'user', // could store user ID
+        timestamp: Date.now()
+    };
+
+    if (!state.topics) state.topics = [];
+    state.topics.push(newTopic);
+
+    switchTopic(id);
+}
+
+function deleteTopic(topicId, e) {
+    e.stopPropagation();
+    if (!confirm('この話題を削除しますか？\n（含まれるメッセージは表示されなくなりますが、データ上は残ります）')) return;
+
+    state.topics = state.topics.filter(t => t.id !== topicId);
+
+    // If deleted current, switch to general
+    if (state.currentTopicId === topicId) {
+        switchTopic('general');
+    } else {
+        renderTopics();
+    }
+    saveState();
+}
+
+function deleteMessage(msgId) {
+    if (!confirm('このメッセージを削除しますか？')) return;
+
+    // Safety check: ensure I am the sender (although UI hides button, user could call directly)
+    const selfMember = state.members.find(m => m.isSelf);
+    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+
+    if (!state.messages) return;
+
+    const msgIndex = state.messages.findIndex(m => m.id === msgId);
+    if (msgIndex === -1) return;
+
+    if (msg.senderKey !== selfKey) {
+        alert('自分のメッセージしか削除できません');
+        return;
+    }
+
+    state.messages.splice(msgIndex, 1);
+    saveState();
+    renderMessages();
+}
+
+/* --- Attachment Logic --- */
+function handleFileSelect(e) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    // Limit file size or count if necessary
+    // For now, process all
+    let processedCount = 0;
+
+    files.forEach(file => {
+        // Warning for large files (> 2MB is risky for localStorage)
+        const sizeMB = file.size / 1024 / 1024;
+        if (sizeMB > 1.5) {
+            const msg = sizeMB > 3
+                ? `❌ ファイル「${file.name}」(${sizeMB.toFixed(1)}MB) は大きすぎます。\nブラウザの制限により、3MB以上のファイルは送信できない可能性が高いです。`
+                : `⚠️ ファイル「${file.name}」(${sizeMB.toFixed(1)}MB) は比較的大きいです。\n複数を送信すると保存容量制限（5MB）を超えて送信できなくなる場合があります。`;
+            alert(msg);
+            if (sizeMB > 3.5) return; // Strict block for very large files to prevent crash
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            let dataUrl = ev.target.result;
+            const type = file.type.startsWith('image/') ? 'image' : 'file';
+
+            if (type === 'image') {
+                dataUrl = await compressImage(dataUrl, 640, 640, 0.2);
+            }
+
+            pendingAttachments.push({
+                name: file.name,
+                type: type,
+                data: dataUrl,
+                size: file.size
+            });
+
+            processedCount++;
+            if (processedCount === files.length) {
+                renderAttachmentPreviews();
+                // Clear input
+                document.getElementById('message-file-input').value = '';
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function removeAttachment(index) {
+    pendingAttachments.splice(index, 1);
+    renderAttachmentPreviews();
+}
+
+function renderAttachmentPreviews() {
+    const container = document.getElementById('attachment-preview-area');
+    if (!container) return; // Guard clause
+
+    if (pendingAttachments.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'flex';
+    container.innerHTML = pendingAttachments.map((att, idx) => {
+        let thumbContent = '';
+        if (att.type === 'image') {
+            thumbContent = `<img src="${att.data}" alt="Preview" onclick="window.open('${att.data}')">`;
+        } else {
+            thumbContent = `<div style="color:var(--text-dim);"><i data-lucide="file"></i></div>`;
+        }
+
+        return `
+            <div class="attachment-preview-item" title="${escapeHtml(att.name)}">
+                ${thumbContent}
+                <button class="btn-remove-attachment" onclick="removeAttachment(${idx})" title="削除">
+                    <i data-lucide="x" style="width:10px; height:10px;"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+}
+
+// Alias so old callers of renderAttachmentPreview() (without 's') still work
+function renderAttachmentPreview() { renderAttachmentPreviews(); }
+
+/* --- Deliverables Folder Management --- */
+function renderDeliverables(folderId = 'root') {
+    const container = document.getElementById('deliverables-content');
+    const breadcrumb = document.getElementById('deliverables-breadcrumb');
+    if (!container || !breadcrumb) return;
+
+    container.innerHTML = '';
+
+    // Breadcrumb setup
+    if (folderId === 'root') {
+        breadcrumb.innerHTML = '<span class="breadcrumb-item active"><i data-lucide="package" style="width:14px;height:14px;"></i> 成果物ルート</span>';
+    } else {
+        const icon = folderId === 'reports' ? 'clipboard-list' : 'presentation';
+        const label = folderId === 'reports' ? '活動報告書' : '提出用成果物';
+        breadcrumb.innerHTML = `
+            <span class="breadcrumb-item" onclick="renderDeliverables('root')" style="cursor:pointer">
+                <i data-lucide="package" style="width:14px;height:14px;"></i> 成果物ルート
+            </span>
+            <span class="breadcrumb-item active">
+                <i data-lucide="${icon}" style="width:14px;height:14px;"></i> ${label}
+            </span>
+        `;
+    }
+
+    if (folderId === 'root') {
+        const folders = [
+            { id: 'reports', name: '活動報告書', icon: 'clipboard-list', desc: '各回の実施報告書 (第3回〜)', color: '#6366f1' },
+            { id: 'presentation', name: '提出用成果物', icon: 'presentation', desc: 'ポスター・スライド・レポート', color: '#f59e0b' }
+        ];
+
+        folders.forEach(f => {
+            const item = createDeliverableItem(f.name, f.icon, f.desc, f.color);
+            item.onclick = () => renderDeliverables(f.id);
+            container.appendChild(item);
+        });
+    } else if (folderId === 'reports') {
+        DEFAULT_SCHEDULE.forEach(s => {
+            if (s.id < 3) return;
+            const r = state.reports[s.id];
+            const isSubmitted = r && r.submitted;
+            const statusLabel = isSubmitted ? '提出済み' : (r && r.content ? '下書き' : '未作成');
+            const statusColor = isSubmitted ? 'var(--success)' : (r && r.content ? 'var(--warning)' : 'var(--text-dim)');
+
+            const item = createDeliverableItem(
+                `第${s.id}回 実施報告書`,
+                'file-text',
+                `${s.date} | ${statusLabel}`,
+                statusColor,
+                isSubmitted
+            );
+            item.onclick = () => {
+                if (isSubmitted) {
+                    openWorkReport(s.id);
+                    setTimeout(() => previewWorkReport(), 100);
+                } else {
+                    openWorkReport(s.id);
+                }
+            };
+            container.appendChild(item);
+        });
+    } else if (folderId === 'presentation') {
+        const ARTIFACT_DEFS = [
+            { key: 'poster', name: '事業企画ポスター', icon: 'image', color: '#4f46e5' },
+            { key: 'leaflet', name: '事業企画リーフレット', icon: 'file-text', color: '#0ea5e9' },
+            { key: 'pamphlet_25', name: '製品・サービスパンフレット', icon: 'book-open', color: '#10b981' },
+            { key: 'slides_25', name: '最終プレゼンスライド', icon: 'presentation', color: '#f59e0b' },
+            { key: 'analysis', name: '課題設定レポート (分析)', icon: 'file-bar-chart', color: '#6366f1' }
+        ];
+
+        ARTIFACT_DEFS.forEach(def => {
+            let isFinal = false;
+            let hasDraft = false;
+            let statusLabel = '未登録';
+            let statusColor = 'var(--text-dim)';
+
+            if (def.key === 'analysis') {
+                const r = state.reports && state.reports['analysis'];
+                isFinal = r && r.updatedAt;
+                statusLabel = isFinal ? '作成済み' : '未作成';
+                statusColor = isFinal ? 'var(--success)' : 'var(--text-dim)';
+            } else {
+                const settings = state.artifactSettings && state.artifactSettings[def.key];
+                isFinal = settings && settings.submitted;
+                hasDraft = settings && settings.slides && settings.slides.length > 0 && !isFinal;
+
+                if (isFinal) {
+                    statusLabel = '最終提出済み';
+                    statusColor = 'var(--success)';
+                } else if (hasDraft) {
+                    statusLabel = '下書き保存中';
+                    statusColor = 'var(--warning)';
+                }
+            }
+
+            const item = createDeliverableItem(def.name, def.icon, statusLabel, statusColor, isFinal);
+            item.onclick = () => {
+                if (isFinal && def.key !== 'analysis') {
+                    openArtifactModal(def.key, def.name);
+                    setTimeout(() => { exportArtifactScript(); closeArtifactModal(); }, 100);
+                } else if (def.key === 'analysis') {
+                    switchView('reports');
+                    switchTab('analysis-report');
+                } else {
+                    openArtifactModal(def.key, def.name);
+                }
+            };
+            container.appendChild(item);
+        });
+    }
+
+    if (window.lucide) lucide.createIcons();
+}
+
+
+function createDeliverableItem(name, icon, desc, color, isCompleted = false) {
+    const div = document.createElement('div');
+    div.className = `deliverable-item ${isCompleted ? 'completed' : ''}`;
+    div.innerHTML = `
+        <div class="deliverable-icon" style="color: ${color}; background: ${color}15;">
+            <i data-lucide="${icon}"></i>
+        </div>
+        <div class="deliverable-info">
+            <div class="deliverable-name">${escapeHtml(name)}</div>
+            <div class="deliverable-desc">${escapeHtml(desc)}</div>
+        </div>
+        ${isCompleted ? '<div class="deliverable-check"><i data-lucide="check"></i></div>' : ''}
+    `;
+    return div;
+}
+
+
+
+
+
