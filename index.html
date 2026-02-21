@@ -195,11 +195,6 @@
             </section>
 
             <section id="view-reports" class="view">
-                <div class="report-tabs">
-                    <button class="report-tab active" data-report="work-report">作業報告書 (活動日報)</button>
-                    <button class="report-tab" data-report="analysis-report">分析レポート</button>
-                    <button class="report-tab" data-report="contribution">貢献度調査</button>
-                </div>
 
                 <div id="report-work-report" class="report-content active">
 
@@ -445,16 +440,26 @@
 
                 <div id="report-contribution" class="report-content">
                     <div class="contribution-editor card">
-                        <h2>貢献度調査・振り返り</h2>
-                        <div class="form-group">
-                            <label for="contribution-content" id="contribution-label">内容を入力してください</label>
-                            <textarea id="contribution-content" name="contributionContent" rows="10"
-                                placeholder="活動内容や自分自身の貢献、反省点などを入力してください..."></textarea>
+                        <h2 id="contribution-title">貢献度調査・相互評価</h2>
+                        <p class="wr-hint" id="contribution-desc">自分以外のメンバーの当日までの貢献度を5点満点で評価してください。</p>
+
+                        <div id="contribution-member-ratings" class="contribution-member-grid mt-1">
+                            <!-- Dynamic member rating rows will be rendered here by JS -->
                         </div>
-                        <button class="btn btn-primary" id="btn-save-contribution">保存</button>
-                        <button class="btn btn-secondary mt-1" onclick="switchView('gantt')">
-                            <i data-lucide="arrow-left"></i> ガントチャートに戻る
-                        </button>
+
+
+                        <div class="wr-submit-row">
+                            <button class="btn btn-secondary" onclick="switchView('gantt')">
+                                <i data-lucide="arrow-left"></i> ガントチャートに戻る
+                            </button>
+                            <div style="flex:1;"></div>
+                            <button class="btn btn-secondary" id="btn-save-contribution-draft">
+                                <i data-lucide="save"></i> 一時保存
+                            </button>
+                            <button class="btn btn-primary" id="btn-submit-contribution">
+                                <i data-lucide="check-circle"></i> 提出
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>

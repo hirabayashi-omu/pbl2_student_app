@@ -112,6 +112,19 @@ body {
     padding: 0.875rem;
 }
 
+.sidebar .nav-item i,
+.sidebar .nav-item svg {
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed .nav-item i,
+.sidebar.collapsed .nav-item svg {
+    transform: scale(0.8);
+}
+
 .sidebar.collapsed .nav-item span {
     display: none;
 }
@@ -151,12 +164,15 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-x: auto;
     overflow-y: auto;
     position: relative;
+    background-color: var(--bg-main);
 }
 
 .top-bar {
     height: var(--topbar-height);
+    min-width: 1200px;
     padding: 0 1.5rem;
     display: flex;
     align-items: center;
@@ -213,6 +229,8 @@ body {
 .view {
     display: none;
     padding: 2rem;
+    min-width: 1200px;
+    flex-shrink: 0;
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -337,7 +355,6 @@ body {
 /* Gantt Chart Custom Styles */
 .gantt-chart {
     min-height: 400px;
-    overflow-x: auto;
     position: relative;
     padding: 1rem 0;
 }
@@ -2696,8 +2713,7 @@ th {
     flex-direction: row;
     /* Use row to accommodate sidebar */
     height: calc(100vh - var(--topbar-height) - 4rem);
-    max-width: 1200px;
-    margin: 0 auto;
+    min-width: 1100px;
     width: 100%;
     position: relative;
     background: #1e2430;
@@ -3801,12 +3817,6 @@ th {
 }
 
 
-@media (max-width: 900px) {
-    .data-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* Bookmark Styles */
 .bookmark-grid {
     display: grid;
@@ -3929,4 +3939,150 @@ th {
     100% {
         border-color: var(--border);
     }
+}
+
+/* --- Contribution Investigation Styles (Updated for Grid & Space) --- */
+.contribution-member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.contribution-member-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    gap: 1.25rem;
+    transition: var(--transition);
+    height: 100%;
+}
+
+.contribution-member-row:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.contribution-member-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.contribution-member-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.contribution-member-name-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.contribution-member-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-main);
+}
+
+.contribution-member-role {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.rating-stars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.rating-star-btn {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 0.6rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 50px;
+    flex: 1;
+}
+
+.rating-star-btn:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--text-main);
+}
+
+.rating-star-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.rating-star-btn.active i {
+    fill: currentColor;
+}
+
+.rating-star-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+
+/* Revised Rating Star Layout for 3-column grid preference */
+.rating-stars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.rating-star-btn {
+    height: 64px;
+    /* Taller */
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.rating-star-btn i {
+    width: 20px;
+    height: 20px;
+}
+
+
+/* Checkbox styling for role selection */
+.contribution-member-roles .checkbox-item:hover {
+    background: rgba(79, 70, 229, 0.1) !important;
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.contribution-member-roles input[type="checkbox"] {
+    accent-color: var(--primary);
 }

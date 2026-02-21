@@ -356,7 +356,11 @@ function updateDisplayInfo() {
                 logoPlaceholder.innerHTML = isSidebar
                     ? `<i data-lucide="image-plus" style="width:20px;height:20px;opacity:0.5;"></i>`
                     : `<i data-lucide="image" style="width:20px;height:20px;opacity:0.5;"></i>`;
-                if (window.lucide) lucide.createIcons();
+                if (window.lucide) {
+                    lucide.createIcons({
+                        root: logoPlaceholder
+                    });
+                }
             }
         }
     };
@@ -367,7 +371,11 @@ function updateDisplayInfo() {
     const btnDelLogo = document.getElementById('btn-delete-team-logo');
     if (btnDelLogo) {
         btnDelLogo.style.display = state.groupLogo ? 'flex' : 'none';
-        if (state.groupLogo && window.lucide) lucide.createIcons();
+        if (state.groupLogo && window.lucide) {
+            lucide.createIcons({
+                root: btnDelLogo
+            });
+        }
     }
 
 
@@ -625,7 +633,8 @@ function initEventListeners() {
 
     // Save Analysis & Contribution
     document.getElementById('btn-save-analysis').addEventListener('click', saveAnalysisReport);
-    document.getElementById('btn-save-contribution').addEventListener('click', saveContributionSurvey);
+    document.getElementById('btn-save-contribution-draft')?.addEventListener('click', () => saveContributionSurvey(false));
+    document.getElementById('btn-submit-contribution')?.addEventListener('click', () => saveContributionSurvey(true));
 
     // General Save
     document.getElementById('btn-save-all').addEventListener('click', () => {
@@ -694,10 +703,22 @@ function switchView(viewId) {
     if (viewId === 'deliverables') renderDeliverables('root');
 
     if (viewId === 'reports') {
-        const currentTab = document.querySelector('.report-tab.active').getAttribute('data-report');
-        if (currentTab === 'work-report') loadWorkReport();
-        else if (currentTab === 'analysis-report') loadAnalysisReport();
-        else if (currentTab === 'contribution') loadContributionSurvey();
+        const activeTab = document.querySelector('.report-tab.active');
+        if (activeTab) {
+            const currentTab = activeTab.getAttribute('data-report');
+            if (currentTab === 'work-report') loadWorkReport();
+            else if (currentTab === 'analysis-report') loadAnalysisReport();
+            else if (currentTab === 'contribution') loadContributionSurvey();
+        } else {
+            // Fallback for when tabs are removed: check which content is currently active
+            if (document.getElementById('report-contribution').classList.contains('active')) {
+                loadContributionSurvey();
+            } else if (document.getElementById('report-analysis-report').classList.contains('active')) {
+                loadAnalysisReport();
+            } else {
+                loadWorkReport();
+            }
+        }
     }
     if (viewId === 'messages') {
         state.lastMessagesCheckTime = Date.now();
@@ -1226,7 +1247,32 @@ function renderGantt() {
                         let isSubmitted = false;
                         let hasDraft = false;
 
-                        if (item.type === 'toggle') {
+                        let progressText = '';
+                        if (item.type === 'contribution' || item.type === 'individual') {
+                            const reportGroup = state.reports[itKey];
+                            const memberCount = (state.members || []).length;
+                            if (reportGroup && memberCount > 0) {
+                                let startedCount = 0;
+                                let submittedCount = 0;
+                                (state.members || []).forEach(m => {
+                                    const userRep = reportGroup[m.id];
+                                    if (userRep) {
+                                        if (userRep.submitted) submittedCount++;
+                                        const hasInteraction = (userRep.ratings && Object.keys(userRep.ratings).length > 0) ||
+                                            (userRep.roles && Object.keys(userRep.roles).length > 0) ||
+                                            userRep.content;
+                                        if (hasInteraction || userRep.submitted) startedCount++;
+                                    }
+                                });
+                                isSubmitted = submittedCount >= memberCount;
+                                hasDraft = !isSubmitted && startedCount > 0;
+                                progressText = `${submittedCount}/${memberCount}人完了`;
+                            } else {
+                                isSubmitted = false;
+                                hasDraft = false;
+                                progressText = `0/${memberCount}人完了`;
+                            }
+                        } else if (item.type === 'toggle') {
                             const settings = state.artifactSettings && state.artifactSettings[item.key];
                             // Check if it's one of the complex artifacts
                             if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
@@ -1253,7 +1299,9 @@ function renderGantt() {
                             marker.innerHTML = '<span class="dot-icon">●</span>';
                         }
 
-                        marker.title = `${item.name} (${i}回目): ${isSubmitted ? '提出済' : (hasDraft ? '作成中(下書きあり)' : '未着手')}\nクリックで編集・登録`;
+                        let statusText = isSubmitted ? '提出済' : (hasDraft ? '作成中(下書きあり)' : '未着手');
+                        if (progressText) statusText += ` (${progressText})`;
+                        marker.title = `${item.name} (${i}回目): ${statusText}\nクリックで編集・登録`;
                         marker.onclick = () => {
                             if (item.type === 'toggle') {
                                 if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
@@ -1271,7 +1319,6 @@ function renderGantt() {
                                 else {
                                     switchTab('contribution');
                                     currentContributionKey = itKey;
-                                    document.getElementById('contribution-label').textContent = `${item.name} (${i}回目) の内容`;
                                     loadContributionSurvey();
                                 }
                             }
@@ -3739,20 +3786,294 @@ function saveAnalysisReport() {
     renderGantt();
 }
 
+const CONTRIBUTION_ROLES = [
+    '発表プレゼンテーション',
+    '質問対応',
+    '資料作成（プレゼン資料）',
+    '資料作成（配布資料）'
+];
+
 function loadContributionSurvey() {
     if (!currentContributionKey) return;
-    const data = state.reports[currentContributionKey] || { content: '' };
-    document.getElementById('contribution-content').value = data.content;
+
+    const self = (state.members || []).find(m => m.isSelf);
+    let data = { ratings: {}, roles: {}, submitted: false };
+
+    const reportData = state.reports[currentContributionKey];
+    if (reportData) {
+        // Detect if the data is in the old flat format or the new partitioned (map) format
+        const isNewFormat = Object.keys(reportData).some(key =>
+            key !== 'ratings' && key !== 'roles' && key !== 'submitted' && key !== 'updatedAt' && key !== 'content'
+        );
+
+        if (self && reportData[self.id]) {
+            // New structure: keyed by member ID
+            data = reportData[self.id];
+        } else if (!isNewFormat && (reportData.ratings || reportData.roles || reportData.submitted !== undefined)) {
+            // Legacy support: ONLY fallback to root data if NO member-specific keys are found.
+            data = reportData;
+        }
+    }
+
+    // Set Title and Description based on currentContributionKey
+    const titleEl = document.getElementById('contribution-title');
+    const descEl = document.getElementById('contribution-desc');
+    const ratingContainer = document.getElementById('contribution-member-ratings');
+
+    // Add Identity indicator
+    const existingBadge = document.getElementById('contribution-self-badge');
+    if (existingBadge) existingBadge.remove();
+
+    if (self) {
+        const badge = document.createElement('div');
+        badge.id = 'contribution-self-badge';
+        badge.style = "background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 1rem;";
+        badge.innerHTML = `<i data-lucide="user" style="width:12px; height:12px;"></i> 評価者: ${self.lastName}${self.firstName} さん として入力中`;
+        titleEl.parentElement.insertBefore(badge, titleEl.nextSibling);
+    }
+
+    // Default visibility
+    if (ratingContainer) ratingContainer.style.display = 'flex';
+
+    if (currentContributionKey.includes('reflection')) {
+        if (titleEl) titleEl.textContent = '振り返りシート';
+        if (descEl) descEl.textContent = '今回の活動を振り返り、自己評価や学んだことを自由に記入してください。';
+        if (ratingContainer) ratingContainer.style.display = 'none'; // Hide ratings for reflection
+    } else if (currentContributionKey.includes('mutual')) {
+        if (titleEl) titleEl.textContent = '相互評価シート';
+        if (descEl) descEl.textContent = 'グループ内の他メンバーの貢献度と役割を評価してください。';
+    } else if (currentContributionKey.includes('contribution_13')) {
+        if (titleEl) titleEl.textContent = '【中間発表】 貢献度調査・相互評価';
+        if (descEl) descEl.textContent = '中間発表までの、自分以外のメンバーの貢献度と役割を評価してください。';
+    } else if (currentContributionKey.includes('contribution_26') || currentContributionKey.includes('contribution_27')) {
+        if (titleEl) titleEl.textContent = '【最終発表】 貢献度調査・相互評価';
+        if (descEl) descEl.textContent = '最終発表までの、自分以外のメンバーの貢献度と役割を評価してください。';
+    }
+
+    // Render member ratings
+    if (!ratingContainer) return;
+    ratingContainer.innerHTML = '';
+
+    const otherMembers = (state.members || []).filter(m => !m.isSelf);
+
+    if (otherMembers.length === 0) {
+        ratingContainer.innerHTML = `
+            <div style="text-align:center; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px dashed var(--border); grid-column: 1 / -1;">
+                <i data-lucide="users" style="width:40px; height:40px; color:var(--text-dim); margin-bottom:1rem; opacity:0.3;"></i>
+                <p class="empty-msg" style="color:var(--text-dim);">評価対象のメンバーがいません。<br><small>「メンバー・テーマ」画面で自分の名前を「自分」として登録してください。</small></p>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+    }
+
+    otherMembers.forEach(member => {
+        const rating = data.ratings ? data.ratings[member.id] || 0 : 0;
+        const memberRoles = data.roles ? data.roles[member.id] || [] : [];
+
+        // Check if this member has submitted THEIR contribution survey
+        const hasMemberSubmitted = reportData && reportData[member.id] && reportData[member.id].submitted;
+
+        const row = document.createElement('div');
+        row.className = 'contribution-member-row';
+
+        let avatarHtml = '';
+        if (member.avatarImage) {
+            avatarHtml = `<img src="${member.avatarImage}" class="contribution-member-avatar">`;
+        } else {
+            const initial = (member.lastName || '?').charAt(0);
+            const color = AVATAR_COLORS[state.members.indexOf(member) % AVATAR_COLORS.length];
+            avatarHtml = `<div class="contribution-member-avatar" style="background:${color}22; color:${color}; border: 1px solid ${color}44;">${initial}</div>`;
+        }
+
+        const submissionBadge = hasMemberSubmitted
+            ? `<span style="background:rgba(16, 185, 129, 0.1); color:#10b981; border:1px solid rgba(16, 185, 129, 0.2); font-size:10px; padding:1px 6px; border-radius:4px; font-weight:600; margin-left:8px;"><i data-lucide="check" style="width:10px; height:10px; vertical-align:middle; margin-right:2px;"></i>提出済み</span>`
+            : '';
+
+        row.innerHTML = `
+            <div class="contribution-member-info">
+                ${avatarHtml}
+                <div class="contribution-member-name-wrap">
+                    <div style="display:flex; align-items:center;">
+                        <span class="contribution-member-name">${member.lastName || ''} ${member.firstName || ''}</span>
+                        ${submissionBadge}
+                    </div>
+                    <span class="contribution-member-role">${member.role || '役割未設定'}</span>
+                </div>
+            </div>
+            
+            <div class="contribution-member-scoring" style="width:100%;">
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.5rem; text-align: center;">当日までの貢献度</p>
+                <div class="rating-stars" data-member-id="${member.id}">
+                    ${[1, 2, 3, 4, 5].map(num => `
+                        <button class="rating-star-btn ${rating === num ? 'active' : ''}" onclick="setContributionRating('${member.id}', ${num})">
+                            <i data-lucide="star"></i> ${num}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="contribution-member-roles" style="width:100%; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 0.5rem;">
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.8rem; text-align: center;">当日までの役割（複数選択可）</p>
+                <div class="role-grid" data-member-id="${member.id}" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    ${CONTRIBUTION_ROLES.map(roleName => `
+                        <label class="checkbox-item" style="cursor:pointer; display:flex; align-items:center; gap:0.75rem; padding: 0.4rem 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; transition: var(--transition);">
+                            <input type="checkbox" name="role_${member.id}" value="${roleName}" ${memberRoles.includes(roleName) ? 'checked' : ''} style="width:16px; height:16px;">
+                            <span style="font-size:0.85rem;">${roleName}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        ratingContainer.appendChild(row);
+    });
+
+    if (window.lucide) lucide.createIcons();
+
+    // Disable controls if submitted
+    const isSubmitted = data.submitted;
+    const container = document.querySelector('.contribution-editor');
+    if (container) {
+        if (isSubmitted) {
+            container.querySelectorAll('button:not([onclick*="switchView"]), input[type="checkbox"]').forEach(el => el.disabled = true);
+            // Show unlock banner if it doesn't exist
+            if (!document.getElementById('contribution-unlock-banner')) {
+                const banner = document.createElement('div');
+                banner.id = 'contribution-unlock-banner';
+                banner.className = 'wr-status-banner submitted mt-2';
+                banner.innerHTML = `
+                    <div class="wr-status-info">
+                        <i data-lucide="lock"></i>
+                        <span>提出済みのため編集できません。修正が必要な場合は教員に申し出てください。</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-light" onclick="unlockContributionSurvey()">教員用ロック解除</button>
+                `;
+                container.insertBefore(banner, container.querySelector('.contribution-member-grid'));
+                if (window.lucide) lucide.createIcons();
+            }
+        } else {
+            container.querySelectorAll('button, input[type="checkbox"]').forEach(el => el.disabled = false);
+            const banner = document.getElementById('contribution-unlock-banner');
+            if (banner) banner.remove();
+        }
+    }
 }
 
-function saveContributionSurvey() {
+window.setContributionRating = (memberId, rating) => {
+    const parent = document.querySelector(`.rating-stars[data-member-id="${memberId}"]`);
+    if (!parent) return;
+
+    const buttons = parent.querySelectorAll('.rating-star-btn');
+    buttons.forEach((btn, idx) => {
+        if ((idx + 1) === rating) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+};
+
+function saveContributionSurvey(isSubmit = false) {
     if (!currentContributionKey) return;
-    const content = document.getElementById('contribution-content').value;
-    state.reports[currentContributionKey] = { content };
+
+    // Check if current user has already submitted
+    const self = (state.members || []).find(m => m.isSelf);
+    const reportData = state.reports[currentContributionKey];
+    if (self && reportData && reportData[self.id]?.submitted) {
+        alert('提出済みの調査は編集できません。');
+        return;
+    }
+
+    const ratings = {};
+    const roles = {};
+
+    document.querySelectorAll('.rating-stars').forEach(el => {
+        const memberId = el.getAttribute('data-member-id');
+        const activeBtn = el.querySelector('.rating-star-btn.active');
+        if (activeBtn) {
+            const buttons = Array.from(el.querySelectorAll('.rating-star-btn'));
+            const index = buttons.indexOf(activeBtn);
+            if (index !== -1) {
+                ratings[memberId] = index + 1;
+            }
+        }
+    });
+
+    document.querySelectorAll('.role-grid').forEach(el => {
+        const memberId = el.getAttribute('data-member-id');
+        const selected = Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        roles[memberId] = selected;
+    });
+
+    const otherMembers = (state.members || []).filter(m => !m.isSelf);
+
+    if (isSubmit) {
+        if (otherMembers.length > 0 && Object.keys(ratings).length < otherMembers.length) {
+            if (!confirm('まだ評価していないメンバーがいます。このまま提出してよろしいですか？')) return;
+        }
+        if (!confirm('提出すると内容を変更できなくなります。よろしいですか？')) return;
+    }
+
+    if (!self) {
+        alert('「自分」の設定が行われていないため、保存できません。メンバー画面で自分を選択してください。');
+        return;
+    }
+
+    // Initialize the report structure if it's new or old
+    const reportRoot = state.reports[currentContributionKey];
+    if (!reportRoot || reportRoot.ratings || reportRoot.submitted !== undefined) {
+        // If it was old flat structure, or empty, start fresh as a map
+        state.reports[currentContributionKey] = {};
+    }
+
+    state.reports[currentContributionKey][self.id] = {
+        ratings,
+        roles,
+        submitted: isSubmit,
+        updatedAt: new Date().toISOString()
+    };
     saveState();
-    alert('保存しました');
-    renderGantt();
+
+    if (isSubmit) {
+        alert('調査内容を提出しました。ガントチャートに戻ります。');
+        renderGantt();
+        switchView('gantt');
+    } else {
+        const btn = document.getElementById('btn-save-contribution-draft');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i> 保存しました';
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 1500);
+        }
+        renderGantt();
+    }
 }
+
+/** 教員用パスワード解除 for Contribution Survey */
+window.unlockContributionSurvey = () => {
+    const pw = prompt('提出済みロックを解除するには管理者パスワードを入力してください:');
+    if (pw === '9784563046378') {
+        const self = (state.members || []).find(m => m.isSelf);
+        const reportGroup = state.reports[currentContributionKey];
+
+        if (reportGroup) {
+            if (self && reportGroup[self.id]) {
+                reportGroup[self.id].submitted = false;
+                alert(`${self.lastName}${self.firstName}さんのロックを解除しました。`);
+            } else if (reportGroup.submitted !== undefined) {
+                // Legacy support
+                reportGroup.submitted = false;
+                alert('ロックを解除しました。');
+            } else {
+                alert('解除対象のデータが見つかりません。');
+                return;
+            }
+            saveState();
+            loadContributionSurvey();
+            renderGantt();
+        }
+    } else if (pw !== null) {
+        alert('パスワードが正しくありません。');
+    }
+};
 
 // Legacy handlers kept for HTML compatibility
 function handleImageUpload(e) {
@@ -3909,6 +4230,9 @@ function importData(e) {
                 if (imported.reports) {
                     if (!state.reports) state.reports = {};
                     Object.keys(imported.reports).forEach(key => {
+                        // Skip contribution-related reports during merge to prevent overwriting/seeing others' data
+                        if (key.startsWith('contribution_') || key.includes('mutual') || key.includes('reflection')) return;
+
                         const remoteRep = imported.reports[key];
                         const localRep = state.reports[key];
 
@@ -3964,13 +4288,28 @@ function importData(e) {
 
             } else {
                 // --- OVERWRITE LOGIC ---
+                // Preserve local mutual evaluations so they aren't lost
+                const localContributionReports = {};
+                if (state.reports) {
+                    Object.keys(state.reports).forEach(key => {
+                        if (key.startsWith('contribution_') || key.includes('mutual') || key.includes('reflection')) {
+                            localContributionReports[key] = state.reports[key];
+                        }
+                    });
+                }
+
                 // Merge messages so we don't lose existing board data
                 const existingMessages = state.messages ? [...state.messages] : [];
                 state = migrateData(imported);
+
                 // Restore messages if import has none
                 if ((!state.messages || state.messages.length === 0) && existingMessages.length > 0) {
                     state.messages = existingMessages;
                 }
+
+                // Restore local mutual evaluations
+                if (!state.reports) state.reports = {};
+                Object.assign(state.reports, localContributionReports);
                 // Ensure required defaults
                 if (!state.members) state.members = [];
                 if (!state.tasks) state.tasks = [];
