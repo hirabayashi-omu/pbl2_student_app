@@ -274,30 +274,29 @@ function compressImage(dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.25)
 
 function updateDisplayInfo() {
     const displayTheme = document.getElementById('display-theme-name');
+    if (!displayTheme) return; // Prevent errors if UI not ready
+
     const companyPrefix = state.companyName ? `[${state.companyName}] ` : '';
     displayTheme.textContent = companyPrefix + (state.themeName || '未設定のテーマ名');
 
-    document.getElementById('gantt-theme-display').textContent = state.themeName || '未設定のテーマ名';
+    const ganttTheme = document.getElementById('gantt-theme-display');
+    if (ganttTheme) ganttTheme.textContent = state.themeName || '未設定のテーマ名';
 
     const combinedGroupName = state.groupSymbol ? `グループ${state.groupSymbol}${state.groupName ? ': ' + state.groupName : ''}` : (state.groupName || '未設定のグループ名');
-    document.getElementById('display-group-name').textContent = combinedGroupName;
-    document.getElementById('gantt-group-display').textContent = combinedGroupName;
+    const groupDisplay = document.getElementById('display-group-name');
+    if (groupDisplay) groupDisplay.textContent = combinedGroupName;
+
+    const ganttGroup = document.getElementById('gantt-group-display');
+    if (ganttGroup) ganttGroup.textContent = combinedGroupName;
 
     // --- Dashboard Unread Count Card ---
     const unreadEl = document.getElementById('dashboard-unread-count');
     if (unreadEl) {
-        const selfMember = state.members.find(m => m.isSelf);
-        const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
-        let count = 0;
-        if (selfKey && state.messages) {
-            count = state.messages.filter(m => {
-                const isMe = m.senderKey === selfKey;
-                const hasRead = m.readBy && m.readBy.includes(selfKey);
-                return !isMe && !hasRead;
-            }).length;
-        }
-        unreadEl.textContent = count;
+        unreadEl.textContent = getUnreadMessageCount();
     }
+
+    // Update sidebar badges too
+    updateMessageNotification();
 
     // --- Config Locking UI ---
     const lockBadge = document.getElementById('config-lock-badge');
@@ -886,6 +885,7 @@ function setSelf(index) {
     state.members.forEach((m, i) => m.isSelf = (i === index) ? !m.isSelf : false);
     saveState();
     renderMemberList();
+    updateMessageNotification(); // Update badges when "Self" identity changes
 }
 
 /** Cycle avatar color (used as fallback) */
@@ -1952,12 +1952,12 @@ function exportArtifactScript() {
         // Presenters
         const presenterNames = (slide.presenters || []).map(pIdx => {
             const m = state.members[pIdx];
-            return m ? (m.lastName + (m.firstName || '')) : '';
+            return m ? ((m.lastName || '') + (m.firstName || '')) : '';
         }).filter(Boolean).join('・');
         // Hotspot labels
         const hotspotItems = (slide.hotspots || []).map(hs => {
             const author = state.members[hs.authorIdx];
-            const aName = author ? (author.lastName + (author.firstName || '')) : '不明';
+            const aName = author ? ((author.lastName || '') + (author.firstName || '')) : '不明';
             const label = hs.text ? `「${hs.text}」` : '';
             return `<li>${aName}${label}</li>`;
         }).join('');
@@ -3838,7 +3838,7 @@ function importData(e) {
             // 1. Preserve Self Info (always needed for restore context)
             const selfMember = (state.members || []).find(m => m.isSelf);
             const selfKey = selfMember
-                ? (selfMember.emailLocal || `${selfMember.lastName}${selfMember.firstName}`)
+                ? (selfMember.emailLocal || `${selfMember.lastName || ''}${selfMember.firstName || ''}`)
                 : null;
 
             if (doMerge) {
@@ -3869,7 +3869,7 @@ function importData(e) {
                 if (imported.members && Array.isArray(imported.members)) {
                     imported.members.forEach(remoteMem => {
                         const rId = remoteMem.id;
-                        const rKey = remoteMem.emailLocal || `${remoteMem.lastName}${remoteMem.firstName}`;
+                        const rKey = remoteMem.emailLocal || `${remoteMem.lastName || ''}${remoteMem.firstName || ''}`;
 
                         let localIndex = -1;
                         if (rId) {
@@ -3879,7 +3879,7 @@ function importData(e) {
                         // Fallback to name/email if ID not found or missing
                         if (localIndex === -1 && rKey) {
                             localIndex = state.members.findIndex(m =>
-                                (m.emailLocal || `${m.lastName}${m.firstName}`) === rKey
+                                (m.emailLocal || `${m.lastName || ''}${m.firstName || ''}`) === rKey
                             );
                         }
 
@@ -3986,7 +3986,7 @@ function importData(e) {
             // (Ensure local user remains "Self" and keeps their own avatar if better)
             if (selfMember && selfKey && Array.isArray(state.members)) {
                 state.members.forEach(m => {
-                    const mKey = m.emailLocal || `${m.lastName}${m.firstName}`;
+                    const mKey = m.emailLocal || `${m.lastName || ''}${m.firstName || ''}`;
                     if (mKey === selfKey) {
                         m.isSelf = true;
                         // If overwrite cleared avatar, restore it
@@ -4329,7 +4329,7 @@ function renderMessages() {
         const readByNames = [];
         if (readCount > 0 && state.members) {
             readBy.forEach(readerKey => {
-                const m = state.members.find(mem => (mem.emailLocal || (mem.lastName + mem.firstName)) === readerKey);
+                const m = state.members.find(mem => (mem.emailLocal || ((mem.lastName || '') + (mem.firstName || ''))) === readerKey);
                 if (m) readByNames.push((m.lastName || '') + (m.firstName || ''));
             });
         }
@@ -4339,8 +4339,8 @@ function renderMessages() {
         const reactionsHtml = msg.reactions ? Object.entries(msg.reactions).map(([emoji, users]) => {
             const hasReacted = selfKey && users.includes(selfKey);
             const userNames = users.map(uKey => {
-                const m = state.members.find(mem => (mem.emailLocal || (mem.lastName + mem.firstName)) === uKey);
-                return m ? `${m.lastName}${m.firstName}` : uKey;
+                const m = state.members.find(mem => (mem.emailLocal || ((mem.lastName || '') + (mem.firstName || ''))) === uKey);
+                return m ? `${m.lastName || ''}${m.firstName || ''}` : uKey;
             }).join(', ');
             return `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="addReaction('${msg.id}', '${emoji}')" title="${emoji}: ${userNames}">${emoji} ${users.length}</div>`;
         }).join('') : '';
@@ -4373,9 +4373,9 @@ function markMessagesAsRead() {
     if (!state.messages) return;
 
     const selfMember = state.members.find(m => m.isSelf);
-    if (!selfMember) return;
-
-    const selfKey = selfMember.emailLocal || (selfMember.lastName + selfMember.firstName);
+    const selfKey = selfMember
+        ? (selfMember.emailLocal || ((selfMember.lastName || '') + (selfMember.firstName || '')))
+        : 'guest';
 
     let updated = false;
     // Mark only visible messages in current topic as read? Or all?
@@ -4404,6 +4404,10 @@ function markMessagesAsRead() {
             updated = true;
         }
     });
+
+    if (updated) {
+        updateMessageNotification();
+    }
 }
 
 function sendMessage() {
@@ -4473,6 +4477,7 @@ function sendMessage() {
     }
 
     renderMessages();
+    updateMessageNotification(); // Ensure badge is updated after sending
     scrollToBottomMessages();
 }
 
@@ -4481,32 +4486,34 @@ function scrollToBottomMessages() {
     if (list) list.scrollTop = list.scrollHeight;
 }
 
-function updateMessageNotification() {
-    const badge = document.getElementById('msg-badge');
-    if (!badge) return;
-
-    if (!state.messages || state.messages.length === 0) {
-        badge.style.display = 'none';
-        // Still update topics if they're visible
-        if (document.getElementById('topic-list')) renderTopics();
-        return;
-    }
+/**
+ * Returns total unread messages for 'Self' across all active topics.
+ */
+function getUnreadMessageCount() {
+    if (!state.messages || state.messages.length === 0) return 0;
 
     const selfMember = state.members.find(m => m.isSelf);
-    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+    const selfKey = selfMember ? (selfMember.emailLocal || ((selfMember.lastName || '') + (selfMember.firstName || ''))) : 'guest';
 
-    if (!selfKey) {
-        badge.style.display = 'none';
-        if (document.getElementById('topic-list')) renderTopics();
-        return;
-    }
+    const activeTopicIds = new Set((state.topics || []).map(t => t.id));
+    activeTopicIds.add('general');
+    activeTopicIds.add('from_teacher');
 
-    // Count ALL messages where I am not the sender AND I haven't read it yet
-    const unreadCount = state.messages.filter(m => {
+    return state.messages.filter(m => {
+        const tId = m.topicId || 'general';
+        if (!activeTopicIds.has(tId)) return false;
+
         const isMe = (m.senderKey === selfKey);
         const hasRead = m.readBy && m.readBy.includes(selfKey);
         return !isMe && !hasRead;
     }).length;
+}
+
+function updateMessageNotification() {
+    const badge = document.getElementById('msg-badge');
+    if (!badge) return;
+
+    const unreadCount = getUnreadMessageCount();
 
     if (unreadCount > 0) {
         badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
@@ -4730,16 +4737,14 @@ function renderTopics() {
         const isActive = (state.currentTopicId || 'general') === topic.id;
 
         // Count unread
-        const selfMember = state.members.find(m => m.isSelf);
-        const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
-        let unread = 0;
-        if (selfKey) {
-            unread = (state.messages || []).filter(m => {
-                return (m.topicId || 'general') === topic.id &&
-                    m.senderKey !== selfKey &&
-                    (!m.readBy || !m.readBy.includes(selfKey));
-            }).length;
-        }
+        const selfMember = state.members ? state.members.find(m => m.isSelf) : null;
+        const selfKey = selfMember ? (selfMember.emailLocal || ((selfMember.lastName || '') + (selfMember.firstName || ''))) : 'guest';
+
+        const unread = (state.messages || []).filter(m => {
+            return (m.topicId || 'general') === topic.id &&
+                m.senderKey !== selfKey &&
+                (!m.readBy || !m.readBy.includes(selfKey));
+        }).length;
 
         const div = document.createElement('div');
         div.className = `topic-item ${isActive ? 'active' : ''}`;
@@ -4786,6 +4791,7 @@ function switchTopic(topicId) {
     markMessagesAsRead();
     saveState();
 
+    updateMessageNotification(); // Badge needs update after reading current topic
     renderTopics();
     renderMessages();
     scrollToBottomMessages();
@@ -4819,7 +4825,7 @@ function deleteTopic(topicId, e) {
     if (state.currentTopicId === topicId) {
         switchTopic('general');
     } else {
-        renderTopics();
+        updateMessageNotification(); // Overall count changes if topic with unread is deleted
     }
     saveState();
 }
@@ -4870,7 +4876,7 @@ window.addReaction = (msgId, emoji) => {
     if (!msg.reactions[emoji]) msg.reactions[emoji] = [];
 
     const selfMember = state.members.find(m => m.isSelf);
-    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : 'guest';
+    const selfKey = selfMember ? (selfMember.emailLocal || ((selfMember.lastName || '') + (selfMember.firstName || ''))) : 'guest';
 
     const index = msg.reactions[emoji].indexOf(selfKey);
     if (index === -1) {
@@ -4902,6 +4908,7 @@ function deleteMessage(msgId) {
     state.messages = state.messages.filter(m => m.id !== msgId);
     saveState();
     renderMessages();
+    updateMessageNotification(); // Update badge after deletion
 }
 
 /* --- Attachment Logic --- */
