@@ -3107,8 +3107,10 @@ th {
 .message-read-status {
     font-size: 0.65rem;
     color: var(--text-dim);
-    margin-right: 4px;
+    margin: 0 4px;
     cursor: help;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .topic-divider {
@@ -3237,9 +3239,14 @@ th {
 .message-reactions-wrapper {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     position: relative;
     min-height: 24px;
+    flex-wrap: wrap;
+}
+
+.message-item.self .message-reactions-wrapper {
+    justify-content: flex-end;
 }
 
 /* Topics Sidebar */

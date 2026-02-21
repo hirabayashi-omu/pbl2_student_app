@@ -123,8 +123,8 @@
                     <div class="stat-card">
                         <h3>次の重要イベント</h3>
                         <div class="event-info">
-                            <p class="event-name" id="next-event-name">読み込み中...</p>
-                            <p class="event-date" id="next-event-date"></p>
+                            <p class="event-name" id="next-event-name">初期設定ファイルを読み込んでください</p>
+                            <p class="event-date" id="next-event-date">-</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -141,6 +141,11 @@
                             <div class="progress" id="artifacts-progress" style="width: 0%"></div>
                         </div>
                     </div>
+                    <div class="stat-card">
+                        <h3>未読メッセージ</h3>
+                        <div class="stat-value"><span id="dashboard-unread-count">0</span> 件</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">伝言板で確認できます</div>
+                    </div>
                 </div>
 
                 <div class="dashboard-content">
@@ -153,7 +158,7 @@
                     <div class="upcoming-schedule card">
                         <h2>直近のスケジュール</h2>
                         <ul id="upcoming-schedule-list" class="schedule-list">
-                            <li class="empty-msg">スケジュールを読み込み中...</li>
+                            <li class="empty-msg">初期設定待ちです</li>
                         </ul>
                     </div>
                 </div>
@@ -460,9 +465,22 @@
                         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; align-items: start;">
                             <!-- Left: Project Info -->
                             <div>
-                                <h2 style="margin-bottom: 1.5rem;">テーマ・グループ設定</h2>
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                    <h2 style="margin: 0;">テーマ・グループ設定</h2>
+                                    <div id="config-lock-badge"
+                                        style="display: none; background: #ef444422; color: #ef4444; border: 1px solid #ef444444; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
+                                        <i data-lucide="lock"
+                                            style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i>教員初期設定済み
+                                    </div>
+                                </div>
                                 <div class="form-group">
-                                    <label for="input-theme-name">テーマ名</label>
+                                    <label for="input-company-name">関与企業名</label>
+                                    <input type="text" id="input-company-name" name="companyName"
+                                        placeholder="例: 株式会社ムーン・ラボラトリー">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-theme-name">提案テーマ名</label>
                                     <input type="text" id="input-theme-name" name="themeName"
                                         placeholder="例: 循環型AIによる地域課題解決">
                                 </div>
@@ -484,7 +502,7 @@
                                         </select>
                                     </div>
                                     <div class="form-group" style="flex: 2;">
-                                        <label for="input-group-name">チーム名</label>
+                                        <label for="input-group-name">チーム名（学生決定）</label>
                                         <input type="text" id="input-group-name" name="groupName"
                                             placeholder="例: チーム・イノベーション">
                                     </div>
@@ -593,12 +611,17 @@
                     <div class="data-actions card">
                         <h2>教員・メンバーへの共有</h2>
                         <p>現在のデータをJSON形式で書き出します。このファイルを教員・メンバーに共有してください。</p>
-                        <button class="btn btn-primary" id="btn-export-json">
-                            <i data-lucide="download"></i> JSONを書き出す
+                        <button class="btn btn-primary" id="btn-export-json" style="margin-bottom: 0.5rem;">
+                            <i data-lucide="download"></i> JSONを書き出す（バックアップ）
+                        </button>
+                        <button class="btn btn-secondary" id="btn-export-teacher-json"
+                            style="width: 100%; justify-content: center; font-size: 0.8rem;">
+                            <i data-lucide="file-output"></i> 教師配布用ファイルを書き出す
                         </button>
                     </div>
+
                     <div class="data-actions card">
-                        <h2>データの復元</h2>
+                        <h2>データの復元（個人・グループ用）</h2>
                         <p>受け取ったJSONファイルを読み込んでデータを復元します。</p>
                         <input type="file" id="import-json-file" name="importJsonFile" aria-label="JSONファイルのインポート"
                             hidden accept=".json">
@@ -616,12 +639,30 @@
                         </button>
                     </div>
 
-                    <div class="data-actions card danger-zone">
-                        <h2 class="text-danger">初期化</h2>
-                        <p>すべてのデータを削除して初期状態に戻します。</p>
-                        <button class="btn btn-danger" id="btn-reset-data">
-                            <i data-lucide="trash-2"></i> データをリセット
-                        </button>
+                    <div class="data-actions card danger-zone"
+                        style="grid-column: span 2; border-top: 4px solid var(--danger);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <div>
+                                <h2 class="text-danger"><i data-lucide="trash-2"></i> ステップ1: データの初期化</h2>
+                                <p style="font-size: 0.9rem; opacity: 0.82; line-height: 1.6;">
+                                    現在のすべての活動ログ、伝言板、報告書を完全に消去してクリーンな状態に戻します。新しい年度やチームで開始する前に必ず実行してください。</p>
+                                <button class="btn btn-danger" id="btn-reset-data"
+                                    style="margin-top: 1.25rem; width: 100%; justify-content: center; height: 42px;">
+                                    <i data-lucide="zap"></i> データを完全にリセットする
+                                </button>
+                            </div>
+                            <div style="border-left: 1px solid var(--border); padding-left: 2rem;">
+                                <h2><i data-lucide="settings" style="vertical-align: middle;"></i> ステップ2: 初期設定の取り込み</h2>
+                                <p style="font-size: 0.9rem; opacity: 0.82; line-height: 1.6;">
+                                    教員から配布された「202X_企業名_グループ.json」を読み込みます。スケジュール、テーマ、メンバー構成が自動設定されます。</p>
+                                <input type="file" id="import-initial-json" name="importInitialJson"
+                                    aria-label="初期設定JSONのインポート" hidden accept=".json">
+                                <button class="btn btn-primary" id="btn-trigger-initial-import"
+                                    style="margin-top: 1.25rem; width: 100%; justify-content: center; height: 42px;">
+                                    <i data-lucide="file-up"></i> 初期設定ファイルを読み込む
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="data-actions card data-full" style="background: rgba(255,255,255,0.03);">

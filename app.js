@@ -1,13 +1,28 @@
 ﻿// PBL2 Student Manager - app.js
 
+const DEFAULT_DELIVERABLE_TARGETS = {
+    workReportStart: 3,
+    analysis: 13,
+    contribution: [13, 26, 27],
+    poster: 12,
+    leaflet: 12,
+    mutual: [13, 26, 27],
+    reflection: [13, 26, 27],
+    pamphlet: 25,
+    slides: 25
+};
+
 // --- State Management ---
 let state = {
     themeName: '',
+    companyName: '', // NEW
     groupSymbol: '', // A, B, C...
     groupName: '',   // Catchy name
     groupLogo: '',   // DataURL for team logo
     teamsUrl: '',    // URL to Teams chat/channel
     members: [],
+    isConfigLocked: false, // NEW: Locks teacher settings (theme, company, schedule, profs, names)
+    membersLocked: false, // Legacy: overall member list lock
     tasks: [],
     reports: {}, // { iteration: { content: '', images: [] } }
     artifactSettings: {}, // { key: { slides: [{src, hotspots: [{rect, authorIdx}]}] } }
@@ -20,20 +35,40 @@ let state = {
     },
     schedule: [], // Loaded from CSV data
     sidebarCollapsed: false,
-    sidebarCollapsed: false,
-    messages: [], // { id, topicId, senderName, senderRole, content, timestamp, color, readBy: [email/id] }
+    messages: [
+        {
+            id: 'setup-guide-1',
+            topicId: 'from_teacher',
+            senderName: 'システム',
+            senderRole: '案内',
+            content: '【アプリの準備手順①】\n初めに、サイドメニューの「データ管理」から「ステップ1: データの初期化（リセット）」を行ってください。',
+            timestamp: Date.now(),
+            color: '#4f46e5',
+            readBy: []
+        },
+        {
+            id: 'setup-guide-2',
+            topicId: 'from_teacher',
+            senderName: 'システム',
+            senderRole: '案内',
+            content: '【アプリの準備手順②】\n次に、教員より配布された初期設定ファイル（202X_企業名_グループ.json）を「ステップ2: 初期設定ファイルの読み込み」から取り込んでください。これによって、年度・テーマ・グループメンバ・スケジュールが自動設定されます。',
+            timestamp: Date.now() + 1000,
+            color: '#4f46e5',
+            readBy: []
+        }
+    ],
     topics: [ // { id, name, createdBy, timestamp }
         { id: 'general', name: '全般', createdBy: 'system', timestamp: 0 },
         { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
     ],
     lastMessagesCheckTime: 0, // Timestamp when user last viewed the message board
-    currentTopicId: 'general',
+    currentTopicId: 'from_teacher',
     supervisingInstructors: [
         { lastName: '', firstName: '', emailLocal: '' },
         { lastName: '', firstName: '', emailLocal: '' }
     ],
-    membersLocked: false,
-    bookmarks: []
+    bookmarks: [],
+    deliverableTargets: DEFAULT_DELIVERABLE_TARGETS
 };
 
 // --- Mention State ---
@@ -238,12 +273,61 @@ function compressImage(dataUrl, maxWidth = 800, maxHeight = 800, quality = 0.25)
 }
 
 function updateDisplayInfo() {
-    document.getElementById('display-theme-name').textContent = state.themeName || '未設定のテーマ名';
+    const displayTheme = document.getElementById('display-theme-name');
+    const companyPrefix = state.companyName ? `[${state.companyName}] ` : '';
+    displayTheme.textContent = companyPrefix + (state.themeName || '未設定のテーマ名');
+
     document.getElementById('gantt-theme-display').textContent = state.themeName || '未設定のテーマ名';
 
     const combinedGroupName = state.groupSymbol ? `グループ${state.groupSymbol}${state.groupName ? ': ' + state.groupName : ''}` : (state.groupName || '未設定のグループ名');
     document.getElementById('display-group-name').textContent = combinedGroupName;
     document.getElementById('gantt-group-display').textContent = combinedGroupName;
+
+    // --- Dashboard Unread Count Card ---
+    const unreadEl = document.getElementById('dashboard-unread-count');
+    if (unreadEl) {
+        const selfMember = state.members.find(m => m.isSelf);
+        const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+        let count = 0;
+        if (selfKey && state.messages) {
+            count = state.messages.filter(m => {
+                const isMe = m.senderKey === selfKey;
+                const hasRead = m.readBy && m.readBy.includes(selfKey);
+                return !isMe && !hasRead;
+            }).length;
+        }
+        unreadEl.textContent = count;
+    }
+
+    // --- Config Locking UI ---
+    const lockBadge = document.getElementById('config-lock-badge');
+    if (lockBadge) {
+        lockBadge.style.display = state.isConfigLocked ? 'block' : 'none';
+        lockBadge.title = 'クリックしてロック解除（パスワード：pbl2）';
+        lockBadge.style.cursor = 'pointer';
+        lockBadge.onclick = unlockConfigWithPassword;
+    }
+
+    const lockedInputs = [
+        'input-company-name', 'input-theme-name', 'select-group-symbol',
+        'prof-1-last', 'prof-1-first', 'prof-1-email',
+        'prof-2-last', 'prof-2-first', 'prof-2-email'
+    ];
+    lockedInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.readOnly = state.isConfigLocked;
+            if (el.tagName === 'SELECT') el.disabled = state.isConfigLocked;
+            // Add visual cue
+            el.style.opacity = state.isConfigLocked ? '0.7' : '1';
+        }
+    });
+
+    // Theme/Company Name inputs
+    document.getElementById('input-company-name').value = state.companyName || '';
+    document.getElementById('input-theme-name').value = state.themeName || '';
+    document.getElementById('select-group-symbol').value = state.groupSymbol || '';
+    document.getElementById('input-group-name').value = state.groupName || '';
 
     // --- Logo Logic (Sidebar & Gantt) ---
     const updateLogo = (imgId, placeholderId, isSidebar = false) => {
@@ -288,9 +372,7 @@ function updateDisplayInfo() {
     }
 
 
-    document.getElementById('input-theme-name').value = state.themeName || '';
-    document.getElementById('select-group-symbol').value = state.groupSymbol || '';
-    document.getElementById('input-group-name').value = state.groupName || '';
+    // Theme/Company Name inputs set above
 
     // Supervising Instructors
     if (state.supervisingInstructors) {
@@ -413,11 +495,18 @@ function initEventListeners() {
     });
 
     // Theme/Group Setup
+    document.getElementById('input-company-name').addEventListener('input', (e) => {
+        if (state.isConfigLocked) { e.target.value = state.companyName; return; }
+        state.companyName = e.target.value;
+        saveState();
+    });
     document.getElementById('input-theme-name').addEventListener('input', (e) => {
+        if (state.isConfigLocked) { e.target.value = state.themeName; return; }
         state.themeName = e.target.value;
         saveState();
     });
     document.getElementById('select-group-symbol').addEventListener('change', (e) => {
+        if (state.isConfigLocked) { e.target.value = state.groupSymbol; return; }
         state.groupSymbol = e.target.value;
         saveState();
     });
@@ -498,11 +587,18 @@ function initEventListeners() {
 
     // Data Export/Import
     document.getElementById('btn-export-json').addEventListener('click', exportData);
+    document.getElementById('btn-export-teacher-json')?.addEventListener('click', exportTeacherSetup);
     document.getElementById('btn-trigger-import').addEventListener('click', () => {
         document.getElementById('import-json-file').click();
     });
     document.getElementById('import-json-file').addEventListener('change', importData);
     document.getElementById('btn-reset-data').addEventListener('click', resetData);
+
+    // Initial Setup Import
+    document.getElementById('btn-trigger-initial-import')?.addEventListener('click', () => {
+        document.getElementById('import-initial-json').click();
+    });
+    document.getElementById('import-initial-json')?.addEventListener('change', importInitialSetup);
 
     // Artifact Detail Modal
     document.getElementById('btn-close-artifact-modal').addEventListener('click', closeArtifactModal);
@@ -636,15 +732,9 @@ function switchTab(tabId) {
 }
 
 function toggleMembersLock() {
-    if (state.membersLocked) {
-        // Unlocking requires password
-        const pass = prompt('編集ロックを解除するにはパスワードを入力してください (パスワード: pbl2)');
-        if (pass === 'pbl2') {
-            state.membersLocked = false;
-        } else {
-            alert('パスワードが違います');
-            return;
-        }
+    if (state.membersLocked || state.isConfigLocked) {
+        // Unlocking requirements
+        unlockConfigWithPassword();
     } else {
         // Locking
         if (confirm('メンバー登録を固定しますか？固定すると編集ができなくなります。')) {
@@ -654,6 +744,22 @@ function toggleMembersLock() {
     saveState();
     renderMemberList();
     updateLockUI();
+}
+
+/** 初期設定項目のロック解除（パスワード入力） */
+function unlockConfigWithPassword() {
+    const pass = prompt('ロックを解除するには管理者用パスワードを入力してください (パスワード: pbl2)');
+    if (pass === 'pbl2') {
+        state.isConfigLocked = false;
+        state.membersLocked = false;
+        saveState();
+        updateDisplayInfo();
+        renderMemberList();
+        updateLockUI();
+        alert('編集ロックを解除しました。');
+    } else if (pass !== null) {
+        alert('パスワードが正しくありません。');
+    }
 }
 
 function updateLockUI() {
@@ -724,10 +830,10 @@ function renderMemberList() {
             <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
             <div class="member-card-smart ${isLocked ? 'locked' : ''}">
                 <div class="smart-row-top">
-                    <div class="smart-avatar-container" ${!isLocked ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
+                    <div class="smart-avatar-container" ${!(isLocked || state.isConfigLocked) ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
                         <div class="smart-avatar" style="background:${avatarBg};">
                             ${avatarInner}
-                            ${!isLocked ? `
+                            ${!(isLocked || state.isConfigLocked) ? `
                             <div class="smart-avatar-hover">
                                 <i data-lucide="camera" style="width:10px;height:10px;color:white;"></i>
                             </div>
@@ -737,12 +843,12 @@ function renderMemberList() {
                     <div class="smart-identity-area">
                         <div class="smart-name-line">
                             <div class="smart-name-inputs">
-                                <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" aria-label="苗字" placeholder="姓" class="smart-name-input" ${isLocked ? 'readonly' : ''}>
-                                <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" aria-label="名前" placeholder="名" class="smart-name-input" ${isLocked ? 'readonly' : ''}>
+                                <input type="text" value="${member.lastName || ''}" onchange="updateMember(${index}, 'lastName', this.value)" aria-label="苗字" placeholder="姓" class="smart-name-input" ${(isLocked || state.isConfigLocked) ? 'readonly' : ''}>
+                                <input type="text" value="${member.firstName || ''}" onchange="updateMember(${index}, 'firstName', this.value)" aria-label="名前" placeholder="名" class="smart-name-input" ${(isLocked || state.isConfigLocked) ? 'readonly' : ''}>
                             </div>
                             <div class="smart-actions-mini">
                                 ${teamsLink ? `<a href="${teamsLink}" target="_blank" class="mini-btn teams"><i data-lucide="messages-square"></i></a>` : ''}
-                                ${!isLocked ? `<button class="mini-btn delete" onclick="removeMember(${index})"><i data-lucide="trash-2"></i></button>` : ''}
+                                ${!(isLocked || state.isConfigLocked) ? `<button class="mini-btn delete" onclick="removeMember(${index})"><i data-lucide="trash-2"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -750,16 +856,16 @@ function renderMemberList() {
 
                 <div class="smart-row-middle">
                     <div class="smart-email-field">
-                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" ${!isLocked ? `onclick="setSelf(${index})"` : ''} style="border: 1px solid var(--border); padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.2); cursor: ${isLocked ? 'default' : 'pointer'};">
+                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" onclick="setSelf(${index})" style="border: 1px solid var(--border); padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.2); cursor: pointer;">
                             ${member.isSelf ? '自分' : '他'}
                         </div>
-                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" aria-label="学籍番号(ID部分)" placeholder="学籍番号" style="margin-left: 4px;" ${isLocked ? 'readonly' : ''}>
+                        <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" aria-label="学籍番号(ID部分)" placeholder="学籍番号" style="margin-left: 4px;">
                         <span class="email-domain">@st.omu.ac.jp</span>
                     </div>
                 </div>
 
                 <div class="smart-row-bottom">
-                    <select class="smart-select" onchange="updateMember(${index}, 'course', this.value)" aria-label="コース選択" ${isLocked ? 'disabled' : ''}>
+                    <select class="smart-select" onchange="updateMember(${index}, 'course', this.value)" aria-label="コース選択" ${(isLocked || state.isConfigLocked) ? 'disabled' : ''}>
                         <option value="">コース選択</option>
                         ${courseOptions}
                     </select>
@@ -873,7 +979,11 @@ function renderRoleGuide() {
 }
 
 window.updateMember = (index, key, value) => {
-    if (state.membersLocked) return;
+    // Config lock only blocks lastName/firstName. role/email/isSelf should be free.
+    const isName = (key === 'lastName' || key === 'firstName');
+    if (state.isConfigLocked && isName) return;
+    if (state.membersLocked && isName) return;
+
     state.members[index][key] = value;
     state.members[index].updatedAt = new Date().toISOString();
     saveState();
@@ -900,9 +1010,10 @@ function renderGantt() {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     let currentIteration = -1;
-    for (let i = 0; i < DEFAULT_SCHEDULE.length; i++) {
-        if (DEFAULT_SCHEDULE[i].date <= todayStr) {
-            currentIteration = DEFAULT_SCHEDULE[i].id;
+    const schedule = state.schedule || DEFAULT_SCHEDULE;
+    for (let i = 0; i < schedule.length; i++) {
+        if (schedule[i].date <= todayStr) {
+            currentIteration = schedule[i].id;
         } else {
             break;
         }
@@ -921,7 +1032,7 @@ function renderGantt() {
         tick.className = 'gantt-tick';
 
         // Get date from schedule
-        const event = DEFAULT_SCHEDULE[i - 1];
+        const event = (state.schedule || DEFAULT_SCHEDULE)[i - 1];
         const dateStr = event ? event.date.substring(5).replace('-', '/') : ''; // Get MM/DD
 
         let content = `<span class="tick-num">${i}</span>`;
@@ -965,9 +1076,9 @@ function renderGantt() {
         const cell = document.createElement('div');
         cell.className = 'gantt-cell';
 
-        // Find if this session (i) has a special event in DEFAULT_SCHEDULE
-        // DEFAULT_SCHEDULE has 28 entries, we map them carefully
-        const event = DEFAULT_SCHEDULE[i - 1];
+        // Find if this session (i) has a special event in schedule
+        // state.schedule (or DEFAULT_SCHEDULE) has 28 entries, we map them carefully
+        const event = (state.schedule || DEFAULT_SCHEDULE)[i - 1];
         if (event) {
             const marker = document.createElement('div');
             marker.className = 'event-marker';
@@ -1010,6 +1121,8 @@ function renderGantt() {
     ganttTable.appendChild(eventsGrid);
 
     // --- NEW: Categorized Deliverables ---
+    const targets = state.deliverableTargets || DEFAULT_DELIVERABLE_TARGETS;
+
     const deliverableGroups = [
         {
             id: 'effort',
@@ -1017,8 +1130,8 @@ function renderGantt() {
             color: '#ef4444', // Red
             items: [
                 { name: '作業報告書提出', type: 'report', key: 'work-reports' },
-                { name: '課題設定レポート', type: 'analysis', key: 'analysis', target: 13 },
-                { name: '貢献度調査', type: 'contribution', key: 'contribution', targets: [13, 26, 27] }
+                { name: '課題設定レポート', type: 'analysis', key: 'analysis', target: targets.analysis },
+                { name: '貢献度調査', type: 'contribution', key: 'contribution', targets: targets.contribution }
             ]
         },
         {
@@ -1026,12 +1139,12 @@ function renderGantt() {
             name: '発表成果',
             color: '#f59e0b', // Orange
             items: [
-                { name: '事業企画ポスター', type: 'toggle', key: 'poster', target: 12 },
-                { name: '事業企画リーフレット', type: 'toggle', key: 'leaflet', target: 12 },
-                { name: '相互評価シート', type: 'individual', key: 'mutual', targets: [13, 26, 27] },
-                { name: '振り返りシート', type: 'individual', key: 'reflection', targets: [13, 26, 27] },
-                { name: '製品・サービスパンフレット', type: 'toggle', key: 'pamphlet_25', target: 25 },
-                { name: '最終プレゼンスライド', type: 'toggle', key: 'slides_25', target: 25 }
+                { name: '事業企画ポスター', type: 'toggle', key: 'poster', target: targets.poster },
+                { name: '事業企画リーフレット', type: 'toggle', key: 'leaflet', target: targets.leaflet },
+                { name: '相互評価シート', type: 'individual', key: 'mutual', targets: targets.mutual },
+                { name: '振り返りシート', type: 'individual', key: 'reflection', targets: targets.reflection },
+                { name: '製品・サービスパンフレット', type: 'toggle', key: 'pamphlet_25', target: targets.pamphlet },
+                { name: '最終プレゼンスライド', type: 'toggle', key: 'slides_25', target: targets.slides }
             ]
         }
     ];
@@ -1087,7 +1200,8 @@ function renderGantt() {
                 // Logic for different item types
                 if (item.type === 'report') {
                     const iter = i; // iter = actual session number (matches DEFAULT_SCHEDULE id)
-                    if (iter >= 3) { // Reports start from session 3 (sessions 1-2 have no reports)
+                    const startIter = targets.workReportStart || 3;
+                    if (iter >= startIter) { // Reports start from defined session
                         const report = state.reports[iter];
                         const isSubmitted = report && report.submitted;
                         const hasDraft = report && report.content && !isSubmitted;
@@ -1429,10 +1543,16 @@ function migrateData(data) {
 
     // Ensure state object structure
     if (!data.tasks) data.tasks = [];
-    if (!data.members) data.members = [];
-    if (!data.artifacts) data.artifacts = {};
     if (!data.reports) data.reports = {};
     if (!data.artifactSettings) data.artifactSettings = {};
+    if (data.schedule === undefined || (data.schedule && data.schedule.length === 0)) {
+        // Only fallback if we don't have an empty array (meaning it was just reset)
+        // Actually, if we want it to stay empty, we should check if it was initialized.
+        // For now, let's just trust state.schedule being [] means empty.
+    }
+    if (data.isConfigLocked === undefined) data.isConfigLocked = false;
+    if (data.companyName === undefined) data.companyName = '';
+    if (data.deliverableTargets === undefined) data.deliverableTargets = DEFAULT_DELIVERABLE_TARGETS;
 
     // Tasks
     if (Array.isArray(data.tasks)) {
@@ -2451,10 +2571,12 @@ function initWorkReportForm() {
     const iterSelect = document.getElementById('work-report-iteration');
     if (!iterSelect) return;
 
-    // Build option list from DEFAULT_SCHEDULE
+    // Build option list from schedule
     iterSelect.innerHTML = '';
-    DEFAULT_SCHEDULE.forEach(s => {
-        if (s.id >= 3) {
+    const schedule = (state.schedule && state.schedule.length > 0) ? state.schedule : [];
+    const startIter = state.deliverableTargets?.workReportStart || 3;
+    schedule.forEach(s => {
+        if (s.id >= startIter) {
             const opt = document.createElement('option');
             opt.value = s.id;
             opt.textContent = `第${s.id}回`;
@@ -3088,7 +3210,8 @@ function buildMindMapSvgForPrint(pf) {
 }
 
 function getWrIter() {
-    return document.getElementById('work-report-iteration')?.value || '3';
+    const val = document.getElementById('work-report-iteration')?.value;
+    return val || ''; // No default '3'
 }
 
 function getWrCurrent() {
@@ -3097,7 +3220,8 @@ function getWrCurrent() {
 
 function updateWrHeader() {
     const iter = parseInt(getWrIter());
-    const session = DEFAULT_SCHEDULE.find(s => s.id === iter);
+    const schedule = (state.schedule && state.schedule.length > 0) ? state.schedule : [];
+    const session = schedule.find(s => s.id === iter);
 
     // Header card fields
     const setEl = (id, val) => {
@@ -3110,10 +3234,12 @@ function updateWrHeader() {
 
     // Session info bar
     const infoEl = document.getElementById('wr-session-info');
-    if (infoEl && session) {
-        infoEl.textContent = `📅 ${formatDate(session.date)} - ${session.label}`;
-    } else if (infoEl) {
-        infoEl.textContent = `第${iter}回`;
+    if (infoEl) {
+        if (session) {
+            infoEl.textContent = `📅 ${formatDate(session.date)} - ${session.label}`;
+        } else {
+            infoEl.textContent = 'スケジュールが設定されていません。初期設定ファイルを読み込んでください。';
+        }
     }
 }
 
@@ -3639,8 +3765,6 @@ window.removeImage = (idx) => removeWrImage('achievement', idx);
 // --- Data Export/Import ---
 function exportData() {
     const dataStr = JSON.stringify(state, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
 
     const now = new Date();
     const dateStr = now.getFullYear().toString() +
@@ -3650,17 +3774,47 @@ function exportData() {
         now.getMinutes().toString().padStart(2, '0');
 
     const groupPart = state.groupSymbol ? `Group-${state.groupSymbol}` : 'NoGroup';
-    // Truncate theme name to 8 chars and sanitize
-    const themePart = (state.themeName || 'NoTheme')
-        .substring(0, 8)
-        .replace(/[<>:"/\\|?*]/g, '_'); // Sanitize invalid chars
-
+    const themePart = (state.themeName || 'NoTheme').substring(0, 8).replace(/[<>:"/\\|?*]/g, '_');
     const filename = `pbl2_backup_${dateStr}_${groupPart}_${themePart}.json`;
 
+    downloadJson(dataStr, filename);
+}
+
+/** 教員配布用の初期設定ファイルを書き出す */
+function exportTeacherSetup() {
+    const year = new Date().getFullYear();
+    const company = (state.companyName || 'Unknown').replace(/[<>:"/\\|?*]/g, '_');
+    const symbol = state.groupSymbol || 'X';
+    const filename = `${year}_${company}_${symbol}.json`;
+
+    const setupData = {
+        type: 'pbl2_initial_setup',
+        year: year,
+        companyName: state.companyName,
+        themeName: state.themeName,
+        groupSymbol: state.groupSymbol,
+        supervisingInstructors: state.supervisingInstructors,
+        members: (state.members || []).map(m => ({
+            lastName: m.lastName,
+            firstName: m.firstName,
+            course: m.course
+            // role and emailLocal are intentionally omitted
+        })),
+        schedule: state.schedule || DEFAULT_SCHEDULE
+    };
+
+    const dataStr = JSON.stringify(setupData, null, 2);
+    downloadJson(dataStr, filename);
+}
+
+function downloadJson(dataStr, filename) {
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
+    URL.revokeObjectURL(url);
 }
 
 function importData(e) {
@@ -3856,10 +4010,155 @@ function importData(e) {
 }
 
 function resetData() {
-    if (confirm('すべてのデータをリセットしますか？')) {
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload();
-    }
+    if (!confirm('本当にすべてのデータをリセットしますか？\n活動ログやメッセージ、報告書を含むすべてのデータが消去され、初期状態に戻ります。\n(※この操作は取り消せません)')) return;
+
+    // Force clear everything from localStorage to avoid any legacy contamination
+    localStorage.removeItem(STORAGE_KEY);
+
+    // Reset state to clean defaults with tutorial messages
+    state = {
+        themeName: '',
+        companyName: '',
+        groupSymbol: '',
+        groupName: '',
+        groupLogo: '',
+        teamsUrl: '',
+        members: [],
+        isConfigLocked: false,
+        membersLocked: false,
+        tasks: [],
+        reports: {},
+        artifactSettings: {},
+        analysisReport: { bg: '', problem: '', solution: '', images: [] },
+        artifacts: {
+            poster: false,
+            leaflet: false,
+            pamphlet_25: false,
+            slides_25: false
+        },
+        schedule: [], // Start empty, wait for import
+        sidebarCollapsed: false,
+        messages: [
+            {
+                id: generateId(),
+                topicId: 'from_teacher',
+                senderName: 'システム',
+                senderRole: '案内',
+                content: '【アプリの準備手順】\n1. まず、この「データ管理」画面で「ステップ1: データの初期化（リセット）」を行ってください（完了済み）。\n2. 次に、教員より配布された初期設定ファイル（202X_企業名_グループ.json）を「ステップ2: 初期設定ファイルの読み込み」ボタンから読み込んでください。',
+                timestamp: Date.now(),
+                color: '#4f46e5',
+                readBy: []
+            },
+            {
+                id: generateId(),
+                topicId: 'from_teacher',
+                senderName: 'システム',
+                senderRole: '案内',
+                content: '初期設定ファイルの取り込みが完了すると、年度・テーマ・ガントチャートのスケジュール・メンバー名が自動的に設定されます。',
+                timestamp: Date.now() + 1000,
+                color: '#4f46e5',
+                readBy: []
+            }
+        ],
+        topics: [
+            { id: 'general', name: '全般', createdBy: 'system', timestamp: 0 },
+            { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
+        ],
+        lastMessagesCheckTime: 0,
+        currentTopicId: 'from_teacher', // Show tutorial messages immediately
+        supervisingInstructors: [
+            { lastName: '', firstName: '', emailLocal: '' },
+            { lastName: '', firstName: '', emailLocal: '' }
+        ],
+        bookmarks: [],
+        deliverableTargets: DEFAULT_DELIVERABLE_TARGETS
+    };
+
+    saveState();
+    alert('データを完全に消去しました。\n次に、教員より配布された初期設定ファイルを読み込んでください。');
+    location.reload();
+}
+
+/** 初期設定のインポート（教員配布用ファイル） */
+async function importInitialSetup(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const imported = JSON.parse(event.target.result);
+            if (imported.type !== 'pbl2_initial_setup') {
+                if (!confirm('このファイルは正規の初期設定ファイルではない可能性があります。続行しますか？')) return;
+            }
+
+            if (!confirm('初期設定を取り込みますか？\n現在のすべてのデータ（メッセージ、タスク、報告書など）がリセットされ、新しい設定で上書きされます。\n（※一度リセットすると元に戻せません）')) return;
+
+            // Reset state with imported core data
+            const now = new Date().toISOString();
+            state = {
+                themeName: imported.themeName || '',
+                companyName: imported.companyName || '',
+                groupSymbol: imported.groupSymbol || '',
+                groupName: '', // Student group decides this
+                groupLogo: '',
+                teamsUrl: '',
+                members: (imported.members || []).map(m => ({
+                    ...m,
+                    id: generateId(),
+                    updatedAt: now,
+                    isSelf: false,
+                    emailLocal: '',
+                    role: '' // Student group decides this
+                })),
+                supervisingInstructors: imported.supervisingInstructors || [
+                    { lastName: '', firstName: '', emailLocal: '' },
+                    { lastName: '', firstName: '', emailLocal: '' }
+                ],
+                schedule: imported.schedule || DEFAULT_SCHEDULE,
+                tasks: [],
+                reports: {},
+                messages: [
+                    {
+                        id: generateId(),
+                        topicId: 'from_teacher',
+                        senderName: 'システム',
+                        senderRole: '完了案内',
+                        content: '【設定完了】初期設定の取り込みが完了しました。\n\n【次のステップ】\n1. メンバー表から自分の名前を探し、「自分」ボタンをオンにしてください。\n2. 自分の学籍番号（メールID）を入力してください。\n3. リーダーやエンジニアなどの詳細な役割を話し合って決定し、選択してください。',
+                        timestamp: Date.now(),
+                        color: '#10b981',
+                        readBy: []
+                    }
+                ],
+                topics: [
+                    { id: 'general', name: '全般', createdBy: 'system', timestamp: 0 },
+                    { id: 'from_teacher', name: '教員より', createdBy: 'system', timestamp: 0 }
+                ],
+                artifactSettings: {},
+                analysisReport: { bg: '', problem: '', solution: '', images: [] },
+                artifacts: {
+                    poster: false,
+                    leaflet: false,
+                    pamphlet_25: false,
+                    slides_25: false
+                },
+                sidebarCollapsed: false,
+                lastMessagesCheckTime: 0,
+                currentTopicId: 'general',
+                isConfigLocked: true, // LOCK the configuration upon import
+                membersLocked: false, // Don't lock the whole list, just names (via isConfigLocked)
+                bookmarks: [],
+                deliverableTargets: imported.deliverableTargets || DEFAULT_DELIVERABLE_TARGETS
+            };
+
+            saveState();
+            alert('初期設定を読み込みました。アプリを再起動します。');
+            location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('ファイルの解読に失敗しました。JSON形式が正しいか確認してください。');
+        }
+    };
+    reader.readAsText(file);
 }
 
 // --- Dashboard Stats ---
@@ -3868,6 +4167,7 @@ function renderAll() {
     renderRecentActivity();
     renderUpcomingSchedule();
     renderRoleGuide();
+    updateMessageNotification(); // Ensure sidebar badge is updated on load
 }
 
 function renderRecentActivity() {
@@ -3930,7 +4230,8 @@ function renderRecentActivity() {
 function renderUpcomingSchedule() {
     const list = document.getElementById('upcoming-schedule-list');
     const now = new Date();
-    const upcoming = DEFAULT_SCHEDULE.filter(s => new Date(s.date) >= now).slice(0, 3);
+    const schedule = (state.schedule && state.schedule.length > 0) ? state.schedule : [];
+    const upcoming = schedule.filter(s => new Date(s.date) >= now).slice(0, 3);
 
     if (upcoming.length > 0) {
         list.innerHTML = upcoming.map(s => `
@@ -3942,6 +4243,10 @@ function renderUpcomingSchedule() {
 
         document.getElementById('next-event-name').textContent = upcoming[0].label;
         document.getElementById('next-event-date').textContent = upcoming[0].date;
+    } else {
+        list.innerHTML = '<li class="empty-msg">今後の予定はありません（初期設定待ち）</li>';
+        document.getElementById('next-event-name').textContent = '未設定';
+        document.getElementById('next-event-date').textContent = '-';
     }
 }
 
@@ -4029,11 +4334,15 @@ function renderMessages() {
             });
         }
         const readTooltip = readByNames.length > 0 ? `既読: ${readByNames.join(', ')}` : 'まだ誰も読んでいません';
-        const readLabel = readCount > 0 ? `<span class="message-read-status" title="${readTooltip}">既読 ${readCount}</span>` : '';
+        const readLabel = `<span class="message-read-status" title="${readTooltip}">${readCount > 0 ? `既読 ${readCount}` : '未読'}</span>`;
 
         const reactionsHtml = msg.reactions ? Object.entries(msg.reactions).map(([emoji, users]) => {
             const hasReacted = selfKey && users.includes(selfKey);
-            return `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="addReaction('${msg.id}', '${emoji}')">${emoji} ${users.length}</div>`;
+            const userNames = users.map(uKey => {
+                const m = state.members.find(mem => (mem.emailLocal || (mem.lastName + mem.firstName)) === uKey);
+                return m ? `${m.lastName}${m.firstName}` : uKey;
+            }).join(', ');
+            return `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="addReaction('${msg.id}', '${emoji}')" title="${emoji}: ${userNames}">${emoji} ${users.length}</div>`;
         }).join('') : '';
 
         div.innerHTML = `
@@ -4047,12 +4356,12 @@ function renderMessages() {
                 </div>
                 <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
                 <div class="message-reactions-wrapper">
+                    ${isMe ? readLabel : ''}
                     <div class="message-reactions">${reactionsHtml}</div>
                     <button class="btn-add-reaction" onclick="toggleReactionPicker(event, '${msg.id}')" title="リアクションを追加">
                         <i data-lucide="smile-plus" style="width:16px; height:16px;"></i>
                     </button>
                 </div>
-                ${isMe ? `<div style="text-align:right; margin-top:2px;">${readLabel}</div>` : ''}
             </div>
         `;
         list.appendChild(div);
@@ -4176,20 +4485,27 @@ function updateMessageNotification() {
     const badge = document.getElementById('msg-badge');
     if (!badge) return;
 
-    if (!state.messages) {
+    if (!state.messages || state.messages.length === 0) {
         badge.style.display = 'none';
+        // Still update topics if they're visible
+        if (document.getElementById('topic-list')) renderTopics();
         return;
     }
 
     const selfMember = state.members.find(m => m.isSelf);
     const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
 
-    // Count messages that are NEWER than last check time AND NOT sent by me
-    const lastCheck = state.lastMessagesCheckTime || 0;
+    if (!selfKey) {
+        badge.style.display = 'none';
+        if (document.getElementById('topic-list')) renderTopics();
+        return;
+    }
+
+    // Count ALL messages where I am not the sender AND I haven't read it yet
     const unreadCount = state.messages.filter(m => {
-        const isNew = new Date(m.timestamp).getTime() > lastCheck;
-        const isMe = selfKey && (m.senderKey === selfKey);
-        return isNew && !isMe;
+        const isMe = (m.senderKey === selfKey);
+        const hasRead = m.readBy && m.readBy.includes(selfKey);
+        return !isMe && !hasRead;
     }).length;
 
     if (unreadCount > 0) {
@@ -4197,6 +4513,11 @@ function updateMessageNotification() {
         badge.style.display = 'flex';
     } else {
         badge.style.display = 'none';
+    }
+
+    // Always update the topic list badges too if it's currently rendered
+    if (document.getElementById('topic-list')) {
+        renderTopics();
     }
 }
 
@@ -4705,8 +5026,9 @@ function renderDeliverables(folderId = 'root') {
     }
 
     if (folderId === 'root') {
+        const startIter = state.deliverableTargets?.workReportStart || 3;
         const folders = [
-            { id: 'reports', name: '活動報告書', icon: 'clipboard-list', desc: '各回の実施報告書 (第3回〜)', color: '#6366f1' },
+            { id: 'reports', name: '活動報告書', icon: 'clipboard-list', desc: `各回の実施報告書 (第${startIter}回〜)`, color: '#6366f1' },
             { id: 'presentation', name: '提出用成果物', icon: 'presentation', desc: 'ポスター・スライド・レポート', color: '#f59e0b' }
         ];
 
@@ -4716,8 +5038,10 @@ function renderDeliverables(folderId = 'root') {
             container.appendChild(item);
         });
     } else if (folderId === 'reports') {
-        DEFAULT_SCHEDULE.forEach(s => {
-            if (s.id < 3) return;
+        const startIter = state.deliverableTargets?.workReportStart || 3;
+        const currentSchedule = (state.schedule && state.schedule.length > 0) ? state.schedule : DEFAULT_SCHEDULE;
+        currentSchedule.forEach(s => {
+            if (s.id < startIter) return;
             const r = state.reports[s.id];
             const isSubmitted = r && r.submitted;
             const statusLabel = isSubmitted ? '提出済み' : (r && r.content ? '下書き' : '未作成');
