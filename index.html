@@ -7,6 +7,9 @@
     <title>応用専門PBL2 プロジェクト管理ツール</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="mindmap.css">
+    <link rel="stylesheet" href="bmc_styles.css">
+    <link rel="stylesheet" href="teamwork_styles.css">
+    <link rel="stylesheet" href="tech_core_styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -41,14 +44,29 @@
                 <button class="nav-item" data-view="bookmarks">
                     <i data-lucide="bookmark"></i> <span>ブックマーク</span>
                 </button>
+
+                <div class="nav-separator"></div>
+
                 <button class="nav-item" data-view="members">
                     <i data-lucide="users"></i> <span>メンバー・テーマ</span>
                 </button>
                 <button class="nav-item" data-view="data">
                     <i data-lucide="database"></i> <span>データ管理</span>
                 </button>
+
+                <div class="nav-separator"></div>
+
                 <button class="nav-item" data-view="mindmap">
                     <i data-lucide="network"></i> <span>マインドマップ</span>
+                </button>
+                <button class="nav-item" data-view="teamwork">
+                    <i data-lucide="users-2"></i> <span>チームワーク</span>
+                </button>
+                <button class="nav-item" data-view="tech-core">
+                    <i data-lucide="cpu"></i> <span>技術コア開発</span>
+                </button>
+                <button class="nav-item" data-view="bmc">
+                    <i data-lucide="grid"></i> <span>ビジネス分析</span>
                 </button>
             </nav>
             <div class="sidebar-footer">
@@ -935,6 +953,463 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section id="view-teamwork" class="view">
+                <div class="team-container">
+                    <div class="card teamwork-header" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h2
+                                    style="font-size: 1.25rem; display: flex; align-items: center; gap: 8px; margin: 0;">
+                                    <i data-lucide="heart" style="color: #ef4444;"></i> チームワーク形成
+                                </h2>
+                                <p style="font-size: 0.85rem; color: var(--text-dim); margin-top: 4px;">
+                                    互いの強みや興味を知り、最高のチームパフォーマンスを目指します。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Team Introduction Section -->
+                    <div class="card teamwork-intro-card" style="margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="flag" style="color: var(--primary);"></i> チーム紹介・ビジョン
+                        </h3>
+                        <div id="team-intro-content" contenteditable="true" class="editable-area"
+                            style="min-height: 100px; padding: 1rem; border: 1px dashed var(--border); border-radius: 8px;"
+                            onblur="saveTeamworkData('intro', this.innerHTML)">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+
+                    <!-- Members Section -->
+                    <div id="teamwork-members-grid" class="members-profile-grid">
+                        <!-- Dynamic member cards -->
+                    </div>
+                </div>
+                <!-- Hidden input for member photo -->
+                <input type="file" id="member-photo-input" style="display:none;" accept="image/*">
+            </section>
+
+            <section id="view-tech-core" class="view">
+                <div class="tech-core-container">
+                    <div class="card tech-core-header"
+                        style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin: 0;">
+                                <i data-lucide="cpu" style="color: #3b82f6;"></i> 技術コア開発
+                            </h2>
+                            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">
+                                図解や構成図を描き、プロジェクトの技術的な核を定義します。
+                            </p>
+                        </div>
+                        <div class="tech-canvas-toolbar">
+                            <button class="canvas-tool-btn active" data-tool="select" title="選択"><i
+                                    data-lucide="mouse-pointer-2"></i></button>
+                            <button class="canvas-tool-btn-sm" id="btn-copy" title="コピー (Ctrl+C)"><i
+                                    data-lucide="copy"></i></button>
+                            <button class="canvas-tool-btn-sm" id="btn-paste" title="貼り付け (Ctrl+V)"><i
+                                    data-lucide="clipboard"></i></button>
+                            <button class="canvas-tool-btn-sm" id="btn-duplicate" title="複製 (Ctrl+D)"><i
+                                    data-lucide="layers"></i></button>
+                            <button class="canvas-tool-btn-sm" id="btn-delete" title="削除 (Delete)"><i
+                                    data-lucide="trash-2"></i></button>
+                            <div class="tool-separator"></div>
+                            <button class="canvas-tool-btn-sm" id="btn-undo" title="元に戻す (Ctrl+Z)"><i
+                                    data-lucide="undo"></i></button>
+                            <button class="canvas-tool-btn-sm" id="btn-redo" title="やり直し (Ctrl+Y)"><i
+                                    data-lucide="redo"></i></button>
+                            <div class="tool-separator"></div>
+
+                            <!-- Shapes Dropdown -->
+                            <div class="canvas-dropdown-tool">
+                                <button class="canvas-tool-btn" id="shape-selector-btn" title="図形選択">
+                                    <i data-lucide="shapes"></i>
+                                    <i data-lucide="chevron-down" style="width:10px; height:10px;"></i>
+                                </button>
+                                <div class="canvas-dropdown-menu" id="shape-dropdown">
+                                    <button class="menu-item" data-tool="rect"><i data-lucide="square"></i> 四角形</button>
+                                    <button class="menu-item" data-tool="rounded-rect"><i data-lucide="box"></i>
+                                        角丸四角形</button>
+                                    <button class="menu-item" data-tool="circle"><i data-lucide="circle"></i> 円</button>
+                                    <button class="menu-item" data-tool="triangle"><i data-lucide="triangle"></i>
+                                        三角形</button>
+                                    <button class="menu-item" data-tool="diamond"><i data-lucide="diamond"></i>
+                                        ひし形</button>
+                                    <button class="menu-item" data-tool="arrow"><i data-lucide="arrow-up-right"></i>
+                                        矢印</button>
+                                    <button class="menu-item" data-tool="line"><i data-lucide="minus"></i> 直線</button>
+                                    <button class="menu-item" data-tool="polyline"><i data-lucide="spline"></i>
+                                        折れ線</button>
+                                </div>
+                            </div>
+
+                            <button class="canvas-tool-btn" data-tool="text" title="テキスト (T)"><i
+                                    data-lucide="type"></i></button>
+                            <button class="canvas-tool-btn" id="btn-image-upload" title="画像をアップロード"><i
+                                    data-lucide="image"></i></button>
+                            <input type="file" id="canvas-image-input" style="display:none;" accept="image/*">
+                            <div class="tool-separator"></div>
+
+                            <!-- Styling Controls -->
+                            <div class="canvas-style-group">
+                                <label title="線色"><i data-lucide="pencil" style="width:14px;"></i></label>
+                                <input type="color" id="canvas-stroke-color" value="#3b82f6">
+                            </div>
+
+                            <div class="canvas-style-group">
+                                <label title="塗り色"><i data-lucide="paint-bucket" style="width:14px;"></i></label>
+                                <div class="color-picker-wrapper">
+                                    <input type="color" id="canvas-fill-color" value="#ffffff">
+                                    <label class="checkbox-item"
+                                        style="padding:0; margin-left:5px; background:transparent;" title="塗りつぶしなし">
+                                        <input type="checkbox" id="canvas-no-fill" checked> <span>なし</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="tool-separator"></div>
+
+                            <div class="canvas-style-group">
+                                <label title="線の太さ"><i data-lucide="move-vertical" style="width:14px;"></i></label>
+                                <select id="canvas-line-width">
+                                    <option value="1">1px</option>
+                                    <option value="2" selected>2px</option>
+                                    <option value="4">4px</option>
+                                    <option value="8">8px</option>
+                                </select>
+                            </div>
+
+                            <div class="canvas-style-group">
+                                <label title="線種"><i data-lucide="minus" style="width:14px;"></i></label>
+                                <select id="canvas-line-dash">
+                                    <option value="solid">実線</option>
+                                    <option value="dashed">破線</option>
+                                    <option value="dotted">点線</option>
+                                </select>
+                            </div>
+
+                            <div class="tool-separator"></div>
+
+                            <div class="canvas-style-group text-only-style" style="display:none;">
+                                <label title="フォントサイズ"><i data-lucide="case-sensitive" style="width:14px;"></i></label>
+                                <select id="canvas-font-size">
+                                    <option value="12">12px</option>
+                                    <option value="14">14px</option>
+                                    <option value="16" selected>16px</option>
+                                    <option value="20">20px</option>
+                                    <option value="24">24px</option>
+                                    <option value="32">32px</option>
+                                </select>
+                                <button class="canvas-tool-btn-sm" id="btn-text-bold" title="太字"><i
+                                        data-lucide="bold"></i></button>
+                                <button class="canvas-tool-btn-sm" id="btn-text-italic" title="斜体"><i
+                                        data-lucide="italic"></i></button>
+                            </div>
+
+                            <div class="tool-separator"></div>
+
+                            <button class="btn btn-secondary btn-sm" onclick="clearTechCanvas()"
+                                style="margin-left: auto;">クリア</button>
+                        </div>
+                    </div>
+                    <div id="tech-canvas-wrapper" class="tech-canvas-wrapper">
+                        <canvas id="tech-core-canvas"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-bmc" class="view">
+                <div class="bmc-container">
+                    <div class="bmc-header card"
+                        style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <h2
+                                    style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap;">
+                                    <i data-lucide="grid" style="color: var(--primary);"></i> ビジネス分析
+                                </h2>
+                                <div style="height: 16px; width: 1px; background: var(--border);"></div>
+                                <input type="text" id="bmc-title-input" placeholder="プロジェクト名・ビジネスプラン名を入力..."
+                                    style="background: transparent; border: none; border-bottom: 1px solid transparent; color: var(--text-main); font-size: 0.95rem; font-weight: 500; width: 400px; padding: 4px 8px; transition: border-color 0.2s;"
+                                    onfocus="this.style.borderBottomColor='var(--primary)'"
+                                    onblur="this.style.borderBottomColor='transparent'; saveBMCTitle(this.value)">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
+                                <div class="analysis-tabs" style="display: flex; gap: 4px;">
+                                    <button class="analysis-tab active" data-analysis-tab="bmc"
+                                        onclick="switchAnalysisTab('bmc')">BMC</button>
+                                    <button class="analysis-tab" data-analysis-tab="5w1h"
+                                        onclick="switchAnalysisTab('5w1h')">5W1H</button>
+                                    <button class="analysis-tab" data-analysis-tab="3c"
+                                        onclick="switchAnalysisTab('3c')">3C分析</button>
+                                </div>
+                                <div id="analysis-tab-description"
+                                    style="font-size: 0.8rem; color: var(--text-dim); border-left: 2px solid var(--border); padding-left: 12px; line-height: 1.4;">
+                                    ビジネスの構造を可視化し、価値創造の仕組みを定義します。
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bmc-toolbar" style="display: flex; gap: 1rem; align-items: center;">
+                            <div class="bmc-help-text"
+                                style="font-size: 0.75rem; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px;">
+                                セクション右クリック：追加 | 付箋右クリック：編集 | ドラッグ：移動
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="exportBMCAsImage()">
+                                <i data-lucide="image"></i> 保存
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Content Area -->
+                    <div id="analysis-content">
+                        <!-- BMC (Business Model Canvas) -->
+                        <div id="analysis-tab-bmc" class="analysis-tab-pane active">
+                            <div id="bmc-board" class="bmc-board">
+                                <!-- Left Column (KP) -->
+                                <div class="bmc-section" data-section="KP" id="bmc-kp">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="handshake"></i>
+                                        <span>パートナー<br><small>Key Partners</small></span>
+                                        <div class="bmc-help-tip down"
+                                            data-label="ビジネスを運営するために必要な外部パートナーやサプライヤーのネットワーク">?
+                                        </div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-KP"></div>
+                                </div>
+
+                                <!-- 2nd Column (KA & KR) -->
+                                <div class="bmc-dual-column">
+                                    <div class="bmc-section" data-section="KA" id="bmc-ka">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="activity"></i>
+                                            <span>主な活動<br><small>Key Activities</small></span>
+                                            <div class="bmc-help-tip down" data-label="価値を提供するために必要な最も重要な活動">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-KA"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="KR" id="bmc-kr">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="wrench"></i>
+                                            <span>主なリソース<br><small>Key Resources</small></span>
+                                            <div class="bmc-help-tip" data-label="ビジネスモデルを動かすために必要な資産（人的、物的、知的、金銭的）">?
+                                            </div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-KR"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 3rd Column (VP) -->
+                                <div class="bmc-section primary" data-section="VP" id="bmc-vp">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="gift"></i>
+                                        <span>価値提案<br><small>Value Proposition</small></span>
+                                        <div class="bmc-help-tip down" data-label="顧客がなぜ他社ではなく自社を選ぶのか、解決する課題や満たすニーズ">?
+                                        </div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-VP"></div>
+                                </div>
+
+                                <!-- 4th Column (CR & CH) -->
+                                <div class="bmc-dual-column">
+                                    <div class="bmc-section" data-section="CR" id="bmc-cr">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="heart"></i>
+                                            <span>顧客との関係<br><small>Relationships</small></span>
+                                            <div class="bmc-help-tip down" data-label="顧客セグメントごとにどのような関係性を築き、維持するか">?
+                                            </div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-CR"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="CH" id="bmc-ch">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="truck"></i>
+                                            <span>チャネル<br><small>Channels</small></span>
+                                            <div class="bmc-help-tip" data-label="価値提案をどのように顧客に届け、コミュニケーションをとるか">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-CH"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 5th Column (CS) -->
+                                <div class="bmc-section" data-section="CS" id="bmc-cs">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="users"></i>
+                                        <span>顧客セグメント<br><small>Customer Segments</small></span>
+                                        <div class="bmc-help-tip down" data-label="ビジネスが価値を提供しようとする具体的な顧客グループや組織">?
+                                        </div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-CS"></div>
+                                </div>
+
+                                <!-- Bottom: Cost Structure -->
+                                <div class="bmc-section footer" data-section="COST" id="bmc-cost"
+                                    style="grid-column: 1 / span 2.5;">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="coins"></i>
+                                        <span>コスト構造<br><small>Cost Structure</small></span>
+                                        <div class="bmc-help-tip" data-label="ビジネスを運営する上で発生する主要なコスト">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area horizontal" id="bmc-area-COST"></div>
+                                </div>
+
+                                <!-- Bottom: Revenue Streams -->
+                                <div class="bmc-section footer" data-section="REV" id="bmc-rev"
+                                    style="grid-column: 3.5 / span 5;">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="banknote"></i>
+                                        <span>収益の流れ<br><small>Revenue Streams</small></span>
+                                        <div class="bmc-help-tip" data-label="顧客が価値提案に対して支払う仕組みや現金の流れ">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area horizontal" id="bmc-area-REV"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5W1H Analysis -->
+                        <div id="analysis-tab-5w1h" class="analysis-tab-pane">
+                            <div class="w51h-board">
+                                <div class="bmc-section" data-section="5W_WHO" id="bmc-5w-who">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="user"></i> <span>WHO (誰が)<br><small>Target /
+                                                Player</small></span>
+                                        <div class="bmc-help-tip down" data-label="ターゲット顧客、関係者、役割分担">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHO"></div>
+                                </div>
+                                <div class="bmc-section" data-section="5W_WHAT" id="bmc-5w-what">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="package"></i> <span>WHAT (何を)<br><small>Service /
+                                                Product</small></span>
+                                        <div class="bmc-help-tip down" data-label="提供する価値、製品、具体的な内容">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHAT"></div>
+                                </div>
+                                <div class="bmc-section" data-section="5W_WHEN" id="bmc-5w-when">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="calendar"></i> <span>WHEN (いつ)<br><small>Timing /
+                                                Schedule</small></span>
+                                        <div class="bmc-help-tip down" data-label="時期、時間帯、頻度、スケジュール">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHEN"></div>
+                                </div>
+                                <div class="bmc-section" data-section="5W_WHERE" id="bmc-5w-where">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="map-pin"></i> <span>WHERE (どこで)<br><small>Place /
+                                                Channel</small></span>
+                                        <div class="bmc-help-tip" data-label="場所、プラットフォーム、活用シーン">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHERE"></div>
+                                </div>
+                                <div class="bmc-section" data-section="5W_WHY" id="bmc-5w-why">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="help-circle"></i> <span>WHY (なぜ)<br><small>Purpose /
+                                                Reason</small></span>
+                                        <div class="bmc-help-tip" data-label="目的、理由、解決したい課題">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHY"></div>
+                                </div>
+                                <div class="bmc-section" data-section="5W_HOW" id="bmc-5w-how">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="settings"></i> <span>HOW (どのように)<br><small>Method /
+                                                Process</small></span>
+                                        <div class="bmc-help-tip" data-label="実現方法、手段、具体的なプロセス">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-5W_HOW"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3C Analysis -->
+                        <div id="analysis-tab-3c" class="analysis-tab-pane">
+                            <div class="c3-board">
+                                <div class="bmc-section" data-section="3C_CUSTOMER" id="bmc-3c-customer">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="users-2"></i> <span>Customer (市場・顧客)<br><small>Market
+                                                Insight</small></span>
+                                        <div class="bmc-help-tip down" data-label="市場規模、成長性、顧客ニーズ、購買行動">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-3C_CUSTOMER"></div>
+                                </div>
+                                <div class="bmc-section" data-section="3C_COMPETITOR" id="bmc-3c-competitor">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="swords"></i> <span>Competitor (競合)<br><small>Competitor
+                                                Insight</small></span>
+                                        <div class="bmc-help-tip down" data-label="競合他社、シェア、強み・弱み、戦略">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-3C_COMPETITOR"></div>
+                                </div>
+                                <div class="bmc-section" data-section="3C_COMPANY" id="bmc-3c-company">
+                                    <div class="bmc-section-header">
+                                        <i data-lucide="building-2"></i> <span>Company (自社)<br><small>Self
+                                                Insight</small></span>
+                                        <div class="bmc-help-tip down" data-label="リソース、強み、ブランド、成功要因">?</div>
+                                    </div>
+                                    <div class="bmc-sticky-area" id="bmc-area-3C_COMPANY"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BMC Context Menu -->
+                    <div id="bmc-context-menu" class="context-menu">
+                        <div class="menu-item" id="bmc-menu-add"><i data-lucide="plus-square"></i> 付箋を追加</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item danger" id="bmc-menu-clear"><i data-lucide="trash-2"></i> セクションをクリア</div>
+                    </div>
+
+                    <!-- Sticky Note Context Menu -->
+                    <div id="sticky-context-menu" class="context-menu">
+                        <div class="menu-item" id="sticky-menu-image"><i data-lucide="image"></i> 画像を挿入</div>
+                        <div class="menu-item" id="sticky-menu-remove-image" style="display:none;"><i
+                                data-lucide="image-minus"></i> 画像を削除</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item" id="sticky-menu-up"><i data-lucide="chevron-up"></i> 前に移動</div>
+                        <div class="menu-item" id="sticky-menu-down"><i data-lucide="chevron-down"></i> 後ろに移動</div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-group-label"
+                            style="padding: 4px 12px; font-size: 10px; color: var(--text-dim); text-transform: uppercase;">
+                            カラー選択
+                        </div>
+                        <div class="menu-item-colors"
+                            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 12px;">
+                            <div class="color-swatch" data-color="#fef3c7" style="background: #fef3c7;"></div>
+                            <div class="color-swatch" data-color="#dcfce7" style="background: #dcfce7;"></div>
+                            <div class="color-swatch" data-color="#dbeafe" style="background: #dbeafe;"></div>
+                            <div class="color-swatch" data-color="#fee2e2" style="background: #fee2e2;"></div>
+                            <div class="color-swatch" data-color="#f3e8ff" style="background: #f3e8ff;"></div>
+                            <div class="color-swatch" data-color="#ffedd5" style="background: #ffedd5;"></div>
+                            <div class="color-swatch" data-color="#ffffff" style="background: #ffffff;"></div>
+                            <div class="color-swatch" data-color="#e2e8f0" style="background: #e2e8f0;"></div>
+                        </div>
+                        <div class="menu-separator"></div>
+                        <div class="menu-item danger" id="sticky-menu-delete"><i data-lucide="trash"></i> 付箋を削除</div>
+                    </div>
+
+                    <!-- Hidden Input for Sticky Images -->
+                    <input type="file" id="sticky-image-input" accept="image/*" style="display:none">
+
+                    <!-- BMC Formatting Toolbar -->
+                    <div id="bmc-format-toolbar" class="bmc-format-toolbar" style="display:none;">
+                        <button class="format-btn" onmousedown="formatDoc(event, 'bold')" title="太字 (Ctrl+B)"><i
+                                data-lucide="bold"></i></button>
+                        <button class="format-btn" onmousedown="formatDoc(event, 'italic')" title="斜体 (Ctrl+I)"><i
+                                data-lucide="italic"></i></button>
+                        <button class="format-btn" onmousedown="formatDoc(event, 'underline')" title="下線 (Ctrl+U)"><i
+                                data-lucide="underline"></i></button>
+                        <div class="format-separator"></div>
+                        <div class="text-color-grid">
+                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#1a1a1a')"
+                                style="background: #1a1a1a;" title="黒"></div>
+                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#ef4444')"
+                                style="background: #ef4444;" title="赤"></div>
+                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#3b82f6')"
+                                style="background: #3b82f6;" title="青"></div>
+                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#10b981')"
+                                style="background: #10b981;" title="緑"></div>
+                        </div>
+                    </div>
             </section>
 
             <section id="view-bookmarks" class="view">

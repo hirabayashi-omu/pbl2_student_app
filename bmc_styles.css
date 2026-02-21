@@ -1,0 +1,446 @@
+/* ================================================================
+   BUSINESS MODEL CANVAS (BMC) STYLES
+   ================================================================ */
+.bmc-container {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.bmc-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, minmax(200px, auto)) minmax(120px, auto);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-width: 1100px;
+}
+
+/* Framework Layouts */
+.w51h-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, minmax(250px, auto));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.c3-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: minmax(400px, auto);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* Tabs */
+.analysis-tab {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.analysis-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.analysis-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.analysis-tab-pane {
+    display: none;
+}
+
+.analysis-tab-pane.active {
+    display: block;
+}
+
+.bmc-section {
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    min-height: 200px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.bmc-section:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* .bmc-section.primary {
+    background: rgba(79, 70, 229, 0.05);
+} */
+
+.bmc-section.footer {
+    min-height: 120px;
+}
+
+/* KP, VP, CS Span 2 rows */
+#bmc-kp,
+#bmc-vp,
+#bmc-cs {
+    grid-row: span 2;
+}
+
+.bmc-dual-column {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+}
+
+.bmc-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--text-dim);
+}
+
+.bmc-section-header i {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+}
+
+.bmc-section-header span {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text-main);
+}
+
+.bmc-section-header small {
+    font-size: 0.65rem;
+    font-weight: 400;
+    opacity: 0.5;
+    text-transform: uppercase;
+}
+
+.bmc-sticky-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    overflow-y: auto;
+}
+
+.bmc-sticky-area.horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+/* Sticky Note Styling */
+.bmc-sticky {
+    width: 100%;
+    min-height: 40px;
+    /* Reduced from 80 */
+    height: auto;
+    /* Allow auto sizing */
+    background: #fef3c7;
+    color: #1a1a1a;
+    padding: 0.85rem;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    position: relative;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    word-break: break-all;
+    border-left: 4px solid rgba(0, 0, 0, 0.1);
+}
+
+.bmc-sticky:active {
+    cursor: grabbing;
+}
+
+.bmc-sticky:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bmc-sticky.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.bmc-sticky-text {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    resize: none;
+    padding: 0;
+    outline: none;
+    min-height: 40px;
+    cursor: text;
+}
+
+.bmc-sticky-img-wrap {
+    margin-top: 0.5rem;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+.bmc-sticky-img {
+    width: 100%;
+    display: block;
+    object-fit: contain;
+    max-height: 150px;
+}
+
+/* Horizontal Area sticky width */
+.bmc-sticky-area.horizontal .bmc-sticky {
+    width: 180px;
+    min-width: 180px;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    padding: 6px 0;
+    z-index: 1000;
+    display: none;
+    min-width: 180px;
+}
+
+.menu-item {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    transition: background 0.2s;
+}
+
+.menu-item:hover {
+    background: var(--bg-hover);
+}
+
+.menu-item i {
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+}
+
+.menu-item.danger {
+    color: var(--danger);
+}
+
+.menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.menu-separator {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
+
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: transform 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Formatting Toolbar */
+.bmc-format-toolbar {
+    position: fixed;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    z-index: 2000;
+}
+
+.format-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.format-btn:hover {
+    background: var(--bg-hover);
+}
+
+.format-btn i {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.format-separator {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.text-color-grid {
+    display: flex;
+    gap: 4px;
+    padding: 0 4px;
+}
+
+.text-color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.1s;
+}
+
+.text-color-swatch:hover {
+    transform: scale(1.2);
+}
+
+/* Section Help Tips - Bubble Style */
+.bmc-help-tip {
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: help;
+    margin-left: auto;
+    position: relative;
+    transition: all 0.2s;
+    user-select: none;
+    pointer-events: auto;
+    /* Ensure it responds to mouse */
+    z-index: 10;
+}
+
+.bmc-help-tip:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Speech Bubble Tooltip */
+.bmc-help-tip::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 130%;
+    right: -10px;
+    width: 220px;
+    padding: 10px 14px;
+    background: #1e1e2e;
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.5;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: normal;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease-out;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+/* Arrow for Speech Bubble */
+.bmc-help-tip::before {
+    content: "";
+    position: absolute;
+    bottom: 105%;
+    right: 5px;
+    border-width: 6px 6px 0 6px;
+    border-style: solid;
+    border-color: #1e1e2e transparent transparent transparent;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease-out;
+    z-index: 10001;
+    pointer-events: none;
+}
+
+.bmc-help-tip:hover::after,
+.bmc-help-tip:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Downward positioning for top-row tips */
+.bmc-help-tip.down::after {
+    bottom: auto;
+    top: 130%;
+}
+
+.bmc-help-tip.down::before {
+    bottom: auto;
+    top: 105%;
+    border-width: 0 6px 6px 6px;
+    border-color: transparent transparent #1e1e2e transparent;
+}
+
+.bmc-help-tip.down:hover::after,
+.bmc-help-tip.down:hover::before {
+    transform: translateY(0);
+}

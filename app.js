@@ -68,7 +68,8 @@ let state = {
         { lastName: '', firstName: '', emailLocal: '' }
     ],
     bookmarks: [],
-    deliverableTargets: DEFAULT_DELIVERABLE_TARGETS
+    deliverableTargets: DEFAULT_DELIVERABLE_TARGETS,
+    bmc: {} // { sectionId: [ { id, text, color, image, order } ] }
 };
 
 // --- Mention State ---
@@ -685,7 +686,10 @@ function switchView(viewId) {
         mindmap: 'マインドマップ',
         messages: 'メンバー伝言板',
         bookmarks: 'ブックマーク・参考ソース',
-        deliverables: '成果物フォルダ'
+        deliverables: '成果物フォルダ',
+        teamwork: 'チームワーク形成',
+        'tech-core': '技術コア開発',
+        bmc: 'ビジネス分析'
     };
     document.getElementById('view-title').textContent = titles[viewId] || 'PBL2 Manager';
 
@@ -735,6 +739,15 @@ function switchView(viewId) {
     }
     if (viewId === 'bookmarks') {
         renderBookmarks();
+    }
+    if (viewId === 'teamwork') {
+        renderTeamwork();
+    }
+    if (viewId === 'tech-core') {
+        initTechCanvas();
+    }
+    if (viewId === 'bmc') {
+        renderBMC();
     }
 }
 
@@ -5668,4 +5681,1363 @@ window.deleteBookmark = (index) => {
         saveState();
         renderBookmarks();
     }
+};
+
+// --- TEAMWORK LOGIC ---
+window.renderTeamwork = () => {
+    if (!state.teamwork) state.teamwork = { intro: '', members: {} };
+
+    // Intro
+    const introEl = document.getElementById('team-intro-content');
+    if (introEl) introEl.innerHTML = state.teamwork.intro || 'チームの理念や目標を入力してください...';
+
+    // Members
+    const grid = document.getElementById('teamwork-members-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    // We use state.members to get the list of members
+    const members = state.members || [];
+    members.forEach(m => {
+        const profile = state.teamwork.members[m.id] || { strengths: '', interests: '', goals: '', photo: '' };
+
+        const card = document.createElement('div');
+        card.className = 'member-card';
+        card.innerHTML = `
+            <div class="member-card-header">
+                <div class="member-photo-wrap" onclick="triggerMemberPhotoUpload('${m.id}')">
+                    ${profile.photo ? `<img src="${profile.photo}">` : '<i data-lucide="user"></i>'}
+                </div>
+                <div>
+                    <div class="member-name">${m.name}</div>
+                    <div class="member-role">${m.role || 'メンバー'}</div>
+                </div>
+            </div>
+            
+            <div class="member-info-section">
+                <div class="member-info-label"><i data-lucide="zap"></i> 強み・得意なこと</div>
+                <div class="member-info-content" contenteditable="true" onblur="saveMemberProfile('${m.id}', 'strengths', this.innerHTML)">
+                    ${profile.strengths || '自分の得意なスキルや性格的な強みを書きましょう'}
+                </div>
+            </div>
+
+            <div class="member-info-section">
+                <div class="member-info-label"><i data-lucide="heart"></i> 興味・関心</div>
+                <div class="member-info-content" contenteditable="true" onblur="saveMemberProfile('${m.id}', 'interests', this.innerHTML)">
+                    ${profile.interests || 'このテーマに関する興味や、個人的な関心事'}
+                </div>
+            </div>
+
+            <div class="member-info-section">
+                <div class="member-info-label"><i data-lucide="target"></i> してみたいこと</div>
+                <div class="member-info-content" contenteditable="true" onblur="saveMemberProfile('${m.id}', 'goals', this.innerHTML)">
+                    ${profile.goals || 'このプロジェクトで挑戦したい役割や学びたいこと'}
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+window.saveTeamworkData = (key, val) => {
+    if (!state.teamwork) state.teamwork = { intro: '', members: {} };
+    state.teamwork[key] = val;
+    saveState();
+};
+
+window.saveMemberProfile = (memberId, field, val) => {
+    if (!state.teamwork) state.teamwork = { intro: '', members: {} };
+    if (!state.teamwork.members[memberId]) state.teamwork.members[memberId] = {};
+    state.teamwork.members[memberId][field] = val;
+    saveState();
+};
+
+window.triggerMemberPhotoUpload = (memberId) => {
+    const input = document.getElementById('member-photo-input');
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async (re) => {
+                const compressed = await compressImage(re.target.result, 200, 200, 0.5);
+                if (!state.teamwork.members[memberId]) state.teamwork.members[memberId] = {};
+                state.teamwork.members[memberId].photo = compressed;
+                saveState();
+                renderTeamwork();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+};
+
+// --- TECH CORE CANVAS LOGIC ---
+let techCanvasState = {
+    canvas: null,
+    ctx: null,
+    currentTool: 'select',
+    strokeColor: '#3b82f6',
+    fillColor: '#ffffff',
+    noFill: true,
+    lineWidth: 2,
+    lineDash: 'solid',
+    fontSize: 16,
+    isBold: false,
+    isItalic: false,
+    shapes: [],
+    isDrawing: false,
+    startX: 0,
+    startY: 0,
+    currentShape: null,
+    textEditor: null,
+    polylinePoints: [],
+    copiedShape: null,
+    undoStack: [],
+    redoStack: [],
+    isResizing: false,
+    resizeHandle: null,
+    isDraggingPoint: false,
+    activePointIndex: -1,
+    selectedShapes: [],
+    isSelecting: false,
+    selectionRect: null
+};
+
+window.initTechCanvas = () => {
+    const canvas = document.getElementById('tech-core-canvas');
+    if (!canvas) return;
+
+    techCanvasState.canvas = canvas;
+    techCanvasState.ctx = canvas.getContext('2d');
+
+    const wrapper = canvas.parentElement;
+    canvas.width = wrapper.offsetWidth;
+    canvas.height = wrapper.offsetHeight;
+
+    if (!state.techCore) state.techCore = { shapes: [] };
+    techCanvasState.shapes = state.techCore.shapes;
+    techCanvasState.undoStack = [JSON.stringify(techCanvasState.shapes)];
+    techCanvasState.redoStack = [];
+
+    // UI Listeners
+    const toolBtns = document.querySelectorAll('.canvas-tool-btn, .canvas-tool-btn-sm');
+    toolBtns.forEach(btn => {
+        btn.onclick = (e) => {
+            if (btn.id === 'shape-selector-btn') {
+                e.stopPropagation();
+                document.getElementById('shape-dropdown').classList.toggle('active');
+                return;
+            }
+            if (btn.id === 'btn-text-bold') {
+                techCanvasState.isBold = !techCanvasState.isBold;
+                btn.classList.toggle('active', techCanvasState.isBold);
+                return;
+            }
+            if (btn.id === 'btn-text-italic') {
+                techCanvasState.isItalic = !techCanvasState.isItalic;
+                btn.classList.toggle('active', techCanvasState.isItalic);
+                return;
+            }
+
+            if (btn.classList.contains('canvas-tool-btn-sm')) return;
+
+            toolBtns.forEach(b => {
+                if (!b.classList.contains('canvas-tool-btn-sm')) b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            techCanvasState.currentTool = btn.getAttribute('data-tool');
+
+            // Toggle text styles visibility
+            document.querySelector('.text-only-style').style.display = (techCanvasState.currentTool === 'text') ? 'flex' : 'none';
+        };
+    });
+
+    document.getElementById('btn-image-upload').onclick = () => {
+        document.getElementById('canvas-image-input').click();
+    };
+
+    document.getElementById('canvas-image-input').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 300;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) { h = (h / w) * maxDim; w = maxDim; }
+                    else { w = (w / h) * maxDim; h = maxDim; }
+                }
+                techCanvasState.shapes.push({
+                    type: 'image',
+                    x1: 50, y1: 50, x2: 50 + w, y2: 50 + h,
+                    data: event.target.result
+                });
+                saveTechCanvas();
+                drawTechCanvas();
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; // Reset
+    };
+
+    // Shape dropdown selection
+    document.querySelectorAll('#shape-dropdown .menu-item').forEach(item => {
+        item.onclick = (e) => {
+            e.stopPropagation();
+            const tool = item.getAttribute('data-tool');
+            techCanvasState.currentTool = tool;
+
+            toolBtns.forEach(b => b.classList.remove('active'));
+            document.getElementById('shape-selector-btn').classList.add('active');
+            document.getElementById('shape-dropdown').classList.remove('active');
+
+            document.querySelector('.text-only-style').style.display = 'none';
+        };
+    });
+
+    document.addEventListener('click', () => {
+        const dropdown = document.getElementById('shape-dropdown');
+        if (dropdown) dropdown.classList.remove('active');
+    });
+
+    // Style listeners
+    const strokePicker = document.getElementById('canvas-stroke-color');
+    strokePicker.oninput = (e) => {
+        techCanvasState.strokeColor = e.target.value;
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => s.strokeColor = e.target.value);
+            saveTechCanvas(false);
+            drawTechCanvas();
+        }
+    };
+    strokePicker.onchange = () => saveTechCanvas(true);
+
+    const fillPicker = document.getElementById('canvas-fill-color');
+    fillPicker.oninput = (e) => {
+        techCanvasState.fillColor = e.target.value;
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => {
+                s.fillColor = e.target.value;
+            });
+            techCanvasState.noFill = false;
+            document.getElementById('canvas-no-fill').checked = false;
+            saveTechCanvas(false);
+            drawTechCanvas();
+        }
+    };
+    fillPicker.onchange = () => saveTechCanvas(true);
+    document.getElementById('canvas-no-fill').onchange = (e) => {
+        techCanvasState.noFill = e.target.checked;
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => {
+                s.fillColor = e.target.checked ? null : techCanvasState.fillColor;
+            });
+            saveTechCanvas();
+            drawTechCanvas();
+        }
+    };
+    document.getElementById('canvas-line-width').onchange = (e) => {
+        techCanvasState.lineWidth = parseInt(e.target.value);
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => s.lineWidth = techCanvasState.lineWidth);
+            saveTechCanvas();
+            drawTechCanvas();
+        }
+    };
+    document.getElementById('canvas-line-dash').onchange = (e) => {
+        techCanvasState.lineDash = e.target.value;
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => s.lineDash = e.target.value);
+            saveTechCanvas();
+            drawTechCanvas();
+        }
+    };
+    document.getElementById('canvas-font-size').onchange = (e) => {
+        techCanvasState.fontSize = parseInt(e.target.value);
+        if (techCanvasState.selectedShapes.length > 0) {
+            techCanvasState.selectedShapes.forEach(s => {
+                if (s.type === 'text') s.fontSize = techCanvasState.fontSize;
+            });
+            saveTechCanvas();
+            drawTechCanvas();
+        }
+    };
+
+    // Edit actions buttons
+    document.getElementById('btn-copy').onclick = (e) => { e.stopPropagation(); copySelectedShape(); };
+    document.getElementById('btn-paste').onclick = (e) => { e.stopPropagation(); pasteShape(); };
+    document.getElementById('btn-duplicate').onclick = (e) => { e.stopPropagation(); duplicateSelectedShape(); };
+    document.getElementById('btn-delete').onclick = (e) => { e.stopPropagation(); deleteSelectedShape(); };
+    document.getElementById('btn-undo').onclick = (e) => { e.stopPropagation(); undoAction(); };
+    document.getElementById('btn-redo').onclick = (e) => { e.stopPropagation(); redoAction(); };
+
+    // Canvas Events
+    canvas.oncontextmenu = (e) => {
+        if (techCanvasState.currentTool === 'polyline') e.preventDefault();
+    };
+
+    canvas.ondblclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const clickedShape = [...techCanvasState.shapes].reverse().find(s => isPointInShape(x, y, s));
+        if (clickedShape && clickedShape.type === 'text') {
+            startTextEditing(clickedShape.x1, clickedShape.y1, clickedShape);
+        }
+    };
+
+    canvas.onmousedown = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left);
+        const y = (e.clientY - rect.top);
+
+        if (techCanvasState.currentTool === 'polyline') {
+            if (e.button === 0) { // Left click
+                techCanvasState.polylinePoints.push({ x, y });
+            } else if (e.button === 2) { // Right click
+                if (techCanvasState.polylinePoints.length > 1) {
+                    techCanvasState.shapes.push({
+                        type: 'polyline',
+                        points: [...techCanvasState.polylinePoints],
+                        strokeColor: techCanvasState.strokeColor,
+                        lineWidth: techCanvasState.lineWidth,
+                        lineDash: techCanvasState.lineDash
+                    });
+                    techCanvasState.polylinePoints = [];
+                    saveTechCanvas();
+                }
+            }
+            drawTechCanvas();
+            return;
+        }
+
+        if (techCanvasState.textEditor) finishTextEditing();
+
+        // Check for resize handles or polyline points if something is selected
+        if (techCanvasState.currentTool === 'select' && techCanvasState.selectedShapes.length === 1) {
+            const s = techCanvasState.selectedShapes[0];
+            // Polyline points
+            if (s.type === 'polyline') {
+                for (let i = 0; i < s.points.length; i++) {
+                    const p = s.points[i];
+                    if (Math.abs(x - p.x) < 12 && Math.abs(y - p.y) < 12) {
+                        techCanvasState.isDraggingPoint = true;
+                        techCanvasState.activePointIndex = i;
+                        techCanvasState.startX = x;
+                        techCanvasState.startY = y;
+                        return;
+                    }
+                }
+            }
+
+            // Resize handles
+            const handles = getResizeHandles(s);
+            for (const h of handles) {
+                if (Math.abs(x - h.x) < 12 && Math.abs(y - h.y) < 12) {
+                    techCanvasState.isResizing = true;
+                    techCanvasState.resizeHandle = h.type;
+                    techCanvasState.startX = x;
+                    techCanvasState.startY = y;
+                    return;
+                }
+            }
+        }
+
+        techCanvasState.startX = x;
+        techCanvasState.startY = y;
+
+        if (techCanvasState.currentTool === 'select') {
+            const clickedShape = [...techCanvasState.shapes].reverse().find(s => isPointInShape(x, y, s));
+            if (clickedShape) {
+                if (e.shiftKey) {
+                    if (techCanvasState.selectedShapes.includes(clickedShape)) {
+                        techCanvasState.selectedShapes = techCanvasState.selectedShapes.filter(s => s !== clickedShape);
+                    } else {
+                        techCanvasState.selectedShapes.push(clickedShape);
+                    }
+                } else if (!techCanvasState.selectedShapes.includes(clickedShape)) {
+                    techCanvasState.selectedShapes = [clickedShape];
+                }
+                techCanvasState.isDrawing = true; // For moving
+                syncToolbarUI(clickedShape);
+                drawTechCanvas();
+            } else {
+                if (!e.shiftKey) techCanvasState.selectedShapes = [];
+                techCanvasState.isSelecting = true;
+                techCanvasState.selectionRect = { x1: x, y1: y, x2: x, y2: y };
+                drawTechCanvas();
+            }
+        } else if (techCanvasState.currentTool === 'text') {
+            startTextEditing(x, y);
+            techCanvasState.isDrawing = false;
+        } else {
+            techCanvasState.isDrawing = true;
+            techCanvasState.currentShape = {
+                type: techCanvasState.currentTool,
+                x1: x, y1: y, x2: x, y2: y,
+                strokeColor: techCanvasState.strokeColor,
+                fillColor: techCanvasState.noFill ? null : techCanvasState.fillColor,
+                lineWidth: techCanvasState.lineWidth,
+                lineDash: techCanvasState.lineDash,
+                fontSize: techCanvasState.fontSize,
+                isBold: techCanvasState.isBold,
+                isItalic: techCanvasState.isItalic,
+                text: ''
+            };
+        }
+    };
+
+    canvas.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (techCanvasState.isResizing && techCanvasState.selectedShapes.length === 1) {
+            const s = techCanvasState.selectedShapes[0];
+            const handle = techCanvasState.resizeHandle;
+            if (handle.includes('n')) s.y1 = y;
+            if (handle.includes('s')) s.y2 = y;
+            if (handle.includes('w')) s.x1 = x;
+            if (handle.includes('e')) s.x2 = x;
+            drawTechCanvas();
+            return;
+        }
+
+        if (techCanvasState.isDraggingPoint && techCanvasState.selectedShapes.length === 1) {
+            const p = techCanvasState.selectedShapes[0].points[techCanvasState.activePointIndex];
+            p.x = x;
+            p.y = y;
+            drawTechCanvas();
+            return;
+        }
+
+        if (!techCanvasState.isDrawing) return;
+
+        if (techCanvasState.currentTool === 'select' && techCanvasState.selectedShapes.length > 0) {
+            const dx = x - techCanvasState.startX;
+            const dy = y - techCanvasState.startY;
+            techCanvasState.selectedShapes.forEach(s => {
+                if (s.points) {
+                    s.points.forEach(p => { p.x += dx; p.y += dy; });
+                } else {
+                    s.x1 += dx; s.y1 += dy;
+                    if (s.x2 !== undefined) { s.x2 += dx; s.y2 += dy; }
+                }
+            });
+            techCanvasState.startX = x;
+            techCanvasState.startY = y;
+        } else if (techCanvasState.currentShape) {
+            techCanvasState.currentShape.x2 = x;
+            techCanvasState.currentShape.y2 = y;
+        }
+        drawTechCanvas();
+    };
+
+    canvas.onmouseup = () => {
+        if (techCanvasState.isResizing || techCanvasState.isDraggingPoint) {
+            saveTechCanvas();
+        }
+        if (techCanvasState.isSelecting) {
+            const r = techCanvasState.selectionRect;
+            const xMin = Math.min(r.x1, r.x2);
+            const xMax = Math.max(r.x1, r.x2);
+            const yMin = Math.min(r.y1, r.y2);
+            const yMax = Math.max(r.y1, r.y2);
+
+            const newlySelected = techCanvasState.shapes.filter(s => {
+                const sx1 = Math.min(s.x1, s.x2 || s.x1);
+                const sx2 = Math.max(s.x1, s.x2 || s.x1);
+                const sy1 = Math.min(s.y1, s.y2 || s.y1);
+                const sy2 = Math.max(s.y1, s.y2 || s.y1);
+                return sx1 < xMax && sx2 > xMin && sy1 < yMax && sy2 > yMin;
+            });
+            techCanvasState.selectedShapes = newlySelected;
+            techCanvasState.isSelecting = false;
+            techCanvasState.selectionRect = null;
+            drawTechCanvas();
+        }
+        techCanvasState.isResizing = false;
+        techCanvasState.isDraggingPoint = false;
+
+        if (techCanvasState.currentShape) {
+            techCanvasState.shapes.push(techCanvasState.currentShape);
+            techCanvasState.currentShape = null;
+            saveTechCanvas();
+        }
+        techCanvasState.isDrawing = false;
+        drawTechCanvas();
+    };
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        const view = document.getElementById('view-tech-core');
+        if (!view || !view.classList.contains('active')) return;
+        if (techCanvasState.textEditor) return;
+
+        const isCtrl = e.ctrlKey || e.metaKey;
+
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            deleteSelectedShape();
+        }
+        if (isCtrl && e.key === 'c') {
+            copySelectedShape();
+        }
+        if (isCtrl && e.key === 'v') {
+            pasteShape();
+        }
+        if (isCtrl && e.key === 'd') {
+            e.preventDefault();
+            duplicateSelectedShape();
+        }
+        if (isCtrl && e.key === 'z') {
+            e.preventDefault();
+            undoAction();
+        }
+        if (isCtrl && e.key === 'y') {
+            e.preventDefault();
+            redoAction();
+        }
+    });
+
+    drawTechCanvas();
+};
+
+function undoAction() {
+    if (techCanvasState.undoStack.length > 1) {
+        techCanvasState.redoStack.push(techCanvasState.undoStack.pop());
+        const snapshot = techCanvasState.undoStack[techCanvasState.undoStack.length - 1];
+        techCanvasState.shapes = JSON.parse(snapshot);
+        saveTechCanvas(false);
+        drawTechCanvas();
+    }
+}
+
+function redoAction() {
+    if (techCanvasState.redoStack.length > 0) {
+        const snapshot = techCanvasState.redoStack.pop();
+        techCanvasState.undoStack.push(snapshot);
+        techCanvasState.shapes = JSON.parse(snapshot);
+        saveTechCanvas(false);
+        drawTechCanvas();
+    }
+}
+
+function deleteSelectedShape() {
+    if (techCanvasState.selectedShapes.length > 0) {
+        techCanvasState.shapes = techCanvasState.shapes.filter(s => !techCanvasState.selectedShapes.includes(s));
+        techCanvasState.selectedShapes = [];
+        saveTechCanvas();
+        drawTechCanvas();
+    }
+}
+
+function copySelectedShape() {
+    if (techCanvasState.selectedShapes.length > 0) {
+        techCanvasState.copiedShapes = JSON.parse(JSON.stringify(techCanvasState.selectedShapes));
+    }
+}
+
+function pasteShape() {
+    if (techCanvasState.copiedShapes && techCanvasState.copiedShapes.length > 0) {
+        const newShapes = JSON.parse(JSON.stringify(techCanvasState.copiedShapes));
+        newShapes.forEach(ns => {
+            ns.x1 += 20; ns.y1 += 20;
+            if (ns.x2 !== undefined) { ns.x2 += 20; ns.y2 += 20; }
+            if (ns.points) {
+                ns.points.forEach(p => { p.x += 20; p.y += 20; });
+            }
+            techCanvasState.shapes.push(ns);
+        });
+        techCanvasState.selectedShapes = newShapes;
+        saveTechCanvas();
+        drawTechCanvas();
+    }
+}
+
+function duplicateSelectedShape() {
+    if (techCanvasState.selectedShapes.length > 0) {
+        const newShapes = JSON.parse(JSON.stringify(techCanvasState.selectedShapes));
+        newShapes.forEach(ns => {
+            ns.x1 += 20; ns.y1 += 20;
+            if (ns.x2 !== undefined) { ns.x2 += 20; ns.y2 += 20; }
+            if (ns.points) {
+                ns.points.forEach(p => { p.x += 20; p.y += 20; });
+            }
+            techCanvasState.shapes.push(ns);
+        });
+        techCanvasState.selectedShapes = newShapes;
+        saveTechCanvas();
+        drawTechCanvas();
+    }
+}
+
+function isPointInShape(x, y, s) {
+    if (s.type === 'rect' || s.type === 'rounded-rect' || s.type === 'text') {
+        const x1 = Math.min(s.x1, s.x2 || s.x1 + 100);
+        const x2 = Math.max(s.x1, s.x2 || s.x1 + 100);
+        const y1 = Math.min(s.y1, s.y2 || s.y1 + 20);
+        const y2 = Math.max(s.y1, s.y2 || s.y1 + 20);
+        return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+    }
+    if (s.type === 'circle') {
+        const rx = Math.abs(s.x2 - s.x1) / 2;
+        const ry = Math.abs(s.y2 - s.y1) / 2;
+        if (rx === 0 || ry === 0) return false;
+        const cx = (s.x1 + s.x2) / 2;
+        const cy = (s.y1 + s.y2) / 2;
+        return (Math.pow(x - cx, 2) / Math.pow(rx, 2)) + (Math.pow(y - cy, 2) / Math.pow(ry, 2)) <= 1;
+    }
+    if (s.type === 'line' || s.type === 'arrow') {
+        const dist = distToSegment({ x, y }, { x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 });
+        return dist < 10;
+    }
+    if (s.type === 'polyline') {
+        for (let i = 0; i < s.points.length - 1; i++) {
+            const dist = distToSegment({ x, y }, s.points[i], s.points[i + 1]);
+            if (dist < 10) return true;
+        }
+    }
+    if (s.type === 'triangle' || s.type === 'diamond' || s.type === 'image') {
+        // Simple bounding box check for hit detection
+        const x1 = Math.min(s.x1, s.x2);
+        const x2 = Math.max(s.x1, s.x2);
+        const y1 = Math.min(s.y1, s.y2);
+        const y2 = Math.max(s.y1, s.y2);
+        return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+    }
+    return false;
+}
+
+function distToSegment(p, v, w) {
+    const l2 = Math.pow(v.x - w.x, 2) + Math.pow(v.y - w.y, 2);
+    if (l2 == 0) return Math.sqrt(Math.pow(p.x - v.x, 2) + Math.pow(p.y - v.y, 2));
+    let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    return Math.sqrt(Math.pow(p.x - (v.x + t * (w.x - v.x)), 2) + Math.pow(p.y - (v.y + t * (w.y - v.y)), 2));
+}
+
+function startTextEditing(x, y, existingShape = null) {
+    const wrapper = document.getElementById('tech-canvas-wrapper');
+    const textarea = document.createElement('textarea');
+    textarea.className = 'canvas-text-editor';
+    textarea.style.left = x + 'px';
+    textarea.style.top = y + 'px';
+
+    const fsize = existingShape ? existingShape.fontSize : techCanvasState.fontSize;
+    const isBold = existingShape ? existingShape.isBold : techCanvasState.isBold;
+    const isItalic = existingShape ? existingShape.isItalic : techCanvasState.isItalic;
+    const color = existingShape ? existingShape.strokeColor : techCanvasState.strokeColor;
+
+    textarea.style.fontSize = fsize + 'px';
+    textarea.style.fontWeight = isBold ? 'bold' : 'normal';
+    textarea.style.fontStyle = isItalic ? 'italic' : 'normal';
+    textarea.style.color = color;
+    textarea.style.width = '200px';
+    textarea.style.height = (fsize * 2) + 'px';
+    textarea.value = existingShape ? existingShape.text : '';
+
+    wrapper.appendChild(textarea);
+    textarea.focus();
+
+    techCanvasState.textEditor = {
+        el: textarea,
+        x: x,
+        y: y,
+        editingShape: existingShape
+    };
+
+    textarea.onmousedown = (e) => e.stopPropagation();
+    textarea.onkeydown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            finishTextEditing();
+        }
+        if (e.key === 'Escape') {
+            finishTextEditing();
+        }
+    };
+}
+
+function finishTextEditing() {
+    if (!techCanvasState.textEditor) return;
+    const { el, x, y, editingShape } = techCanvasState.textEditor;
+    const text = el.value.trim();
+
+    if (text) {
+        if (editingShape) {
+            editingShape.text = text;
+            editingShape.strokeColor = techCanvasState.strokeColor;
+            editingShape.fontSize = techCanvasState.fontSize;
+            editingShape.isBold = techCanvasState.isBold;
+            editingShape.isItalic = techCanvasState.isItalic;
+        } else {
+            techCanvasState.shapes.push({
+                type: 'text',
+                x1: x, y1: y,
+                strokeColor: techCanvasState.strokeColor,
+                fontSize: techCanvasState.fontSize,
+                isBold: techCanvasState.isBold,
+                isItalic: techCanvasState.isItalic,
+                text: text
+            });
+        }
+        saveTechCanvas();
+        drawTechCanvas();
+    }
+    el.remove();
+    techCanvasState.textEditor = null;
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+    const headlen = 10;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(x2 - headlen * Math.cos(angle - Math.PI / 6), y2 - headlen * Math.sin(angle - Math.PI / 6));
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - headlen * Math.cos(angle + Math.PI / 6), y2 - headlen * Math.sin(angle + Math.PI / 6));
+    ctx.stroke();
+}
+
+function drawTechCanvas() {
+    const { ctx, canvas, shapes, currentShape } = techCanvasState;
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    for (let i = 0; i < canvas.width; i += 40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+    for (let i = 0; i < canvas.height; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
+
+    if (techCanvasState.isSelecting && techCanvasState.selectionRect) {
+        const r = techCanvasState.selectionRect;
+        ctx.strokeStyle = '#3b82f6';
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+        ctx.fillRect(r.x1, r.y1, r.x2 - r.x1, r.y2 - r.y1);
+    }
+
+    // Drawing Polyline in progress
+    if (techCanvasState.polylinePoints.length > 0) {
+        ctx.strokeStyle = techCanvasState.strokeColor;
+        ctx.lineWidth = techCanvasState.lineWidth;
+        const dash = techCanvasState.lineDash === 'dashed' ? [10, 5] : (techCanvasState.lineDash === 'dotted' ? [2, 4] : []);
+        ctx.setLineDash(dash);
+        ctx.beginPath();
+        techCanvasState.polylinePoints.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        // Final point handles
+        techCanvasState.polylinePoints.forEach(p => {
+            ctx.fillStyle = '#fff';
+            ctx.setLineDash([]);
+            ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+            ctx.strokeRect(p.x - 3, p.y - 3, 6, 6);
+        });
+    }
+
+    const renderShape = (s) => {
+        ctx.strokeStyle = s.strokeColor || '#3b82f6';
+        ctx.fillStyle = s.fillColor || 'transparent';
+        ctx.lineWidth = s.lineWidth || 2;
+
+        const dash = s.lineDash === 'dashed' ? [10, 5] : (s.lineDash === 'dotted' ? [2, 4] : []);
+        ctx.setLineDash(dash);
+
+        if (s.type === 'rect') {
+            if (s.fillColor) ctx.fillRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+            ctx.strokeRect(s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+        } else if (s.type === 'rounded-rect') {
+            const r = 10;
+            const w = s.x2 - s.x1;
+            const h = s.y2 - s.y1;
+            ctx.beginPath();
+            ctx.moveTo(s.x1 + r, s.y1);
+            ctx.lineTo(s.x1 + w - r, s.y1);
+            ctx.quadraticCurveTo(s.x1 + w, s.y1, s.x1 + w, s.y1 + r);
+            ctx.lineTo(s.x1 + w, s.y1 + h - r);
+            ctx.quadraticCurveTo(s.x1 + w, s.y1 + h, s.x1 + w - r, s.y1 + h);
+            ctx.lineTo(s.x1 + r, s.y1 + h);
+            ctx.quadraticCurveTo(s.x1, s.y1 + h, s.x1, s.y1 + h - r);
+            ctx.lineTo(s.x1, s.y1 + r);
+            ctx.quadraticCurveTo(s.x1, s.y1, s.x1 + r, s.y1);
+            ctx.closePath();
+            if (s.fillColor) ctx.fill();
+            ctx.stroke();
+        } else if (s.type === 'circle') {
+            const rx = Math.abs(s.x2 - s.x1) / 2;
+            const ry = Math.abs(s.y2 - s.y1) / 2;
+            const cx = (s.x1 + s.x2) / 2;
+            const cy = (s.y1 + s.y2) / 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+            if (s.fillColor) ctx.fill();
+            ctx.stroke();
+        } else if (s.type === 'triangle') {
+            ctx.beginPath();
+            ctx.moveTo(s.x1 + (s.x2 - s.x1) / 2, s.y1);
+            ctx.lineTo(s.x1, s.y2);
+            ctx.lineTo(s.x2, s.y2);
+            ctx.closePath();
+            if (s.fillColor) ctx.fill();
+            ctx.stroke();
+        } else if (s.type === 'diamond') {
+            ctx.beginPath();
+            ctx.moveTo(s.x1 + (s.x2 - s.x1) / 2, s.y1);
+            ctx.lineTo(s.x2, s.y1 + (s.y2 - s.y1) / 2);
+            ctx.lineTo(s.x1 + (s.x2 - s.x1) / 2, s.y2);
+            ctx.lineTo(s.x1, s.y1 + (s.y2 - s.y1) / 2);
+            ctx.closePath();
+            if (s.fillColor) ctx.fill();
+            ctx.stroke();
+        } else if (s.type === 'arrow') {
+            drawArrow(ctx, s.x1, s.y1, s.x2, s.y2, s.strokeColor, s.lineWidth);
+        } else if (s.type === 'line') {
+            ctx.beginPath();
+            ctx.moveTo(s.x1, s.y1);
+            ctx.lineTo(s.x2, s.y2);
+            ctx.stroke();
+        } else if (s.type === 'text') {
+            ctx.setLineDash([]);
+            const fontStyle = (s.isItalic ? 'italic ' : '') + (s.isBold ? 'bold ' : '');
+            ctx.font = `${fontStyle}${s.fontSize || 16}px sans-serif`;
+            ctx.fillStyle = s.strokeColor;
+            ctx.fillText(s.text, s.x1, s.y1 + (s.fontSize || 16));
+        } else if (s.type === 'polyline') {
+            ctx.beginPath();
+            s.points.forEach((p, i) => {
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.stroke();
+        } else if (s.type === 'image') {
+            const img = new Image();
+            img.src = s.data;
+            if (img.complete) {
+                ctx.drawImage(img, s.x1, s.y1, s.x2 - s.x1, s.y2 - s.y1);
+            } else {
+                img.onload = () => drawTechCanvas();
+            }
+        }
+    };
+
+    shapes.forEach(renderShape);
+    if (currentShape) renderShape(currentShape);
+
+    // Selection handles
+    if (techCanvasState.selectedShapes.length > 0) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1;
+
+        techCanvasState.selectedShapes.forEach(s => {
+            if (s.type === 'polyline') {
+                s.points.forEach((p, i) => {
+                    ctx.fillStyle = (i === techCanvasState.activePointIndex && techCanvasState.isDraggingPoint && techCanvasState.selectedShapes.length === 1) ? '#3b82f6' : '#fff';
+                    ctx.fillRect(p.x - 4, p.y - 4, 8, 8);
+                    ctx.strokeRect(p.x - 4, p.y - 4, 8, 8);
+                });
+            } else if (s.type !== 'text') {
+                // Resize handles only if exactly one shape selected
+                if (techCanvasState.selectedShapes.length === 1) {
+                    const handles = getResizeHandles(s);
+                    handles.forEach(h => {
+                        ctx.fillStyle = techCanvasState.resizeHandle === h.type && techCanvasState.isResizing ? '#3b82f6' : '#fff';
+                        ctx.fillRect(h.x - 4, h.y - 4, 8, 8);
+                        ctx.strokeRect(h.x - 4, h.y - 4, 8, 8);
+                    });
+                }
+                // Bounding box
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(Math.min(s.x1, s.x2) - 2, Math.min(s.y1, s.y2) - 2, Math.abs(s.x2 - s.x1) + 4, Math.abs(s.y2 - s.y1) + 4);
+            } else if (s.type === 'text') {
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(s.x1 - 2, s.y1 - 2, 100, (s.fontSize || 16) * 1.5);
+            }
+        });
+    }
+}
+
+function getResizeHandles(s) {
+    const xMin = Math.min(s.x1, s.x2);
+    const xMax = Math.max(s.x1, s.x2);
+    const yMin = Math.min(s.y1, s.y2);
+    const yMax = Math.max(s.y1, s.y2);
+    const midX = (xMin + xMax) / 2;
+    const midY = (yMin + yMax) / 2;
+
+    return [
+        { x: xMin, y: yMin, type: 'nw' },
+        { x: midX, y: yMin, type: 'n' },
+        { x: xMax, y: yMin, type: 'ne' },
+        { x: xMax, y: midY, type: 'e' },
+        { x: xMax, y: yMax, type: 'se' },
+        { x: midX, y: yMax, type: 's' },
+        { x: xMin, y: yMax, type: 'sw' },
+        { x: xMin, y: midY, type: 'w' }
+    ];
+}
+
+function syncToolbarUI(s) {
+    if (s.strokeColor) {
+        techCanvasState.strokeColor = s.strokeColor;
+        document.getElementById('canvas-stroke-color').value = s.strokeColor;
+    }
+    if (s.fillColor !== undefined) {
+        if (s.fillColor === null) {
+            techCanvasState.noFill = true;
+            document.getElementById('canvas-no-fill').checked = true;
+        } else {
+            techCanvasState.noFill = false;
+            techCanvasState.fillColor = s.fillColor;
+            document.getElementById('canvas-fill-color').value = s.fillColor;
+            document.getElementById('canvas-no-fill').checked = false;
+        }
+    }
+    if (s.lineWidth) {
+        techCanvasState.lineWidth = s.lineWidth;
+        document.getElementById('canvas-line-width').value = s.lineWidth;
+    }
+    if (s.lineDash) {
+        techCanvasState.lineDash = s.lineDash;
+        document.getElementById('canvas-line-dash').value = s.lineDash;
+    }
+    if (s.fontSize) {
+        techCanvasState.fontSize = s.fontSize;
+        document.getElementById('canvas-font-size').value = s.fontSize;
+    }
+}
+
+function drawArrow(ctx, fromx, fromy, tox, toy, color, lineWidth) {
+    const headlen = 10;
+    const angle = Math.atan2(toy - fromy, tox - fromx);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth || 2;
+    ctx.beginPath();
+    ctx.moveTo(fromx, fromy);
+    ctx.lineTo(tox, toy);
+    ctx.stroke();
+    // Head
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(tox, toy);
+    ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fill();
+}
+
+function saveTechCanvas(shouldRecord = true) {
+    if (!state.techCore) state.techCore = { shapes: [] };
+    state.techCore.shapes = techCanvasState.shapes;
+    if (shouldRecord) {
+        techCanvasState.undoStack.push(JSON.stringify(techCanvasState.shapes));
+        techCanvasState.redoStack = [];
+        // Limit history to 50 steps
+        if (techCanvasState.undoStack.length > 50) techCanvasState.undoStack.shift();
+    }
+    saveState();
+}
+
+window.clearTechCanvas = () => {
+    if (confirm('キャンバスをクリアしますか？')) {
+        techCanvasState.shapes = [];
+        techCanvasState.polylinePoints = [];
+        techCanvasState.selectedShapes = [];
+        saveTechCanvas();
+        drawTechCanvas();
+    }
+};
+
+// --- BUSINESS MODEL CANVAS (BMC) LOGIC ---
+let bmcState = {
+    activeSection: null,
+    activeStickyId: null,
+    draggedSticky: null,
+    draggedSection: null
+};
+
+window.renderBMC = () => {
+    if (!state.bmc) state.bmc = {};
+
+    // Load title
+    const titleInput = document.getElementById('bmc-title-input');
+    if (titleInput) titleInput.value = state.bmc.title || '';
+
+    const bmcSections = ['KP', 'KA', 'KR', 'VP', 'CR', 'CH', 'CS', 'COST', 'REV'];
+    const w51hSections = ['5W_WHO', '5W_WHAT', '5W_WHEN', '5W_WHERE', '5W_WHY', '5W_HOW'];
+    const c3Sections = ['3C_CUSTOMER', '3C_COMPETITOR', '3C_COMPANY'];
+
+    const allSections = [...bmcSections, ...w51hSections, ...c3Sections];
+
+    allSections.forEach(sid => {
+        const area = document.getElementById(`bmc-area-${sid}`);
+        if (!area) return;
+        area.innerHTML = '';
+
+        const stickies = state.bmc[sid] || [];
+        stickies.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        stickies.forEach(s => {
+            // Ensure compatibility with old data format
+            if (!s.content && s.text) s.content = s.text;
+            const stickyEl = createStickyElement(sid, s);
+            area.appendChild(stickyEl);
+        });
+
+        // Event for section context menu
+        const sectionEl = document.querySelector(`.bmc-section[data-section="${sid}"]`);
+        if (sectionEl) {
+            sectionEl.oncontextmenu = (e) => showBMCContextMenu(e, sid);
+        }
+
+        // Drop Zone
+        area.ondragover = (e) => {
+            e.preventDefault();
+            area.classList.add('drag-over');
+        };
+        area.ondragleave = () => area.classList.remove('drag-over');
+        area.ondrop = (e) => handleBMCDrop(e, sid);
+    });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+window.switchAnalysisTab = (tabId) => {
+    // Hide all panes
+    document.querySelectorAll('.analysis-tab-pane').forEach(p => p.classList.remove('active'));
+    // Show target pane
+    const targetPane = document.getElementById(`analysis-tab-${tabId}`);
+    if (targetPane) targetPane.classList.add('active');
+
+    // Update tab status
+    document.querySelectorAll('.analysis-tab').forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-analysis-tab') === tabId);
+    });
+
+    // Update description text
+    const descriptions = {
+        bmc: 'ビジネスの全体像を「価値提案・顧客・収益」など9つの視点で可視化し、事業の仕組みを定義します。',
+        '5w1h': '「誰が・何を・いつ・どこで・なぜ・どのように」の基本要素を整理し、計画の具体化や状況把握に活用します。',
+        '3c': '「顧客(Customer)・競合(Competitor)・自社(Company)」の3点から、市場環境と自社の勝ち筋を分析します。'
+    };
+    const descEl = document.getElementById('analysis-tab-description');
+    if (descEl) descEl.textContent = descriptions[tabId] || '';
+};
+
+window.saveBMCTitle = (val) => {
+    if (!state.bmc) state.bmc = {};
+    state.bmc.title = val;
+    saveState();
+};
+
+function createStickyElement(sectionId, s) {
+    const el = document.createElement('div');
+    el.className = 'bmc-sticky';
+    el.draggable = true;
+    el.style.backgroundColor = s.color || '#fef3c7';
+    el.id = `sticky-${s.id}`;
+
+    let imgHtml = s.image ? `<div class="bmc-sticky-img-wrap"><img src="${s.image}" class="bmc-sticky-img"></div>` : '';
+
+    el.innerHTML = `
+        <div class="bmc-sticky-text" contenteditable="true" onblur="handleStickyTextBlur('${sectionId}', '${s.id}', this)">${s.content || s.text || ''}</div>
+        ${imgHtml}
+    `;
+
+    el.oncontextmenu = (e) => {
+        e.stopPropagation();
+        showStickyContextMenu(e, sectionId, s.id);
+    };
+
+    el.ondragstart = (e) => {
+        bmcState.draggedSticky = s;
+        bmcState.draggedSection = sectionId;
+        el.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', s.id);
+    };
+
+    el.ondragend = () => {
+        el.classList.remove('dragging');
+    };
+
+    return el;
+}
+
+function handleStickyTextBlur(sectionId, stickyId, el) {
+    const newHtml = el.innerHTML.trim();
+    const newText = el.innerText.trim();
+    if (!state.bmc[sectionId]) return;
+    const s = state.bmc[sectionId].find(item => item.id === stickyId);
+    if (s) {
+        s.content = newHtml;
+        s.text = newText;
+        saveState();
+    }
+}
+
+// --- Text Formatting Functions ---
+window.formatDoc = (e, cmd, val) => {
+    e.preventDefault(); // Prevent button from taking focus and losing selection
+    document.execCommand(cmd, false, val);
+
+    // Find the active sticky text area to trigger an immediate save
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+        let node = selection.getRangeAt(0).commonAncestorContainer;
+        if (node.nodeType === 3) node = node.parentNode;
+        const stickyTextBody = node.closest('.bmc-sticky-text');
+        if (stickyTextBody) {
+            // Finding the parent sticky element to get the IDs
+            const stickyEl = stickyTextBody.closest('.bmc-sticky');
+            const sectionEl = stickyTextBody.closest('.bmc-section');
+            if (stickyEl && sectionEl) {
+                const sectionId = sectionEl.getAttribute('data-section');
+                const stickyId = stickyEl.id.replace('sticky-', '');
+                handleStickyTextBlur(sectionId, stickyId, stickyTextBody);
+            }
+        }
+    }
+};
+
+document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection();
+    const toolbar = document.getElementById('bmc-format-toolbar');
+    if (!toolbar) return;
+
+    if (selection.rangeCount > 0 && !selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        // Find if the selection is inside a .bmc-sticky-text element
+        let node = range.commonAncestorContainer;
+        if (node.nodeType === 3) node = node.parentNode;
+
+        const stickyTextBody = node.closest('.bmc-sticky-text');
+
+        if (stickyTextBody) {
+            const rect = range.getBoundingClientRect();
+            // Only show if the selection has some height (visible)
+            if (rect.width > 0 && rect.height > 0) {
+                toolbar.style.display = 'flex';
+                // Center toolbar above selection
+                const left = rect.left + rect.width / 2 - toolbar.offsetWidth / 2;
+                const top = rect.top - toolbar.offsetHeight - 10;
+
+                toolbar.style.left = Math.max(10, left) + 'px'; // Prevent going off-screen left
+                toolbar.style.top = top + 'px';
+                return;
+            }
+        }
+    }
+    toolbar.style.display = 'none';
+});
+
+function handleBMCDrop(e, targetSectionId) {
+    e.preventDefault();
+    const area = document.getElementById(`bmc-area-${targetSectionId}`);
+    if (area) area.classList.remove('drag-over');
+
+    if (!bmcState.draggedSticky) return;
+
+    const sourceSection = bmcState.draggedSection;
+    const stickyData = bmcState.draggedSticky;
+    const isCopy = e.ctrlKey || e.metaKey;
+
+    if (isCopy) {
+        // Clone
+        const newId = 's' + Date.now() + Math.random().toString(36).substr(2, 5);
+        const copy = JSON.parse(JSON.stringify(stickyData));
+        copy.id = newId;
+        copy.order = (state.bmc[targetSectionId]?.length || 0);
+        if (!state.bmc[targetSectionId]) state.bmc[targetSectionId] = [];
+        state.bmc[targetSectionId].push(copy);
+    } else {
+        // Move
+        if (sourceSection === targetSectionId) return;
+
+        // Remove from source (safe handling for empty state)
+        if (state.bmc[sourceSection]) {
+            state.bmc[sourceSection] = state.bmc[sourceSection].filter(i => i.id !== stickyData.id);
+        }
+
+        // Add to target
+        if (!state.bmc[targetSectionId]) state.bmc[targetSectionId] = [];
+        stickyData.order = state.bmc[targetSectionId].length;
+        state.bmc[targetSectionId].push(stickyData);
+    }
+
+    saveState();
+    renderBMC();
+    bmcState.draggedSticky = null;
+    bmcState.draggedSection = null;
+}
+
+// --- Context Menus ---
+function showBMCContextMenu(e, sectionId) {
+    e.preventDefault();
+    const menu = document.getElementById('bmc-context-menu');
+    menu.style.display = 'block';
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
+
+    bmcState.activeSection = sectionId;
+
+    const closer = () => {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closer);
+    };
+    setTimeout(() => document.addEventListener('click', closer), 10);
+}
+
+function showStickyContextMenu(e, sectionId, stickyId) {
+    e.preventDefault();
+    const menu = document.getElementById('sticky-context-menu');
+    menu.style.display = 'block';
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
+
+    bmcState.activeSection = sectionId;
+    bmcState.activeStickyId = stickyId;
+
+    // Toggle remove image button visibility
+    const s = state.bmc[sectionId].find(item => item.id === stickyId);
+    const removeBtn = document.getElementById('sticky-menu-remove-image');
+    if (removeBtn) {
+        removeBtn.style.display = s && s.image ? 'flex' : 'none';
+    }
+
+    const closer = () => {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closer);
+    };
+    setTimeout(() => document.addEventListener('click', closer), 10);
+}
+
+// Menu Actions
+document.getElementById('sticky-menu-remove-image').onclick = () => {
+    const sid = bmcState.activeSection;
+    const id = bmcState.activeStickyId;
+    const s = state.bmc[sid].find(item => item.id === id);
+    if (s) {
+        delete s.image;
+        saveState();
+        renderBMC();
+    }
+};
+
+// Menu Actions
+document.getElementById('bmc-menu-add').onclick = () => {
+    const sid = bmcState.activeSection;
+    const newId = 's' + Date.now();
+    if (!state.bmc[sid]) state.bmc[sid] = [];
+    state.bmc[sid].push({
+        id: newId,
+        text: '新しいアイデア',
+        color: '#fef3c7',
+        order: state.bmc[sid].length
+    });
+    saveState();
+    renderBMC();
+};
+
+document.getElementById('bmc-menu-clear').onclick = () => {
+    if (confirm('このセクションの付箋をすべて削除してもよろしいですか？')) {
+        state.bmc[bmcState.activeSection] = [];
+        saveState();
+        renderBMC();
+    }
+};
+
+document.getElementById('sticky-menu-delete').onclick = () => {
+    const sid = bmcState.activeSection;
+    const id = bmcState.activeStickyId;
+    state.bmc[sid] = state.bmc[sid].filter(s => s.id !== id);
+    saveState();
+    renderBMC();
+};
+
+document.getElementById('sticky-menu-up').onclick = () => {
+    const sid = bmcState.activeSection;
+    const id = bmcState.activeStickyId;
+    const list = state.bmc[sid];
+    const idx = list.findIndex(s => s.id === id);
+    if (idx > 0) {
+        [list[idx], list[idx - 1]] = [list[idx - 1], list[idx]];
+        list.forEach((s, i) => s.order = i);
+        saveState();
+        renderBMC();
+    }
+};
+
+document.getElementById('sticky-menu-down').onclick = () => {
+    const sid = bmcState.activeSection;
+    const id = bmcState.activeStickyId;
+    const list = state.bmc[sid];
+    const idx = list.findIndex(s => s.id === id);
+    if (idx >= 0 && idx < list.length - 1) {
+        [list[idx], list[idx + 1]] = [list[idx + 1], list[idx]];
+        list.forEach((s, i) => s.order = i);
+        saveState();
+        renderBMC();
+    }
+};
+
+document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.onclick = () => {
+        const color = sw.getAttribute('data-color');
+        const sid = bmcState.activeSection;
+        const id = bmcState.activeStickyId;
+        const s = state.bmc[sid].find(item => item.id === id);
+        if (s) {
+            s.color = color;
+            saveState();
+            renderBMC();
+        }
+    };
+});
+
+document.getElementById('sticky-menu-image').onclick = () => {
+    document.getElementById('sticky-image-input').click();
+};
+
+document.getElementById('sticky-image-input').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (re) => {
+        const compressed = await compressImage(re.target.result, 600, 600, 0.3);
+        const sid = bmcState.activeSection;
+        const id = bmcState.activeStickyId;
+        const s = state.bmc[sid].find(item => item.id === id);
+        if (s) {
+            s.image = compressed;
+            saveState();
+            renderBMC();
+        }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+};
+
+window.exportBMCAsImage = () => {
+    alert('【画像保存】ブラウザの印刷機能（PDF保存）またはスクリーンショットをご利用ください。');
 };
