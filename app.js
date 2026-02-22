@@ -730,6 +730,12 @@ function switchView(viewId) {
         if (!state.currentTopicId) state.currentTopicId = 'general';
         if (!state.topics) state.topics = [{ id: 'general', name: '全般', createdBy: 'system', timestamp: 0 }];
 
+        const topic = state.topics.find(t => t.id === state.currentTopicId);
+        if (topic) {
+            const titleEl = document.getElementById('current-topic-name');
+            if (titleEl) titleEl.textContent = topic.name;
+        }
+
         markMessagesAsRead();
         saveState();
         updateMessageNotification();
@@ -737,6 +743,7 @@ function switchView(viewId) {
         renderMessages(); // This will render messages for currentTopicId
         scrollToBottomMessages();
     }
+
     if (viewId === 'bookmarks') {
         renderBookmarks();
     }
@@ -827,6 +834,8 @@ function renderMemberList() {
 
     updateLockUI();
 
+    const anySelf = state.members.some(m => m.isSelf);
+
     state.members.forEach((member, index) => {
         const card = document.createElement('div');
         card.className = 'member-card card';
@@ -859,14 +868,16 @@ function renderMemberList() {
 
         const isLocked = state.membersLocked;
 
+        const canEditAvatar = member.isSelf || (!(isLocked || state.isConfigLocked) && !anySelf);
+
         card.innerHTML = `
             <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
-            <div class="member-card-smart ${isLocked ? 'locked' : ''}">
+            <div class="member-card-smart ${isLocked ? 'locked' : ''} ${anySelf && !member.isSelf ? 'avatar-readonly' : ''}">
                 <div class="smart-row-top">
-                    <div class="smart-avatar-container" ${!(isLocked || state.isConfigLocked) ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
+                    <div class="smart-avatar-container" ${canEditAvatar ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
                         <div class="smart-avatar" style="background:${avatarBg};">
                             ${avatarInner}
-                            ${!(isLocked || state.isConfigLocked) ? `
+                            ${canEditAvatar ? `
                             <div class="smart-avatar-hover">
                                 <i data-lucide="camera" style="width:10px;height:10px;color:white;"></i>
                             </div>
@@ -889,8 +900,8 @@ function renderMemberList() {
 
                 <div class="smart-row-middle">
                     <div class="smart-email-field">
-                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" onclick="setSelf(${index})" style="border: 1px solid var(--border); padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.2); cursor: pointer;">
-                            ${member.isSelf ? '自分' : '他'}
+                        <div class="smart-self-indicator ${member.isSelf ? 'active' : ''}" onclick="setSelf(${index})" title="${member.isSelf ? '解除' : '自分として設定'}">
+                            ${member.isSelf ? '自分' : 'メンバー'}
                         </div>
                         <input type="text" value="${member.emailLocal || ''}" onchange="updateMember(${index}, 'emailLocal', this.value)" aria-label="学籍番号(ID部分)" placeholder="学籍番号" style="margin-left: 4px;">
                         <span class="email-domain">@st.omu.ac.jp</span>
@@ -4640,9 +4651,12 @@ function renderMessages() {
         return;
     }
 
-    const selfMember = state.members.find(m => m.isSelf);
-    const selfKey = selfMember ? (selfMember.emailLocal || (selfMember.lastName + selfMember.firstName)) : null;
+    const selfMember = state.members ? state.members.find(m => m.isSelf) : null;
+    const selfKey = selfMember ? (selfMember.emailLocal || ((selfMember.lastName || '') + (selfMember.firstName || ''))) : 'guest';
 
+    let lastSenderKey = null;
+
+    let lastTimestamp = null;
     let lastDate = null;
 
     filteredMessages.forEach(msg => {
@@ -4655,12 +4669,15 @@ function renderMessages() {
             sep.innerHTML = `<span>${dateStr}</span>`;
             list.appendChild(sep);
             lastDate = dateStr;
+            lastSenderKey = null; // Reset grouping on new date
         }
 
         const isMe = selfKey && (msg.senderKey === selfKey);
+        // LINE-style grouping: same sender within 1 minute
+        const isGrouped = (msg.senderKey === lastSenderKey) && (Math.abs(msg.timestamp - lastTimestamp) < 60000);
 
         const div = document.createElement('div');
-        div.className = `message-item ${isMe ? 'self' : ''}`;
+        div.className = `message-item ${isMe ? 'self' : ''} ${isGrouped ? 'is-grouped' : ''}`;
 
         const timeStr = dateObj.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
@@ -4678,15 +4695,33 @@ function renderMessages() {
 
         const readBy = msg.readBy || [];
         const readCount = readBy.length;
+        const readByMembers = [];
         const readByNames = [];
         if (readCount > 0 && state.members) {
             readBy.forEach(readerKey => {
                 const m = state.members.find(mem => (mem.emailLocal || ((mem.lastName || '') + (mem.firstName || ''))) === readerKey);
-                if (m) readByNames.push((m.lastName || '') + (m.firstName || ''));
+                if (m) {
+                    readByMembers.push(m);
+                    readByNames.push((m.lastName || '') + (m.firstName || ''));
+                }
             });
         }
-        const readTooltip = readByNames.length > 0 ? `既読: ${readByNames.join(', ')}` : 'まだ誰も読んでいません';
-        const readLabel = `<span class="message-read-status" title="${readTooltip}">${readCount > 0 ? `既読 ${readCount}` : '未読'}</span>`;
+
+        const readTooltip = readByNames.length > 0 ? `既読: ${readByNames.join(', ')}` : '未読';
+
+        const readChipsHtml = readByMembers.map(m => {
+            const initialsChar = m.lastName ? m.lastName.charAt(0) : '?';
+            const readerColor = m.avatarColor || AVATAR_COLORS[state.members.indexOf(m) % AVATAR_COLORS.length];
+            const readerAvatar = m.avatarImage
+                ? `<img src="${m.avatarImage}" class="reader-avatar-icon">`
+                : `<div class="reader-avatar-icon" style="background:${readerColor}">${initialsChar}</div>`;
+            return `<div class="read-chip">${readerAvatar}<span class="reader-name">${m.lastName || ''}</span></div>`;
+        }).join('');
+
+        const readLabel = readCount > 0
+            ? `<div class="message-read-status" onclick="toggleReadParticipants(event, '${msg.id}')">既読 ${readCount}</div><div id="read-list-${msg.id}" class="read-participants-popup">${readChipsHtml}</div>`
+            : '';
+
 
         const reactionsHtml = msg.reactions ? Object.entries(msg.reactions).map(([emoji, users]) => {
             const hasReacted = selfKey && users.includes(selfKey);
@@ -4697,29 +4732,20 @@ function renderMessages() {
             return `<div class="reaction-badge ${hasReacted ? 'active' : ''}" onclick="addReaction('${msg.id}', '${emoji}')" title="${emoji}: ${userNames}">${emoji} ${users.length}</div>`;
         }).join('') : '';
 
-        div.innerHTML = `
-            <div class="message-avatar" style="background:${avatarBg};" title="${msg.senderName}">
-                ${avatarInner}
-            </div>
-            <div class="message-content-wrapper">
-                <div class="message-meta">
-                    <span style="font-weight:600;">${msg.senderName}</span>
-                    <span>${timeStr}</span>
-                </div>
-                <div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div>
-                <div class="message-reactions-wrapper">
-                    ${isMe ? readLabel : ''}
-                    <div class="message-reactions">${reactionsHtml}</div>
-                    <button class="btn-add-reaction" onclick="toggleReactionPicker(event, '${msg.id}')" title="リアクションを追加">
-                        <i data-lucide="smile-plus" style="width:16px; height:16px;"></i>
-                    </button>
-                </div>
-            </div>
-        `;
+        const hasReactions = msg.reactions && Object.keys(msg.reactions).length > 0;
+
+        div.innerHTML = `<div class="message-avatar" style="background:${avatarBg};" title="${msg.senderName}">${avatarInner}</div><div class="message-content-wrapper">${!isGrouped ? `<div class="message-meta"><span>${msg.senderName}</span></div>` : ''}<div class="message-bubble-row"><div class="message-bubble">${formatMessageContent(msg.content)}${renderAttachments(msg.attachments)}${isMe ? `<button class="btn-delete-msg" onclick="deleteMessage('${msg.id}')" title="削除">×</button>` : ''}</div><div class="message-read-status-wrapper">${isMe ? readLabel : ''}<span class="message-time">${timeStr}</span></div></div>${hasReactions ? `<div class="message-reactions-wrapper"><div class="message-reactions">${reactionsHtml}</div><button class="btn-add-reaction" onclick="toggleReactionPicker(event, '${msg.id}')" title="リアクションを追加"><i data-lucide="smile-plus" style="width:14px; height:14px;"></i></button></div>` : `<div class="message-reactions-wrapper only-button"><button class="btn-add-reaction" onclick="toggleReactionPicker(event, '${msg.id}')" title="リアクションを追加"><i data-lucide="smile-plus" style="width:14px; height:14px;"></i></button></div>`}</div>`;
+
+
+
         list.appendChild(div);
+
+        lastSenderKey = msg.senderKey;
+        lastTimestamp = msg.timestamp;
     });
     if (window.lucide) lucide.createIcons();
 }
+
 
 function markMessagesAsRead() {
     if (!state.messages) return;
@@ -5134,20 +5160,24 @@ function renderTopics() {
 function switchTopic(topicId) {
     if (state.currentTopicId === topicId) return;
 
-    // Save current state first
-    saveState();
-
     state.currentTopicId = topicId;
+
+    const topic = state.topics.find(t => t.id === topicId);
+    if (topic) {
+        const titleEl = document.getElementById('current-topic-name');
+        if (titleEl) titleEl.textContent = topic.name;
+    }
 
     // Mark messages in new topic as read
     markMessagesAsRead();
     saveState();
 
-    updateMessageNotification(); // Badge needs update after reading current topic
+    updateMessageNotification();
     renderTopics();
     renderMessages();
     scrollToBottomMessages();
 }
+
 
 function createNewTopic() {
     const name = prompt('新しい話題の名称を入力してください:');
@@ -5219,6 +5249,28 @@ window.toggleReactionPicker = (e, msgId) => {
     };
     setTimeout(() => document.addEventListener('click', closePicker), 10);
 };
+
+window.toggleReadParticipants = (e, msgId) => {
+    e.stopPropagation();
+    const popup = document.getElementById(`read-list-${msgId}`);
+    if (!popup) return;
+
+    // Close other popups first
+    document.querySelectorAll('.read-participants-popup.active').forEach(p => {
+        if (p !== popup) p.classList.remove('active');
+    });
+
+    popup.classList.toggle('active');
+
+    if (popup.classList.contains('active')) {
+        const close = () => {
+            popup.classList.remove('active');
+            document.removeEventListener('click', close);
+        };
+        setTimeout(() => document.addEventListener('click', close), 10);
+    }
+};
+
 
 window.addReaction = (msgId, emoji) => {
     const msg = state.messages.find(m => m.id === msgId);
@@ -5698,18 +5750,28 @@ window.renderTeamwork = () => {
 
     // We use state.members to get the list of members
     const members = state.members || [];
-    members.forEach(m => {
+    members.forEach((m, index) => {
         const profile = state.teamwork.members[m.id] || { strengths: '', interests: '', goals: '', photo: '' };
+
+        const fullName = `${m.lastName || ''}${m.firstName || ''}`.trim() || m.name || 'メンバー';
+        const initials = fullName ? fullName.slice(0, 1) : '?';
+        const avatarColor = m.avatarColor || AVATAR_COLORS[index % AVATAR_COLORS.length];
+        const teamworkPhoto = profile.photo || m.avatarImage;
+        const hasEffectiveImage = !!teamworkPhoto;
+        const avatarInner = hasEffectiveImage
+            ? `<img src="${teamworkPhoto}">`
+            : initials;
+        const avatarBg = hasEffectiveImage ? 'transparent' : avatarColor;
 
         const card = document.createElement('div');
         card.className = 'member-card';
         card.innerHTML = `
             <div class="member-card-header">
-                <div class="member-photo-wrap" onclick="triggerMemberPhotoUpload('${m.id}')">
-                    ${profile.photo ? `<img src="${profile.photo}">` : '<i data-lucide="user"></i>'}
+                <div class="member-photo-wrap" onclick="triggerMemberPhotoUpload('${m.id}')" style="background:${avatarBg};">
+                    ${avatarInner}
                 </div>
                 <div>
-                    <div class="member-name">${m.name}</div>
+                    <div class="member-name">${fullName}</div>
                     <div class="member-role">${m.role || 'メンバー'}</div>
                 </div>
             </div>
