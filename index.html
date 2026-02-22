@@ -987,18 +987,56 @@
             <section id="view-tech-core" class="view">
                 <div class="tech-core-container">
                     <div class="card tech-core-header"
-                        style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <h2 style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin: 0;">
-                                <i data-lucide="cpu" style="color: #3b82f6;"></i> 技術コア開発
-                            </h2>
-                            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">
-                                図解や構成図を描き、プロジェクトの技術的な核を定義します。
-                            </p>
+                        style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h2
+                                    style="font-size: 1.05rem; display: flex; align-items: center; gap: 8px; margin: 0;">
+                                    <i data-lucide="cpu" style="color: #3b82f6;"></i> 技術コア開発
+                                </h2>
+                                <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">
+                                    図解や構成図を描き、プロジェクトの技術的な核を定義します。
+                                </p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="font-size: 0.75rem; color: #f59e0b; font-weight: 700; white-space: nowrap;">
+                                    <i data-lucide="lightbulb"
+                                        style="width:14px; height:14px; vertical-align: middle;"></i>
+                                    事例:
+                                </span>
+                                <select id="tech-tutorial-select"
+                                    onchange="loadTechTutorial(this.value); this.value='';"
+                                    style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
+                                    <option value="" disabled selected>選択...</option>
+                                    <option value="drone">自律配送ドローン</option>
+                                    <option value="ev_station">EV高速充電スタンド</option>
+                                    <option value="smart_agri">スマート農業IoT</option>
+                                    <option value="factory">AI自動検品ライン</option>
+                                    <option value="rocket">再使用型ロケット</option>
+                                    <option value="quantum">量子クラウド基盤</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 4px; margin-left: 8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportTechCanvasJSON()" title="保存">
+                                    <i data-lucide="save"></i>
+                                </button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="document.getElementById('tech-canvas-json-input').click()" title="読込">
+                                    <i data-lucide="upload"></i>
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="exportTechCanvasPDF()" title="PDF">
+                                    <i data-lucide="file-text"></i>
+                                </button>
+                                <input type="file" id="tech-canvas-json-input" style="display:none" accept=".json"
+                                    onchange="importTechCanvasJSON(this)">
+                            </div>
                         </div>
-                        <div class="tech-canvas-toolbar">
+
+                        <div class="tech-canvas-toolbar"
+                            style="margin: 0; padding: 0.4rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border); width: fit-content; display: flex; align-items: center; gap: 4px;">
                             <button class="canvas-tool-btn active" data-tool="select" title="選択"><i
-                                    data-lucide="mouse-pointer-2"></i></button>
+                                    data-lucide="mouse-pointer-2" style="width:16px;height:16px;"></i></button>
                             <button class="canvas-tool-btn-sm" id="btn-copy" title="コピー (Ctrl+C)"><i
                                     data-lucide="copy"></i></button>
                             <button class="canvas-tool-btn-sm" id="btn-paste" title="貼り付け (Ctrl+V)"><i
@@ -1115,8 +1153,8 @@
             <section id="view-bmc" class="view">
                 <div class="bmc-container">
                     <div class="bmc-header card"
-                        style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
+                        style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <h2
                                     style="font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin: 0; white-space: nowrap;">
@@ -1128,7 +1166,7 @@
                                     onfocus="this.style.borderBottomColor='var(--primary)'"
                                     onblur="this.style.borderBottomColor='transparent'; saveBMCTitle(this.value)">
                             </div>
-                            <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
+                            <div style="display: flex; align-items: center; gap: 16px;">
                                 <div class="analysis-tabs" style="display: flex; gap: 4px;">
                                     <button class="analysis-tab active" data-analysis-tab="bmc"
                                         onclick="switchAnalysisTab('bmc')">BMC</button>
@@ -1143,265 +1181,306 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="bmc-toolbar" style="display: flex; gap: 1rem; align-items: center;">
-                            <div class="bmc-help-text"
-                                style="font-size: 0.75rem; color: var(--text-dim); background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 6px;">
-                                セクション右クリック：追加 | 付箋右クリック：編集 | ドラッグ：移動
-                            </div>
-                            <button class="btn btn-secondary btn-sm" onclick="exportBMCAsImage()">
-                                <i data-lucide="image"></i> 保存
-                            </button>
-                        </div>
-                    </div>
 
-                    <!-- Analysis Content Area -->
-                    <div id="analysis-content">
-                        <!-- BMC (Business Model Canvas) -->
-                        <div id="analysis-tab-bmc" class="analysis-tab-pane active">
-                            <div id="bmc-board" class="bmc-board">
-                                <!-- Left Column (KP) -->
-                                <div class="bmc-section" data-section="KP" id="bmc-kp">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="handshake"></i>
-                                        <span>パートナー<br><small>Key Partners</small></span>
-                                        <div class="bmc-help-tip down"
-                                            data-label="ビジネスを運営するために必要な外部パートナーやサプライヤーのネットワーク">?
-                                        </div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-KP"></div>
+                        <div class="bmc-toolbar"
+                            style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 0.75rem 1.25rem; border-radius: 12px; border: 1px solid var(--border); margin: 0;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 700;">
+                                        <i data-lucide="lightbulb"
+                                            style="width:14px; height:14px; vertical-align: middle;"></i>
+                                        事例:
+                                    </span>
+                                    <select onchange="loadTutorial(this.value)"
+                                        style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
+                                        <option value="" disabled selected>選択...</option>
+                                        <option value="mcdonalds">マクドナルド</option>
+                                        <option value="muji">無印良品</option>
+                                        <option value="ikea">IKEA</option>
+                                        <option value="daiso">ダイソー</option>
+                                        <option value="gshock">Casio G-shock</option>
+                                        <option value="pixel">Google Pixel</option>
+                                        <option value="applewatch">Apple Watch</option>
+                                    </select>
                                 </div>
+                            </div>
 
-                                <!-- 2nd Column (KA & KR) -->
-                                <div class="bmc-dual-column">
-                                    <div class="bmc-section" data-section="KA" id="bmc-ka">
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <button class="btn btn-secondary btn-sm" onclick="exportAnalysisJSON()"
+                                    title="分析データを保存（JSON）">
+                                    <i data-lucide="save"></i> 保存
+                                </button>
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="document.getElementById('analysis-json-input').click()"
+                                    title="分析データを読み込む（JSON）">
+                                    <i data-lucide="upload"></i> 読込
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="clearActiveAnalysis()"
+                                    title="表示をリセット">
+                                    <i data-lucide="refresh-ccw"></i> クリア
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="exportAnalysisPDF()" title="PDF出力">
+                                    <i data-lucide="file-text"></i> PDF
+                                </button>
+                                <input type="file" id="analysis-json-input" style="display:none" accept=".json"
+                                    onchange="importAnalysisJSON(this)">
+                            </div>
+                        </div>
+
+                        <!-- Analysis Content Area -->
+                        <div id="analysis-content">
+                            <!-- BMC (Business Model Canvas) -->
+                            <div id="analysis-tab-bmc" class="analysis-tab-pane active">
+                                <div id="bmc-board" class="bmc-board">
+                                    <!-- Left Column (KP) -->
+                                    <div class="bmc-section" data-section="KP" id="bmc-kp">
                                         <div class="bmc-section-header">
-                                            <i data-lucide="activity"></i>
-                                            <span>主な活動<br><small>Key Activities</small></span>
-                                            <div class="bmc-help-tip down" data-label="価値を提供するために必要な最も重要な活動">?</div>
-                                        </div>
-                                        <div class="bmc-sticky-area" id="bmc-area-KA"></div>
-                                    </div>
-                                    <div class="bmc-section" data-section="KR" id="bmc-kr">
-                                        <div class="bmc-section-header">
-                                            <i data-lucide="wrench"></i>
-                                            <span>主なリソース<br><small>Key Resources</small></span>
-                                            <div class="bmc-help-tip" data-label="ビジネスモデルを動かすために必要な資産（人的、物的、知的、金銭的）">?
+                                            <i data-lucide="handshake"></i>
+                                            <span>パートナー<br><small>Key Partners</small></span>
+                                            <div class="bmc-help-tip down"
+                                                data-label="ビジネスを運営するために必要な外部パートナーやサプライヤーのネットワーク">?
                                             </div>
                                         </div>
-                                        <div class="bmc-sticky-area" id="bmc-area-KR"></div>
+                                        <div class="bmc-sticky-area" id="bmc-area-KP"></div>
                                     </div>
-                                </div>
 
-                                <!-- 3rd Column (VP) -->
-                                <div class="bmc-section primary" data-section="VP" id="bmc-vp">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="gift"></i>
-                                        <span>価値提案<br><small>Value Proposition</small></span>
-                                        <div class="bmc-help-tip down" data-label="顧客がなぜ他社ではなく自社を選ぶのか、解決する課題や満たすニーズ">?
+                                    <!-- 2nd Column (KA & KR) -->
+                                    <div class="bmc-dual-column">
+                                        <div class="bmc-section" data-section="KA" id="bmc-ka">
+                                            <div class="bmc-section-header">
+                                                <i data-lucide="activity"></i>
+                                                <span>主な活動<br><small>Key Activities</small></span>
+                                                <div class="bmc-help-tip down" data-label="価値を提供するために必要な最も重要な活動">?</div>
+                                            </div>
+                                            <div class="bmc-sticky-area" id="bmc-area-KA"></div>
+                                        </div>
+                                        <div class="bmc-section" data-section="KR" id="bmc-kr">
+                                            <div class="bmc-section-header">
+                                                <i data-lucide="wrench"></i>
+                                                <span>主なリソース<br><small>Key Resources</small></span>
+                                                <div class="bmc-help-tip"
+                                                    data-label="ビジネスモデルを動かすために必要な資産（人的、物的、知的、金銭的）">?
+                                                </div>
+                                            </div>
+                                            <div class="bmc-sticky-area" id="bmc-area-KR"></div>
                                         </div>
                                     </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-VP"></div>
-                                </div>
 
-                                <!-- 4th Column (CR & CH) -->
-                                <div class="bmc-dual-column">
-                                    <div class="bmc-section" data-section="CR" id="bmc-cr">
+                                    <!-- 3rd Column (VP) -->
+                                    <div class="bmc-section primary" data-section="VP" id="bmc-vp">
                                         <div class="bmc-section-header">
-                                            <i data-lucide="heart"></i>
-                                            <span>顧客との関係<br><small>Relationships</small></span>
-                                            <div class="bmc-help-tip down" data-label="顧客セグメントごとにどのような関係性を築き、維持するか">?
+                                            <i data-lucide="gift"></i>
+                                            <span>価値提案<br><small>Value Proposition</small></span>
+                                            <div class="bmc-help-tip down"
+                                                data-label="顧客がなぜ他社ではなく自社を選ぶのか、解決する課題や満たすニーズ">?
                                             </div>
                                         </div>
-                                        <div class="bmc-sticky-area" id="bmc-area-CR"></div>
+                                        <div class="bmc-sticky-area" id="bmc-area-VP"></div>
                                     </div>
-                                    <div class="bmc-section" data-section="CH" id="bmc-ch">
+
+                                    <!-- 4th Column (CR & CH) -->
+                                    <div class="bmc-dual-column">
+                                        <div class="bmc-section" data-section="CR" id="bmc-cr">
+                                            <div class="bmc-section-header">
+                                                <i data-lucide="heart"></i>
+                                                <span>顧客との関係<br><small>Relationships</small></span>
+                                                <div class="bmc-help-tip down" data-label="顧客セグメントごとにどのような関係性を築き、維持するか">
+                                                    ?
+                                                </div>
+                                            </div>
+                                            <div class="bmc-sticky-area" id="bmc-area-CR"></div>
+                                        </div>
+                                        <div class="bmc-section" data-section="CH" id="bmc-ch">
+                                            <div class="bmc-section-header">
+                                                <i data-lucide="truck"></i>
+                                                <span>チャネル<br><small>Channels</small></span>
+                                                <div class="bmc-help-tip" data-label="価値提案をどのように顧客に届け、コミュニケーションをとるか">?
+                                                </div>
+                                            </div>
+                                            <div class="bmc-sticky-area" id="bmc-area-CH"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 5th Column (CS) -->
+                                    <div class="bmc-section" data-section="CS" id="bmc-cs">
                                         <div class="bmc-section-header">
-                                            <i data-lucide="truck"></i>
-                                            <span>チャネル<br><small>Channels</small></span>
-                                            <div class="bmc-help-tip" data-label="価値提案をどのように顧客に届け、コミュニケーションをとるか">?</div>
+                                            <i data-lucide="users"></i>
+                                            <span>顧客セグメント<br><small>Customer Segments</small></span>
+                                            <div class="bmc-help-tip down" data-label="ビジネスが価値を提供しようとする具体的な顧客グループや組織">?
+                                            </div>
                                         </div>
-                                        <div class="bmc-sticky-area" id="bmc-area-CH"></div>
+                                        <div class="bmc-sticky-area" id="bmc-area-CS"></div>
                                     </div>
-                                </div>
 
-                                <!-- 5th Column (CS) -->
-                                <div class="bmc-section" data-section="CS" id="bmc-cs">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="users"></i>
-                                        <span>顧客セグメント<br><small>Customer Segments</small></span>
-                                        <div class="bmc-help-tip down" data-label="ビジネスが価値を提供しようとする具体的な顧客グループや組織">?
+                                    <!-- Bottom: Cost Structure -->
+                                    <div class="bmc-section footer" data-section="COST" id="bmc-cost"
+                                        style="grid-column: 1 / span 2.5;">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="coins"></i>
+                                            <span>コスト構造<br><small>Cost Structure</small></span>
+                                            <div class="bmc-help-tip" data-label="ビジネスを運営する上で発生する主要なコスト">?</div>
                                         </div>
+                                        <div class="bmc-sticky-area horizontal" id="bmc-area-COST"></div>
                                     </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-CS"></div>
-                                </div>
 
-                                <!-- Bottom: Cost Structure -->
-                                <div class="bmc-section footer" data-section="COST" id="bmc-cost"
-                                    style="grid-column: 1 / span 2.5;">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="coins"></i>
-                                        <span>コスト構造<br><small>Cost Structure</small></span>
-                                        <div class="bmc-help-tip" data-label="ビジネスを運営する上で発生する主要なコスト">?</div>
+                                    <!-- Bottom: Revenue Streams -->
+                                    <div class="bmc-section footer" data-section="REV" id="bmc-rev"
+                                        style="grid-column: 3.5 / span 5;">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="banknote"></i>
+                                            <span>収益の流れ<br><small>Revenue Streams</small></span>
+                                            <div class="bmc-help-tip" data-label="顧客が価値提案に対して支払う仕組みや現金の流れ">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area horizontal" id="bmc-area-REV"></div>
                                     </div>
-                                    <div class="bmc-sticky-area horizontal" id="bmc-area-COST"></div>
                                 </div>
+                            </div>
 
-                                <!-- Bottom: Revenue Streams -->
-                                <div class="bmc-section footer" data-section="REV" id="bmc-rev"
-                                    style="grid-column: 3.5 / span 5;">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="banknote"></i>
-                                        <span>収益の流れ<br><small>Revenue Streams</small></span>
-                                        <div class="bmc-help-tip" data-label="顧客が価値提案に対して支払う仕組みや現金の流れ">?</div>
+                            <!-- 5W1H Analysis -->
+                            <div id="analysis-tab-5w1h" class="analysis-tab-pane">
+                                <div class="w51h-board">
+                                    <div class="bmc-section" data-section="5W_WHO" id="bmc-5w-who">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="user"></i> <span>WHO (誰が)<br><small>Target /
+                                                    Player</small></span>
+                                            <div class="bmc-help-tip down" data-label="ターゲット顧客、関係者、役割分担">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_WHO"></div>
                                     </div>
-                                    <div class="bmc-sticky-area horizontal" id="bmc-area-REV"></div>
+                                    <div class="bmc-section" data-section="5W_WHAT" id="bmc-5w-what">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="package"></i> <span>WHAT (何を)<br><small>Service /
+                                                    Product</small></span>
+                                            <div class="bmc-help-tip down" data-label="提供する価値、製品、具体的な内容">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_WHAT"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="5W_WHEN" id="bmc-5w-when">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="calendar"></i> <span>WHEN (いつ)<br><small>Timing /
+                                                    Schedule</small></span>
+                                            <div class="bmc-help-tip down" data-label="時期、時間帯、頻度、スケジュール">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_WHEN"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="5W_WHERE" id="bmc-5w-where">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="map-pin"></i> <span>WHERE (どこで)<br><small>Place /
+                                                    Channel</small></span>
+                                            <div class="bmc-help-tip" data-label="場所、プラットフォーム、活用シーン">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_WHERE"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="5W_WHY" id="bmc-5w-why">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="help-circle"></i> <span>WHY (なぜ)<br><small>Purpose /
+                                                    Reason</small></span>
+                                            <div class="bmc-help-tip" data-label="目的、理由、解決したい課題">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_WHY"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="5W_HOW" id="bmc-5w-how">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="settings"></i> <span>HOW (どのように)<br><small>Method /
+                                                    Process</small></span>
+                                            <div class="bmc-help-tip" data-label="実現方法、手段、具体的なプロセス">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-5W_HOW"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3C Analysis -->
+                            <div id="analysis-tab-3c" class="analysis-tab-pane">
+                                <div class="c3-board">
+                                    <div class="bmc-section" data-section="3C_CUSTOMER" id="bmc-3c-customer">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="users-2"></i> <span>Customer (市場・顧客)<br><small>Market
+                                                    Insight</small></span>
+                                            <div class="bmc-help-tip down" data-label="市場規模、成長性、顧客ニーズ、購買行動">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-3C_CUSTOMER"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="3C_COMPETITOR" id="bmc-3c-competitor">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="swords"></i> <span>Competitor (競合)<br><small>Competitor
+                                                    Insight</small></span>
+                                            <div class="bmc-help-tip down" data-label="競合他社、シェア、強み・弱み、戦略">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-3C_COMPETITOR"></div>
+                                    </div>
+                                    <div class="bmc-section" data-section="3C_COMPANY" id="bmc-3c-company">
+                                        <div class="bmc-section-header">
+                                            <i data-lucide="building-2"></i> <span>Company (自社)<br><small>Self
+                                                    Insight</small></span>
+                                            <div class="bmc-help-tip down" data-label="リソース、強み、ブランド、成功要因">?</div>
+                                        </div>
+                                        <div class="bmc-sticky-area" id="bmc-area-3C_COMPANY"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 5W1H Analysis -->
-                        <div id="analysis-tab-5w1h" class="analysis-tab-pane">
-                            <div class="w51h-board">
-                                <div class="bmc-section" data-section="5W_WHO" id="bmc-5w-who">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="user"></i> <span>WHO (誰が)<br><small>Target /
-                                                Player</small></span>
-                                        <div class="bmc-help-tip down" data-label="ターゲット顧客、関係者、役割分担">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHO"></div>
-                                </div>
-                                <div class="bmc-section" data-section="5W_WHAT" id="bmc-5w-what">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="package"></i> <span>WHAT (何を)<br><small>Service /
-                                                Product</small></span>
-                                        <div class="bmc-help-tip down" data-label="提供する価値、製品、具体的な内容">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHAT"></div>
-                                </div>
-                                <div class="bmc-section" data-section="5W_WHEN" id="bmc-5w-when">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="calendar"></i> <span>WHEN (いつ)<br><small>Timing /
-                                                Schedule</small></span>
-                                        <div class="bmc-help-tip down" data-label="時期、時間帯、頻度、スケジュール">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHEN"></div>
-                                </div>
-                                <div class="bmc-section" data-section="5W_WHERE" id="bmc-5w-where">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="map-pin"></i> <span>WHERE (どこで)<br><small>Place /
-                                                Channel</small></span>
-                                        <div class="bmc-help-tip" data-label="場所、プラットフォーム、活用シーン">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHERE"></div>
-                                </div>
-                                <div class="bmc-section" data-section="5W_WHY" id="bmc-5w-why">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="help-circle"></i> <span>WHY (なぜ)<br><small>Purpose /
-                                                Reason</small></span>
-                                        <div class="bmc-help-tip" data-label="目的、理由、解決したい課題">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_WHY"></div>
-                                </div>
-                                <div class="bmc-section" data-section="5W_HOW" id="bmc-5w-how">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="settings"></i> <span>HOW (どのように)<br><small>Method /
-                                                Process</small></span>
-                                        <div class="bmc-help-tip" data-label="実現方法、手段、具体的なプロセス">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-5W_HOW"></div>
-                                </div>
+                        <!-- BMC Context Menu -->
+                        <div id="bmc-context-menu" class="context-menu">
+                            <div class="menu-item" id="bmc-menu-add"><i data-lucide="plus-square"></i> 付箋を追加</div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-item danger" id="bmc-menu-clear"><i data-lucide="trash-2"></i> セクションをクリア
                             </div>
                         </div>
 
-                        <!-- 3C Analysis -->
-                        <div id="analysis-tab-3c" class="analysis-tab-pane">
-                            <div class="c3-board">
-                                <div class="bmc-section" data-section="3C_CUSTOMER" id="bmc-3c-customer">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="users-2"></i> <span>Customer (市場・顧客)<br><small>Market
-                                                Insight</small></span>
-                                        <div class="bmc-help-tip down" data-label="市場規模、成長性、顧客ニーズ、購買行動">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-3C_CUSTOMER"></div>
-                                </div>
-                                <div class="bmc-section" data-section="3C_COMPETITOR" id="bmc-3c-competitor">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="swords"></i> <span>Competitor (競合)<br><small>Competitor
-                                                Insight</small></span>
-                                        <div class="bmc-help-tip down" data-label="競合他社、シェア、強み・弱み、戦略">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-3C_COMPETITOR"></div>
-                                </div>
-                                <div class="bmc-section" data-section="3C_COMPANY" id="bmc-3c-company">
-                                    <div class="bmc-section-header">
-                                        <i data-lucide="building-2"></i> <span>Company (自社)<br><small>Self
-                                                Insight</small></span>
-                                        <div class="bmc-help-tip down" data-label="リソース、強み、ブランド、成功要因">?</div>
-                                    </div>
-                                    <div class="bmc-sticky-area" id="bmc-area-3C_COMPANY"></div>
-                                </div>
+                        <!-- Sticky Note Context Menu -->
+                        <div id="sticky-context-menu" class="context-menu">
+                            <div class="menu-item" id="sticky-menu-image"><i data-lucide="image"></i> 画像を挿入</div>
+                            <div class="menu-item" id="sticky-menu-remove-image" style="display:none;"><i
+                                    data-lucide="image-minus"></i> 画像を削除</div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-item" id="sticky-menu-up"><i data-lucide="chevron-up"></i> 前に移動</div>
+                            <div class="menu-item" id="sticky-menu-down"><i data-lucide="chevron-down"></i> 後ろに移動</div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-group-label"
+                                style="padding: 4px 12px; font-size: 10px; color: var(--text-dim); text-transform: uppercase;">
+                                カラー選択
+                            </div>
+                            <div class="menu-item-colors"
+                                style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 12px;">
+                                <div class="color-swatch" data-color="#fef3c7" style="background: #fef3c7;"></div>
+                                <div class="color-swatch" data-color="#dcfce7" style="background: #dcfce7;"></div>
+                                <div class="color-swatch" data-color="#dbeafe" style="background: #dbeafe;"></div>
+                                <div class="color-swatch" data-color="#fee2e2" style="background: #fee2e2;"></div>
+                                <div class="color-swatch" data-color="#f3e8ff" style="background: #f3e8ff;"></div>
+                                <div class="color-swatch" data-color="#ffedd5" style="background: #ffedd5;"></div>
+                                <div class="color-swatch" data-color="#ffffff" style="background: #ffffff;"></div>
+                                <div class="color-swatch" data-color="#e2e8f0" style="background: #e2e8f0;"></div>
+                            </div>
+                            <div class="menu-separator"></div>
+                            <div class="menu-item danger" id="sticky-menu-delete"><i data-lucide="trash"></i> 付箋を削除
                             </div>
                         </div>
-                    </div>
 
-                    <!-- BMC Context Menu -->
-                    <div id="bmc-context-menu" class="context-menu">
-                        <div class="menu-item" id="bmc-menu-add"><i data-lucide="plus-square"></i> 付箋を追加</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item danger" id="bmc-menu-clear"><i data-lucide="trash-2"></i> セクションをクリア</div>
-                    </div>
+                        <!-- Hidden Input for Sticky Images -->
+                        <input type="file" id="sticky-image-input" accept="image/*" style="display:none">
 
-                    <!-- Sticky Note Context Menu -->
-                    <div id="sticky-context-menu" class="context-menu">
-                        <div class="menu-item" id="sticky-menu-image"><i data-lucide="image"></i> 画像を挿入</div>
-                        <div class="menu-item" id="sticky-menu-remove-image" style="display:none;"><i
-                                data-lucide="image-minus"></i> 画像を削除</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item" id="sticky-menu-up"><i data-lucide="chevron-up"></i> 前に移動</div>
-                        <div class="menu-item" id="sticky-menu-down"><i data-lucide="chevron-down"></i> 後ろに移動</div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-group-label"
-                            style="padding: 4px 12px; font-size: 10px; color: var(--text-dim); text-transform: uppercase;">
-                            カラー選択
+                        <!-- BMC Formatting Toolbar -->
+                        <div id="bmc-format-toolbar" class="bmc-format-toolbar" style="display:none;">
+                            <button class="format-btn" onmousedown="formatDoc(event, 'bold')" title="太字 (Ctrl+B)"><i
+                                    data-lucide="bold"></i></button>
+                            <button class="format-btn" onmousedown="formatDoc(event, 'italic')" title="斜体 (Ctrl+I)"><i
+                                    data-lucide="italic"></i></button>
+                            <button class="format-btn" onmousedown="formatDoc(event, 'underline')"
+                                title="下線 (Ctrl+U)"><i data-lucide="underline"></i></button>
+                            <div class="format-separator"></div>
+                            <div class="text-color-grid">
+                                <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#1a1a1a')"
+                                    style="background: #1a1a1a;" title="黒"></div>
+                                <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#ef4444')"
+                                    style="background: #ef4444;" title="赤"></div>
+                                <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#3b82f6')"
+                                    style="background: #3b82f6;" title="青"></div>
+                                <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#10b981')"
+                                    style="background: #10b981;" title="緑"></div>
+                            </div>
                         </div>
-                        <div class="menu-item-colors"
-                            style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px 12px;">
-                            <div class="color-swatch" data-color="#fef3c7" style="background: #fef3c7;"></div>
-                            <div class="color-swatch" data-color="#dcfce7" style="background: #dcfce7;"></div>
-                            <div class="color-swatch" data-color="#dbeafe" style="background: #dbeafe;"></div>
-                            <div class="color-swatch" data-color="#fee2e2" style="background: #fee2e2;"></div>
-                            <div class="color-swatch" data-color="#f3e8ff" style="background: #f3e8ff;"></div>
-                            <div class="color-swatch" data-color="#ffedd5" style="background: #ffedd5;"></div>
-                            <div class="color-swatch" data-color="#ffffff" style="background: #ffffff;"></div>
-                            <div class="color-swatch" data-color="#e2e8f0" style="background: #e2e8f0;"></div>
-                        </div>
-                        <div class="menu-separator"></div>
-                        <div class="menu-item danger" id="sticky-menu-delete"><i data-lucide="trash"></i> 付箋を削除</div>
-                    </div>
-
-                    <!-- Hidden Input for Sticky Images -->
-                    <input type="file" id="sticky-image-input" accept="image/*" style="display:none">
-
-                    <!-- BMC Formatting Toolbar -->
-                    <div id="bmc-format-toolbar" class="bmc-format-toolbar" style="display:none;">
-                        <button class="format-btn" onmousedown="formatDoc(event, 'bold')" title="太字 (Ctrl+B)"><i
-                                data-lucide="bold"></i></button>
-                        <button class="format-btn" onmousedown="formatDoc(event, 'italic')" title="斜体 (Ctrl+I)"><i
-                                data-lucide="italic"></i></button>
-                        <button class="format-btn" onmousedown="formatDoc(event, 'underline')" title="下線 (Ctrl+U)"><i
-                                data-lucide="underline"></i></button>
-                        <div class="format-separator"></div>
-                        <div class="text-color-grid">
-                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#1a1a1a')"
-                                style="background: #1a1a1a;" title="黒"></div>
-                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#ef4444')"
-                                style="background: #ef4444;" title="赤"></div>
-                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#3b82f6')"
-                                style="background: #3b82f6;" title="青"></div>
-                            <div class="text-color-swatch" onmousedown="formatDoc(event, 'foreColor', '#10b981')"
-                                style="background: #10b981;" title="緑"></div>
-                        </div>
-                    </div>
             </section>
 
             <section id="view-bookmarks" class="view">

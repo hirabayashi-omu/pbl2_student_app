@@ -677,6 +677,12 @@ function switchView(viewId) {
         if (n.getAttribute('data-view') === viewId) n.classList.add('active');
     });
 
+    // Handle nav-group active state
+    document.querySelectorAll('.nav-group').forEach(group => {
+        const hasActiveItem = group.querySelector(`.nav-item[data-view="${viewId}"]`);
+        group.classList.toggle('active', !!hasActiveItem);
+    });
+
     const titles = {
         dashboard: 'ダッシュボード',
         gantt: 'プロジェクト管理',
@@ -7100,6 +7106,861 @@ document.getElementById('sticky-image-input').onchange = async (e) => {
     e.target.value = '';
 };
 
+window.exportAnalysisJSON = () => {
+    if (!state.bmc) {
+        alert('保存するデータがありません。');
+        return;
+    }
+    const dataStr = JSON.stringify(state.bmc, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const title = state.bmc.title || 'business_analysis';
+    a.download = `${title}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+window.importAnalysisJSON = (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!confirm('既存の分析データが上書きされます。よろしいですか？')) {
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            state.bmc = imported;
+            saveState();
+            renderBMC();
+            alert('分析データを読み込みました。');
+        } catch (err) {
+            alert('ファイルの形式が正しくありません。');
+        }
+    };
+    reader.readAsText(file);
+    input.value = '';
+};
+
+window.exportAnalysisPDF = () => {
+    const activePane = document.querySelector('.analysis-tab-pane.active');
+    const boardEl = activePane ? activePane.querySelector('.bmc-board, .w51h-board, .c3-board') : null;
+
+    if (!activePane || !boardEl) {
+        alert('出力するボードが見つかりません。');
+        return;
+    }
+
+    const tabId = activePane.id.replace('analysis-tab-', '');
+
+    const title = document.getElementById('bmc-title-input').value || 'Business Analysis';
+    const contentHtml = boardEl.outerHTML;
+
+    const previewWindow = window.open('', '_blank', 'width=1200,height=800');
+    if (!previewWindow) {
+        alert('ポップアップがブロックされました。ブラウザの設定で許可してください。');
+        return;
+    }
+
+    previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>【印刷プレビュー】${title}</title>
+            <link rel="stylesheet" href="styles.css">
+            <link rel="stylesheet" href="bmc_styles.css">
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+                
+                @page { 
+                    size: landscape; 
+                    margin: 5mm; 
+                }
+
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: #f1f5f9 !important;
+                    font-family: 'Noto Sans JP', sans-serif;
+                    overflow-x: hidden;
+                }
+                
+                .preview-toolbar {
+                    position: sticky;
+                    top: 0;
+                    background: #1e293b;
+                    color: white;
+                    padding: 10px 30px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 1000;
+                }
+
+                .print-btn {
+                    padding: 10px 24px;
+                    background: #10b981;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 700;
+                    font-size: 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .bmc-paper {
+                    background: white;
+                    width: 290mm;
+                    margin: 10px auto;
+                    padding: 10px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                    min-height: 190mm;
+                    box-sizing: border-box;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .bmc-board, .w51h-board, .c3-board { 
+                    width: 100% !important;
+                    min-width: 0 !important;
+                    height: auto !important;
+                    background: #cbd5e1 !important; 
+                    border: 1.5px solid #334155 !important;
+                    gap: 1px !important;
+                    display: grid !important;
+                    flex: 1;
+                }
+
+                .bmc-section { 
+                    background: white !important; 
+                    padding: 6px 8px !important;
+                    min-height: 80px !important;
+                }
+
+                .bmc-section-header i, .bmc-help-tip { display: none !important; }
+                .bmc-section-header span { font-size: 9pt !important; color: #334155 !important; }
+
+                .bmc-sticky { 
+                    box-shadow: none !important;
+                    border: 1px solid rgba(0,0,0,0.1) !important;
+                    padding: 5px !important;
+                    font-size: 8.5pt !important;
+                    margin-bottom: 3px !important;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+
+                .bmc-sticky-img { max-height: 60px !important; }
+
+                @media print {
+                    @page { margin: 0; }
+                    .preview-toolbar { display: none !important; }
+                    body, html { background: white !important; overflow: visible !important; }
+                    .bmc-paper { 
+                        margin: 0 !important; 
+                        padding: 8mm !important; 
+                        box-shadow: none !important; 
+                        width: 100vw !important; 
+                        height: 100vh !important;
+                        min-height: 0 !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                    }
+                    .bmc-board, .w51h-board, .c3-board { 
+                        flex: 1 !important;
+                        min-height: 0 !important;
+                        height: 100% !important;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="preview-toolbar">
+                <div>
+                    <h2 style="margin:0; font-size: 1rem;">${tabId.toUpperCase()} 印刷プレビュー</h2>
+                </div>
+                <button class="print-btn" onclick="window.print()">
+                    🖨️ PDF保存 / 印刷を実行
+                </button>
+            </div>
+            
+            <div class="bmc-paper">
+                <h1 style="margin: 0 0 8px 0; font-size: 1.2rem; color: #1e293b; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 2px;">
+                    ${title}
+                </h1>
+                ${contentHtml}
+            </div>
+
+
+            <script>
+                document.querySelectorAll('.bmc-help-tip, .bmc-format-toolbar').forEach(el => el.remove());
+                document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+                // Adjust layout for print
+                const board = document.querySelector('.bmc-board, .w51h-board, .c3-board');
+                if (board) board.style.height = 'auto';
+            </script>
+        </body>
+        </html>
+    `);
+    previewWindow.document.close();
+};
+
+
+
 window.exportBMCAsImage = () => {
-    alert('【画像保存】ブラウザの印刷機能（PDF保存）またはスクリーンショットをご利用ください。');
+    exportAnalysisPDF();
+};
+
+window.clearActiveAnalysis = () => {
+    const activeTabBtn = document.querySelector('.analysis-tab.active');
+    const tabId = activeTabBtn ? activeTabBtn.getAttribute('data-analysis-tab') : 'bmc';
+
+    let sectionsToClear = [];
+    let label = "";
+
+    if (tabId === 'bmc') {
+        sectionsToClear = ['KP', 'KA', 'KR', 'VP', 'CR', 'CH', 'CS', 'COST', 'REV'];
+        label = "BMC（ビジネスモデルキャンバス）";
+    } else if (tabId === '5w1h') {
+        sectionsToClear = ['5W_WHO', '5W_WHAT', '5W_WHEN', '5W_WHERE', '5W_WHY', '5W_HOW'];
+        label = "5W1H分析";
+    } else if (tabId === '3c') {
+        sectionsToClear = ['3C_CUSTOMER', '3C_COMPETITOR', '3C_COMPANY'];
+        label = "3C分析";
+    }
+
+    if (sectionsToClear.length === 0) return;
+
+    if (!confirm(`${label}のすべての付箋を削除してもよろしいですか？`)) {
+        return;
+    }
+
+    if (!state.bmc) state.bmc = {};
+    sectionsToClear.forEach(sid => {
+        state.bmc[sid] = [];
+    });
+
+    saveState();
+    renderBMC();
+};
+
+
+
+window.loadTutorial = (brandId) => {
+    if (!brandId) return;
+
+    const brandNames = {
+        mcdonalds: "マクドナルド",
+        muji: "無印良品",
+        ikea: "IKEA",
+        daiso: "ダイソー",
+        gshock: "Casio G-shock",
+        pixel: "Google Pixel",
+        applewatch: "Apple Watch"
+    };
+
+    if (!confirm(`${brandNames[brandId]}のビジネス分析例を読み込みます。現在の入力内容は上書きされますがよろしいですか？`)) {
+        document.querySelector('.bmc-toolbar select').value = brandId;
+        return;
+    }
+
+    const tutorials = {
+        mcdonalds: {
+            title: "マクドナルド（日本）のビジネス分析例",
+            KP: [
+                { id: Date.now() + 1, content: "原材料サプライヤー（農業・畜産）", color: "#fef3c7" },
+                { id: Date.now() + 2, content: "不動産オーナー（立地提供）", color: "#fef3c7" },
+                { id: Date.now() + 3, content: "フランチャイズ加盟店", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 4, content: "店舗運営・クイックサービス", color: "#dcfce7" },
+                { id: Date.now() + 5, content: "メニュー開発・品質管理", color: "#dcfce7" },
+                { id: Date.now() + 6, content: "サプライチェーン最適化", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 7, content: "ブランド力（ゴールデンアーチ）", color: "#e0e7ff" },
+                { id: Date.now() + 8, content: "好立地な店舗網", color: "#e0e7ff" },
+                { id: Date.now() + 9, content: "洗練されたマニュアル", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 10, content: "QSC&V（品質、サービス、清潔さ、価値）", color: "#ffedd5" },
+                { id: Date.now() + 11, content: "圧倒的なスピードと利便性", color: "#ffedd5" },
+                { id: Date.now() + 12, content: "子供から大人まで楽しめる体験", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 13, content: "利便性を通じた日常的な接点", color: "#fce7f3" },
+                { id: Date.now() + 14, content: "モバイルオーダー等によるDX体験", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 15, content: "直営・FC実店舗", color: "#fef3c7" },
+                { id: Date.now() + 16, content: "ドライブスルー・デリバリー", color: "#fef3c7" },
+                { id: Date.now() + 17, content: "公式アプリ", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 18, content: "忙しいビジネスパーソン（時短）", color: "#ecfdf5" },
+                { id: Date.now() + 19, content: "ファミリー層（ハッピーセット）", color: "#ecfdf5" },
+                { id: Date.now() + 20, content: "中高生・学生（手軽な軽食）", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 21, content: "食材原価・物流費", color: "#fee2e2" },
+                { id: Date.now() + 22, content: "店舗人件費・教育費", color: "#fee2e2" },
+                { id: Date.now() + 23, content: "不動産賃料・店舗維持費", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 24, content: "食品・飲料の販売売上", color: "#dcfce7" },
+                { id: Date.now() + 25, content: "FC加盟店からのロイヤリティ", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 26, content: "老若男女幅広い一般消費者", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 27, content: "「手軽で美味しい」ハンバーガー、体験、スマイル", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 28, content: "日常的な食事時、多忙な合間", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 29, content: "駅前、郊外、ロードサイド、デリバリー", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 30, content: "食事を安く早く済ませたいというニーズ", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 31, content: "徹底したプロセス標準化とスケールメリット", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 32, content: "安さ・早さを求める層、ファミリー", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 33, content: "モスバーガー、コンビニ、牛丼チェーン", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 34, content: "圧倒的な店舗数、ブランド認知度、最適化されたSCM", color: "#e0e7ff" }]
+        },
+        muji: {
+            title: "無印良品（良品計画）のビジネス分析例",
+            KP: [
+                { id: Date.now() + 101, content: "グローバル製造パートナー", color: "#fef3c7" },
+                { id: Date.now() + 102, content: "アドバイザリーボード（外部デザイナー）", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 103, content: "「理由（わけ）あり」商品企画", color: "#dcfce7" },
+                { id: Date.now() + 104, content: "シンプルな生活提案（感じ良いくらし）", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 105, content: "「無印」という哲学・思想", color: "#e0e7ff" },
+                { id: Date.now() + 106, content: "商品開発のための観察・洞察力", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 107, content: "「これがいい」ではなく「これでいい」という合理性", color: "#ffedd5" },
+                { id: Date.now() + 108, content: "シンプル、高品質、無駄のないデザイン", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 109, content: "MUJI Passport を通じた顧客共創", color: "#fce7f3" },
+                { id: Date.now() + 110, content: "思想への共感に基づく高いロイヤリティ", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 111, content: "国内・海外の実店舗（MUJI）", color: "#fef3c7" },
+                { id: Date.now() + 112, content: "ネットストア（自社EC）", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 113, content: "自身の価値観を持つ都市生活者", color: "#ecfdf5" },
+                { id: Date.now() + 114, content: "シンプル・ミニマルな生活を好む層", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 115, content: "素材選定・商品開発コスト", color: "#fee2e2" },
+                { id: Date.now() + 116, content: "店舗運営・グローバル物流網", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 117, content: "衣料品・生活雑貨・食品の販売売上", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 118, content: "自立した価値観を持つ都市の生活者、ミニマリスト", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 119, content: "シンプルで機能的な生活用品と「感じ良い暮らし」", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 120, content: "日常生活のあらゆるシーン（衣食住）", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 121, content: "主要都市の商業施設、オンライン、生活拠点", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 122, content: "過剰なブランドや装飾を避け、本質的な豊かさを求める", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 123, content: "アンチブランドの思想と、徹底した素材・工程の吟味", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 124, content: "シンプル、環境、本質への価値を置く層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 125, content: "ニトリ（家具・機能）、ユニクロ（衣類）、100均（消耗品）", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 126, content: "独自のライフスタイル思想、根強いファン層、世界観の統一", color: "#e0e7ff" }]
+        },
+        ikea: {
+            title: "IKEA（イケア）のビジネス分析例",
+            KP: [
+                { id: Date.now() + 201, content: "数千社のグローバルサプライヤー", color: "#fef3c7" },
+                { id: Date.now() + 202, content: "物流・配送パートナー", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 203, content: "民主的デザイン（5つの要素）の製品開発", color: "#dcfce7" },
+                { id: Date.now() + 204, content: "店舗でのショールーム体験・体験提供", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 205, content: "フラットパック（平積み）物流ノウハウ", color: "#e0e7ff" },
+                { id: Date.now() + 206, content: "世界最強の家具ブランド認知度", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 207, content: "優れたデザインの家具を、驚きの低価格で", color: "#ffedd5" },
+                { id: Date.now() + 208, content: "店舗での一日楽しめるエンターテインメント（食事含）", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 209, content: "IKEA Family メンバーシップ（特典・優待）", color: "#fce7f3" },
+                { id: Date.now() + 210, content: "カタログやSNSを通じたインスピレーション提供", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 211, content: "郊外の超大型ストア（ブルーボックス）", color: "#fef3c7" },
+                { id: Date.now() + 212, content: "ECサイト・アプリ・都市型店舗", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 213, content: "手頃な価格で家を整えたい若年夫婦・家族", color: "#ecfdf5" },
+                { id: Date.now() + 214, content: "DIYを楽しみ、自分で組み立てることに寛容な層", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 215, content: "大規模製造・原材料調達（スケールメリット）", color: "#fee2e2" },
+                { id: Date.now() + 216, content: "店舗・ショールーム・物流センター維持費", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 217, content: "家具・生活雑貨の販売売上", color: "#dcfce7" },
+                { id: Date.now() + 218, content: "レストラン・フードマーケットの売上", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 219, content: "予算を抑えつつお洒落な暮らしをしたい若年層・ファミリー", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 220, content: "フラットパック家具、北欧デザイン、店舗体験", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 221, content: "引っ越し、模様替え、週末の家族外出", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 222, content: "郊外の大型店舗、オンラインストア", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 223, content: "より多くの人が、毎日をより快適に過ごせるようにするため", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 224, content: "大量生産、平積み梱包、セルフサービスによる徹底的コスト削減", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 225, content: "コスパ、デザイン、体験を求める実利層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 226, content: "ニトリ（手軽さ・日本サイズ）、大塚家具（高級）、Amazon", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 227, content: "世界規模の調達力、独自体験店舗、サステナビリティイメージ", color: "#e0e7ff" }]
+        },
+        daiso: {
+            title: "ダイソー（大創産業）のビジネス分析例",
+            KP: [
+                { id: Date.now() + 301, content: "世界の多種多様な製造工場（OEM）", color: "#fef3c7" },
+                { id: Date.now() + 302, content: "各国のテナント・不動産会社", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 303, content: "月数百種類の新商品開発", color: "#dcfce7" },
+                { id: Date.now() + 304, content: "圧倒的なボリューム陳列と商品回転", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 305, content: "「100円」という強力なブランドと心理的ハードル低下", color: "#e0e7ff" },
+                { id: Date.now() + 306, content: "世界26カ国にわたる膨大な店舗網", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 307, content: "「100円でこんなものまで？」という驚きと楽しさ", color: "#ffedd5" },
+                { id: Date.now() + 308, content: "欲しいものが必ず見つかる圧倒的な品揃え（バラエティ）", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 309, content: "宝探しのような買い物体験によるリピート化", color: "#fce7f3" },
+                { id: Date.now() + 310, content: "SNS（100均パトロール）を通じた情報の拡散", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 311, content: "路面店・SC内店舗・100円ショップ実店舗", color: "#fef3c7" },
+                { id: Date.now() + 312, content: "近年強化中のEC・ネットストア", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 313, content: "家計をやりくりする主婦層・学生", color: "#ecfdf5" },
+                { id: Date.now() + 314, content: "DIY・文具・キッチン用品等を求める全世代", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 315, content: "超大量仕入れによる原価圧縮コスト", color: "#fee2e2" },
+                { id: Date.now() + 316, content: "店舗運営・物流・在庫管理システム費", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 317, content: "薄利多売による圧倒的な販売売上", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 318, content: "ついで買い、宝探しを楽しむ全世代の消費者", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 319, content: "生活を便利にする多種多様な100円アイテム", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 320, content: "日常の消耗品補充、ふとした買い物のついで", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 321, content: "身近な街角、ショッピングモール内", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 322, content: "良いものを安く早く手に入れたい、発見の楽しみを味わいたい", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 323, content: "世界規模のバイイングパワーと企画開発力による圧倒的品揃え", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 324, content: "価格感度が非常に高く、バラエティを好む大衆層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 325, content: "セリア（デザイン性）、キャンドゥ（利便性）、コンビニ", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 326, content: "業界最大手のスケール、開発スピード、グローバル供給網", color: "#e0e7ff" }]
+        },
+        gshock: {
+            title: "Casio G-SHOCK のビジネス分析例",
+            KP: [
+                { id: Date.now() + 401, content: "国内外の精密部品サプライヤー", color: "#fef3c7" },
+                { id: Date.now() + 402, content: "著名デザイナー・ブランドコラボ先", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 403, content: "究極の耐衝撃構造の研究・開発", color: "#dcfce7" },
+                { id: Date.now() + 404, content: "タフネスを軸としたブランドマーケティング", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 405, content: "衝撃耐性（トリプルGレジスト）技術", color: "#e0e7ff" },
+                { id: Date.now() + 406, content: "「壊れない」という世界的なブランドイメージ", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 407, content: "三階建てから落としても壊れない耐衝撃性", color: "#ffedd5" },
+                { id: Date.now() + 408, content: "道具としての実用性と、所有欲を満たすデザインの両立", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 409, content: "ファンコミュニティの構築", color: "#fce7f3" },
+                { id: Date.now() + 410, content: "限定モデルによるコレクター心理の刺激", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 411, content: "専門店（G-SHOCK STORE）、時計店", color: "#fef3c7" },
+                { id: Date.now() + 412, content: "カシオ公式サイト、主要ECモール", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 413, content: "過酷な環境（軍、消防、工事等）で働くプロ", color: "#ecfdf5" },
+                { id: Date.now() + 414, content: "ストリート、スポーツを好む若年〜中年層", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 415, content: "耐衝撃試験・材料研究開発費", color: "#fee2e2" },
+                { id: Date.now() + 416, content: "広告宣伝費・グローバル販促イベント費", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 417, content: "時計製品（低価格帯〜高級品）の販売売上", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 418, content: "現場職のプロ、アウトドア派、ストリートファッション好き", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 419, content: "圧倒的耐久性を持つデジタル・アナログ腕時計", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 420, content: "仕事、スポーツ、極地での活動時、日常のファッション", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 421, content: "地上・海中・宇宙（あらゆる過酷な環境）", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 422, content: "「絶対に壊したくない」という信頼へのニーズ", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 423, content: "「中空構造」という独自技術を基盤とした物づくり", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 424, content: "実用性とタフな格好良さを重要視する層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 425, content: "Garmin（高機能）、スマートウォッチ、高級機械式時計（対極）", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 426, content: "カシオの電子技術力、他にない「最強」のブランド確立", color: "#e0e7ff" }]
+        },
+        pixel: {
+            title: "Google Pixel のビジネス分析例",
+            KP: [
+                { id: Date.now() + 501, content: "主要通信キャリア（docomo, au, SoftBank）", color: "#fef3c7" },
+                { id: Date.now() + 502, content: "Android アプリ開発者エコシステム", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 503, content: "独自チップ（Google Tensor）とAIの研究開発", color: "#dcfce7" },
+                { id: Date.now() + 504, content: "ソフトウェアによるカメラ機能・翻訳機能の最適化", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 505, content: "世界最強のAI技術・大規模データ", color: "#e0e7ff" },
+                { id: Date.now() + 506, content: "Android OS 本家というプラットフォーム優位性", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 507, content: "魔法のようなAI体験（消しゴムマジック、かこって検索）", color: "#ffedd5" },
+                { id: Date.now() + 508, content: "高性能ながら競合機より優れたコストパフォーマンス", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 509, content: "Google One 等のサービスを通じた継続利用促進", color: "#fce7f3" },
+                { id: Date.now() + 510, content: "OSアップデート保証による安心感の提供", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 511, content: "Google ストア（直営EC）", color: "#fef3c7" },
+                { id: Date.now() + 512, content: "大手キャリアショップ、家電量販店", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 513, content: "AIや最新技術に関心の高い層（イノベーター層）", color: "#ecfdf5" },
+                { id: Date.now() + 514, content: "iPhone からの乗り換えを検討しているAndroid移行層", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 515, content: "AI/半導体（Tensor）の巨額な研究開発費", color: "#fee2e2" },
+                { id: Date.now() + 516, content: "日本市場での大規模なTVCM・広告キャンペーン", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 517, content: "端末販売売上、周辺機器の売上", color: "#dcfce7" },
+                { id: Date.now() + 518, content: "広告表示やGoogleサービス利用への誘導（将来価値）", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 519, content: "AI 機能を日常で活用したいスマホユーザー", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 520, content: "AI が主役となる新時代のスマートフォン体験", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 521, content: "写真撮影中、調べ物、翻訳が必要な瞬間", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 522, content: "生活のあらゆる場面、Google エコシステム内", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 523, content: "情報を整理し、日常を便利にするというGoogleの使命", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 524, content: "自社製チップとAIの融合により、ソフトの力でハードを凌駕する", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 525, content: "実用的なAI機能とコスパを重視、シンプルさを好む層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 526, content: "iPhone（ステータス）、Galaxy（最高スペック）、他中華スマホ", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 527, content: "検索からAIまで一気通貫のGoogleサービス網", color: "#e0e7ff" }]
+        },
+        applewatch: {
+            title: "Apple Watch のビジネス分析例",
+            KP: [
+                { id: Date.now() + 601, content: "App Store 開発者、ヘルスケア・病院ネットワーク", color: "#fef3c7" },
+                { id: Date.now() + 602, content: "精密機器製造委託パートナー（フォックスコン等）", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 603, content: "センサー技術（心拍、血中酸素、心電図）の高度化", color: "#dcfce7" },
+                { id: Date.now() + 604, content: "Apple エコシステム（iPhone, Mac）との連携強化", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 605, content: "独自OS（watchOS）と膨大なアプリ資産", color: "#e0e7ff" },
+                { id: Date.now() + 606, content: "洗練されたデザイン美学と圧倒的ブランドロイヤリティ", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 607, content: "「健康」を手元で管理し、寿命を延ばすパーソナル秘書", color: "#ffedd5" },
+                { id: Date.now() + 608, content: "シームレスな通信・決済・通知体験（iPhoneの拡張）", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 609, content: "iPhone 抜きでは使えないことによる「檻」の提供（囲い込み）", color: "#fce7f3" },
+                { id: Date.now() + 610, content: "アクティビティリング等によるゲーミフィケーション（継続）", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 611, content: "Apple Store（直営・オンライン）", color: "#fef3c7" },
+                { id: Date.now() + 612, content: "家電量販店、通信キャリア、高級伊勢丹等のショップ", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 613, content: "健康意識の高い層（ダイエット、ランナー、高齢者）", color: "#ecfdf5" },
+                { id: Date.now() + 614, content: "多忙なビジネスパーソン、iPhone を既に持っているすべての層", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 615, content: "高度な小型センサー・医療グレード機能の開発費", color: "#fee2e2" },
+                { id: Date.now() + 616, content: "厳密なプライバシー・データセキュリティ維持費", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 617, content: "高単価なハードウェア・バンド・周辺機器の売上", color: "#dcfce7" },
+                { id: Date.now() + 618, content: "Apple Health+ 等のサブスクリプション収入への寄与", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 619, content: "自身の健康状態を可視化したいiPhoneユーザー", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 620, content: "命を救う、健康を促す、パーソナルな腕時計型デバイス", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 621, content: "睡眠中、運動中、仕事中（24時間365日）", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 622, content: "ユーザーの「腕の上」（究極のパーソナルスペース）", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 623, content: "Apple 経済圏から離れられなくし、かつ人々のQOLを上げるため", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 624, content: "既存のiPhoneとの強力な縦の連携と、洗練されたUI/UX", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 625, content: "健康、ステータス、利便性の三拍子を求める層", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 626, content: "Garmin、Fitbit（専用機）、Android陣営のスマートウォッチ", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 627, content: "ハード・ソフト・サービスが一体となった唯一無二のエコシステム", color: "#e0e7ff" }]
+        },
+        tech_core: {
+            title: "技術コア開発（保存・読込・PDF出力）の分析例",
+            KP: [
+                { id: Date.now() + 701, content: "オープンソースコミュニティ (React, Lucide, etc.)", color: "#fef3c7" },
+                { id: Date.now() + 702, content: "ブラウザベンダー (V8エンジン実装者)", color: "#fef3c7" }
+            ],
+            KA: [
+                { id: Date.now() + 703, content: "JSONデータの永続化と整合性保証", color: "#dcfce7" },
+                { id: Date.now() + 704, content: "ブラウザ標準技術を用いたPDFプレビュー・レンダリング", color: "#dcfce7" }
+            ],
+            KR: [
+                { id: Date.now() + 705, content: "HTML5/CSS3/JavaScript 専門知識", color: "#e0e7ff" },
+                { id: Date.now() + 706, content: "DOM操作と状態管理の設計パターン", color: "#e0e7ff" }
+            ],
+            VP: [
+                { id: Date.now() + 707, content: "作業の中断・再開を可能にする信頼性の高い保存機能", color: "#ffedd5" },
+                { id: Date.now() + 708, content: "外部共有に耐えうる美しいPDFレポート出力", color: "#ffedd5" }
+            ],
+            CR: [
+                { id: Date.now() + 709, content: "開発者向けドキュメントとREADME", color: "#fce7f3" },
+                { id: Date.now() + 710, content: "UI/UXフィードバックに基づく高速な反復改善", color: "#fce7f3" }
+            ],
+            CH: [
+                { id: Date.now() + 711, content: "GitHub リポジトリ（ソースコード管理）", color: "#fef3c7" },
+                { id: Date.now() + 712, content: "統合開発環境 (VS Code)", color: "#fef3c7" }
+            ],
+            CS: [
+                { id: Date.now() + 713, content: "安定したツールを求めるビジネスアナリスト", color: "#ecfdf5" },
+                { id: Date.now() + 714, content: "基盤機能を再利用するアプリケーション開発者", color: "#ecfdf5" }
+            ],
+            COST: [
+                { id: Date.now() + 715, content: "機能実装およびデバッグに伴う開発人件費", color: "#fee2e2" },
+                { id: Date.now() + 716, content: "ブラウザ互換性テストの検証コスト", color: "#fee2e2" }
+            ],
+            REV: [
+                { id: Date.now() + 717, content: "手作業による集計・出力時間の圧倒的削減", color: "#dcfce7" },
+                { id: Date.now() + 718, content: "データの信頼性向上による業務効率化", color: "#dcfce7" }
+            ],
+            '5W_WHO': [{ id: Date.now() + 719, content: "基盤開発チームおよび全アプリケーションユーザー", color: "#fef3c7" }],
+            '5W_WHAT': [{ id: Date.now() + 720, content: "データの永続性とレポート出力を保証する技術基盤（保存・読込・PDF）", color: "#dcfce7" }],
+            '5W_WHEN': [{ id: Date.now() + 721, content: "アプリケーションのMVP開発から商用展開フェーズ", color: "#e0e7ff" }],
+            '5W_WHERE': [{ id: Date.now() + 722, content: "ウェブブラウザ基盤およびローカルストレージ層", color: "#ffedd5" }],
+            '5W_WHY': [{ id: Date.now() + 723, content: "ユーザーの思考を止めず、成果物を確実にアウトプットするため", color: "#fce7f3" }],
+            '5W_HOW': [{ id: Date.now() + 724, content: "JavaScriptによる状態管理と、CSSによるPrint Medien最適化", color: "#ecfdf5" }],
+            '3C_CUSTOMER': [{ id: Date.now() + 725, content: "安定稼働と「一発で綺麗なPDF」を求めるユーザー", color: "#fef3c7" }],
+            '3C_COMPETITOR': [{ id: Date.now() + 726, content: "ブラウザ標準の不明瞭な印刷機能、外部の有料PDF生成API", color: "#dcfce7" }],
+            '3C_COMPANY': [{ id: Date.now() + 727, content: "内部構造を熟知した高速・軽量な独自実装エンジン", color: "#e0e7ff" }]
+        }
+    };
+
+    const data = tutorials[brandId];
+    if (data) {
+        state.bmc = data;
+        saveState();
+        renderBMC();
+        // Update select value to match loaded brand
+        const selects = document.querySelectorAll('.bmc-toolbar select');
+        selects.forEach(s => s.value = brandId);
+        alert(`${brandNames[brandId]}の分析例を読み込みました。`);
+    }
+};
+
+window.exportTechCanvasJSON = () => {
+    if (!techCanvasState.shapes || techCanvasState.shapes.length === 0) {
+        alert('保存する図形がありません。');
+        return;
+    }
+    const data = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        shapes: techCanvasState.shapes
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tech_core_blueprint_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
+window.importTechCanvasJSON = (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (!confirm('キャンバスの内容が上書きされます。よろしいですか？')) {
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.shapes) {
+                techCanvasState.shapes = data.shapes;
+                saveTechCanvas(true);
+                drawTechCanvas();
+                alert('設計図データを読み込みました。');
+            } else {
+                alert('有効な設計図データではありません。');
+            }
+        } catch (err) {
+            alert('ファイルの読み込みに失敗しました。');
+        }
+    };
+    reader.readAsText(file);
+    input.value = '';
+};
+
+window.exportTechCanvasPDF = () => {
+    const canvas = document.getElementById('tech-core-canvas');
+    if (!canvas) return;
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>技術コア設計図 プレビュー</title>
+                <style>
+                    body { margin: 0; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; font-family: sans-serif; }
+                    .header { width: 100%; padding: 20px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
+                    .canvas-preview { margin: 40px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 95%; }
+                    img { max-width: 100%; height: auto; display: block; }
+                    @media print {
+                        .header, button { display: none; }
+                        body { background: #fff; margin: 0; }
+                        .canvas-preview { box-shadow: none; margin: 0; width: 100%; }
+                    }
+                    button { padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>技術コア設計図 出力プレビュー</h2>
+                    <button onclick="window.print()">PDFとして保存 / 印刷</button>
+                </div>
+                <div class="canvas-preview">
+                    <img src="${dataUrl}" />
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+};
+
+window.loadTechTutorial = (id) => {
+    if (!id) return;
+
+    const names = {
+        drone: "自律型配送ドローン",
+        ev_station: "EV高速充電スタンド",
+        smart_agri: "スマート農業IoT",
+        factory: "AI自動検品ライン",
+        rocket: "再使用型ロケット",
+        quantum: "量子クラウド基盤"
+    };
+
+    if (!confirm(`既存のキャンバスの内容をクリアして、${names[id]}の設計図例を読み込みますか？`)) return;
+
+    const cx = techCanvasState.canvas.width / 2;
+    const cy = techCanvasState.canvas.height / 2;
+    let shapes = [];
+
+    switch (id) {
+        case 'drone':
+            shapes = [
+                { type: 'diamond', x1: cx - 60, y1: cy - 60, x2: cx + 60, y2: cy + 60, strokeColor: '#3b82f6', fillColor: 'rgba(59, 130, 246, 0.1)', lineWidth: 3 },
+                { type: 'rect', x1: cx - 20, y1: cy - 30, x2: cx + 20, y2: cy + 30, strokeColor: '#94a3b8', fillColor: 'rgba(148, 163, 184, 0.2)', lineWidth: 1 },
+                { type: 'line', x1: cx - 40, y1: cy - 40, x2: cx - 180, y2: cy - 180, strokeColor: '#64748b', lineWidth: 8 },
+                { type: 'line', x1: cx + 40, y1: cy - 40, x2: cx + 180, y2: cy - 180, strokeColor: '#64748b', lineWidth: 8 },
+                { type: 'line', x1: cx - 40, y1: cy + 40, x2: cx - 180, y2: cy + 180, strokeColor: '#64748b', lineWidth: 8 },
+                { type: 'line', x1: cx + 40, y1: cy + 40, x2: cx + 180, y2: cy + 180, strokeColor: '#64748b', lineWidth: 8 },
+                { type: 'circle', x1: cx - 210, y1: cy - 210, x2: cx - 150, y2: cy - 150, strokeColor: '#3b82f6', fillColor: '#1c212c', lineWidth: 4 },
+                { type: 'circle', x1: cx + 150, y1: cy - 210, x2: cx + 210, y2: cy - 150, strokeColor: '#3b82f6', fillColor: '#1c212c', lineWidth: 4 },
+                { type: 'circle', x1: cx - 210, y1: cy + 150, x2: cx - 150, y2: cy + 210, strokeColor: '#3b82f6', fillColor: '#1c212c', lineWidth: 4 },
+                { type: 'circle', x1: cx + 150, y1: cy + 150, x2: cx + 210, y2: cy + 210, strokeColor: '#3b82f6', fillColor: '#1c212c', lineWidth: 4 },
+                { type: 'arrow', x1: cx - 100, y1: cy - 100, x2: cx - 50, y2: cy - 50, strokeColor: '#ef4444', lineWidth: 2 },
+                { type: 'text', x1: cx - 220, y1: cy - 120, strokeColor: '#ef4444', fontSize: 14, text: "AI自律制御エンジン v2.4", isBold: true },
+                { type: 'rounded-rect', x1: cx - 250, y1: cy + 230, x2: cx + 250, y2: cy + 300, strokeColor: '#4f46e5', fillColor: 'rgba(79, 70, 229, 0.05)', lineWidth: 1 },
+                { type: 'text', x1: cx - 230, y1: cy + 250, strokeColor: '#fff', fontSize: 16, text: "製品名: SKY-HAWK Autonomous Delivery Unit", isBold: true }
+            ];
+            break;
+        case 'ev_station':
+            shapes = [
+                { type: 'rect', x1: cx - 100, y1: cy - 150, x2: cx + 100, y2: cy + 150, strokeColor: '#10b981', fillColor: 'rgba(16, 185, 129, 0.1)', lineWidth: 4 },
+                { type: 'rounded-rect', x1: cx - 70, y1: cy - 120, x2: cx + 70, y2: cy - 20, strokeColor: '#fff', fillColor: '#064e3b', lineWidth: 2 },
+                { type: 'text', x1: cx - 30, y1: cy - 70, strokeColor: '#10b981', fontSize: 24, text: "85%", isBold: true },
+                { type: 'line', x1: cx + 100, y1: cy, x2: cx + 200, y2: cy, strokeColor: '#94a3b8', lineWidth: 10 },
+                { type: 'rect', x1: cx + 200, y1: cy - 20, x2: cx + 230, y2: cy + 80, strokeColor: '#94a3b8', fillColor: '#334155', lineWidth: 2 },
+                { type: 'text', x1: cx - 80, y1: cy + 180, strokeColor: '#fff', fontSize: 16, text: "Liquid Cooled High-Speed Charger", isBold: true },
+                { type: 'arrow', x1: cx, y1: cy - 250, x2: cx, y2: cy - 150, strokeColor: '#f59e0b', lineWidth: 3 }
+            ];
+            break;
+        case 'smart_agri':
+            shapes = [
+                { type: 'rect', x1: cx - 300, y1: cy + 50, x2: cx + 300, y2: cy + 200, strokeColor: '#16a34a', fillColor: 'rgba(22, 163, 74, 0.1)', lineWidth: 2 },
+                { type: 'circle', x1: cx - 200, y1: cy + 80, x2: cx - 160, y2: cy + 120, strokeColor: '#3b82f6', fillColor: '#1e3a8a', lineWidth: 2 },
+                { type: 'circle', x1: cx, y1: cy + 80, x2: cx + 40, y2: cy + 120, strokeColor: '#3b82f6', fillColor: '#1e3a8a', lineWidth: 2 },
+                { type: 'circle', x1: cx + 200, y1: cy + 80, x2: cx + 240, y2: cy + 120, strokeColor: '#3b82f6', fillColor: '#1e3a8a', lineWidth: 2 },
+                { type: 'rect', x1: cx - 50, y1: cy - 150, x2: cx + 50, y2: cy - 50, strokeColor: '#94a3b8', fillColor: 'rgba(255,255,255,0.05)', lineWidth: 2 },
+                { type: 'text', x1: cx - 40, y1: cy - 100, strokeColor: '#3b82f6', fontSize: 12, text: "Cloud Hub" },
+                { type: 'line', x1: cx, y1: cy - 50, x2: cx, y2: cy + 50, strokeColor: '#3b82f6', lineWidth: 1, lineDash: 'dashed' },
+                { type: 'text', x1: cx - 150, y1: cy - 200, strokeColor: '#fff', fontSize: 18, text: "Autonomous Irrigation & Soil Monitoring System", isBold: true }
+            ];
+            break;
+        case 'factory':
+            shapes = [
+                { type: 'rounded-rect', x1: cx - 350, y1: cy - 20, x2: cx + 350, y2: cy + 20, strokeColor: '#475569', fillColor: '#1e293b', lineWidth: 2 },
+                { type: 'rect', x1: cx - 50, y1: cy - 120, x2: cx + 50, y2: cy - 80, strokeColor: '#ef4444', fillColor: 'rgba(239, 68, 68, 0.2)', lineWidth: 2 },
+                { type: 'circle', x1: cx - 20, y1: cy - 110, x2: cx + 20, y2: cy - 70, strokeColor: '#fff', lineWidth: 1 },
+                { type: 'circle', x1: cx - 200, y1: cy - 15, x2: cx - 170, y2: cy + 15, strokeColor: '#f59e0b', fillColor: '#f59e0b', lineWidth: 0 },
+                { type: 'circle', x1: cx, y1: cy - 15, x2: cx + 30, y2: cy + 15, strokeColor: '#f59e0b', fillColor: '#f59e0b', lineWidth: 0 },
+                { type: 'circle', x1: cx + 200, y1: cy - 15, x2: cx + 230, y2: cy + 15, strokeColor: '#ef4444', fillColor: '#ef4444', lineWidth: 0 },
+                { type: 'text', x1: cx - 60, y1: cy - 150, strokeColor: '#ef4444', fontSize: 14, text: "AI Inspection Camera", isBold: true },
+                { type: 'arrow', x1: cx, y1: cy - 80, x2: cx, y2: cy - 25, strokeColor: '#fff', lineWidth: 2 }
+            ];
+            break;
+        case 'rocket':
+            shapes = [
+                { type: 'rect', x1: cx - 40, y1: cy - 150, x2: cx + 40, y2: cy + 100, strokeColor: '#f8fafc', fillColor: '#f8fafc', lineWidth: 1 },
+                { type: 'circle', x1: cx - 40, y1: cy - 200, x2: cx + 40, y2: cy - 100, strokeColor: '#f8fafc', fillColor: '#f8fafc', lineWidth: 0 },
+                { type: 'triangle', x1: cx - 40, y1: cy + 100, x2: cx + 40, y2: cy + 150, strokeColor: '#64748b', fillColor: '#334155', lineWidth: 2 },
+                { type: 'line', x1: cx - 40, y1: cy + 50, x2: cx - 80, y2: cy + 120, strokeColor: '#f8fafc', lineWidth: 5 },
+                { type: 'line', x1: cx + 40, y1: cy + 50, x2: cx + 80, y2: cy + 120, strokeColor: '#f8fafc', lineWidth: 5 },
+                { type: 'text', x1: cx - 180, y1: cy - 50, strokeColor: '#3b82f6', fontSize: 14, text: "Liquid Oxygen Tank" },
+                { type: 'text', x1: cx - 180, y1: cy + 50, strokeColor: '#ef4444', fontSize: 14, text: "RP-1 Fuel Tank" }
+            ];
+            break;
+        case 'quantum':
+            shapes = [
+                { type: 'rect', x1: cx - 150, y1: cy - 150, x2: cx + 150, y2: cy + 150, strokeColor: '#4f46e5', fillColor: 'rgba(79, 70, 229, 0.05)', lineWidth: 2 },
+                { type: 'circle', x1: cx - 100, y1: cy - 100, x2: cx + 100, y2: cy + 100, strokeColor: '#818cf8', lineWidth: 1, lineDash: 'dashed' },
+                { type: 'circle', x1: cx - 5, y1: cy - 5, x2: cx + 5, y2: cy + 5, strokeColor: '#fff', fillColor: '#fff', lineWidth: 0 },
+                { type: 'text', x1: cx - 80, y1: cy - 180, strokeColor: '#818cf8', fontSize: 18, text: "Superconducting Qubit Core", isBold: true },
+                { type: 'line', x1: cx - 250, y1: cy, x2: cx - 150, y2: cy, strokeColor: '#c084fc', lineWidth: 2 },
+                { type: 'text', x1: cx - 350, y1: cy + 5, strokeColor: '#c084fc', fontSize: 14, text: "Cryogenic Interface" }
+            ];
+            break;
+    }
+
+    techCanvasState.shapes = shapes;
+    saveTechCanvas(true);
+    drawTechCanvas();
+    switchView('tech-core');
+    alert(`${names[id]}の設計図例を読み込みました。`);
 };

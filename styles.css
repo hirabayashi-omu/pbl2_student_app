@@ -140,6 +140,81 @@ body {
     box-shadow: 0 4px 12px var(--primary-glow);
 }
 
+/* Navigation Group & Submenu */
+.nav-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-submenu {
+    display: none;
+    flex-direction: column;
+    padding-left: 2.5rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nav-group.active .sidebar-submenu {
+    display: flex;
+}
+
+.submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.submenu-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.submenu-item i,
+.submenu-item svg {
+    width: 16px !important;
+    height: 16px !important;
+    opacity: 0.7;
+}
+
+.submenu-arrow {
+    margin-left: auto;
+    width: 14px !important;
+    height: 14px !important;
+    transition: transform 0.3s ease;
+    opacity: 0.5;
+}
+
+.nav-group.active .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar-submenu,
+.sidebar.collapsed .submenu-arrow {
+    display: none !important;
+}
+
 .nav-separator {
     height: 1px;
     background: var(--border);
@@ -4273,4 +4348,124 @@ th {
 
 .contribution-member-roles input[type="checkbox"] {
     accent-color: var(--primary);
+}
+
+/* --- Business Analysis Print Styles --- */
+@media print {
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+
+    * {
+        animation: none !important;
+        transition: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    html,
+    body {
+        height: auto !important;
+        overflow: visible !important;
+        background: white !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Hierarchy reset */
+    .app-container,
+    .main-content {
+        display: block !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        width: 100% !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        position: static !important;
+    }
+
+    /* Hide non-printable UI */
+    .sidebar,
+    .top-bar,
+    .top-menu,
+    .bmc-toolbar,
+    .analysis-tabs,
+    .bmc-help-text,
+    .bmc-help-tip,
+    .nav-item,
+    .sidebar-header,
+    .sidebar-footer {
+        display: none !important;
+    }
+
+    /* Show only the active view */
+    .view {
+        display: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+    }
+
+    .view.active {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* BMC / Analysis adjustments */
+    .bmc-container {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .bmc-board,
+    .w51h-board,
+    .c3-board {
+        min-width: 0 !important;
+        width: 100% !important;
+        background: #f0f0f0 !important;
+        /* light grey for lines */
+        color: #000 !important;
+        gap: 2px !important;
+        display: grid !important;
+    }
+
+    .bmc-section {
+        background: white !important;
+        border: 1px solid #999 !important;
+        min-height: 80px !important;
+        page-break-inside: avoid;
+    }
+
+    .bmc-sticky {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        color: black !important;
+        page-break-inside: avoid;
+        margin: 2px 0 !important;
+    }
+
+    .bmc-header {
+        margin-bottom: 20px !important;
+    }
+
+    .bmc-header h2,
+    #bmc-title-input {
+        color: #000 !important;
+        font-size: 18pt !important;
+        border-bottom: 2px solid #000 !important;
+    }
+
+    .bmc-section-header span {
+        color: #333 !important;
+    }
+
+    .bmc-section-header i {
+        display: none !important;
+    }
 }
