@@ -25,6 +25,7 @@ let state = {
     membersLocked: false, // Legacy: overall member list lock
     tasks: [],
     reports: {}, // { iteration: { content: '', images: [] } }
+    presentationSchedules: {}, // NEW: { iteration: [ { teamName, theme }, ... ] }
     artifactSettings: {}, // { key: { slides: [{src, hotspots: [{rect, authorIdx}]}] } }
     analysisReport: { bg: '', problem: '', solution: '', images: [] },
     artifacts: { // Track specific deliverables (toggles)
@@ -73,6 +74,11 @@ let state = {
     polls: [], // { id, title, options: [{id, text, votes: [memberIdx]}], status: 'active/closed', type: 'single/multiple' }
     currentPollId: null
 };
+
+let currentReflectionKey = null;
+let currentContributionKey = null;
+let currentMutualKey = null;
+
 
 // --- Mention State ---
 let mentionState = {
@@ -673,6 +679,22 @@ function initEventListeners() {
     // Message Topics
     document.getElementById('btn-add-topic').addEventListener('click', createNewTopic);
 
+    // Mutual schedule import (Mid-term)
+    const btnMidtermImport = document.getElementById('btn-trigger-midterm-import');
+    const inputMidtermJson = document.getElementById('import-midterm-json');
+    if (btnMidtermImport && inputMidtermJson) {
+        btnMidtermImport.onclick = () => inputMidtermJson.click();
+        inputMidtermJson.onchange = (e) => handlePresentationScheduleImport(e, ["13"]);
+    }
+
+    // Mutual schedule import (Final)
+    const btnFinalImport = document.getElementById('btn-trigger-final-import');
+    const inputFinalJson = document.getElementById('import-final-json');
+    if (btnFinalImport && inputFinalJson) {
+        btnFinalImport.onclick = () => inputFinalJson.click();
+        inputFinalJson.onchange = (e) => handlePresentationScheduleImport(e, ["26", "27"]);
+    }
+
     // Attachments
     document.getElementById('btn-attach-file').addEventListener('click', () => {
         document.getElementById('message-file-input').click();
@@ -700,7 +722,7 @@ function switchView(viewId) {
     const titles = {
         dashboard: 'ダッシュボード',
         gantt: 'プロジェクト管理',
-        reports: '報告書・レポート作成',
+        reports: '作業報告書作成',
         members: 'メンバー・テーマ設定',
         data: 'データ管理',
         mindmap: 'マインドマップ',
@@ -791,9 +813,23 @@ function switchTab(tabId) {
         c.classList.toggle('active', c.id === `report-${tabId}`);
     });
 
-    if (tabId === 'work-report') loadWorkReport();
-    else if (tabId === 'analysis-report') loadAnalysisReport();
-    else if (tabId === 'contribution') loadContributionSurvey();
+    const viewTitle = document.getElementById('view-title');
+    if (tabId === 'work-report') {
+        loadWorkReport();
+        // viewTitle is also updated inside loadWorkReport -> updateWrHeader
+    } else if (tabId === 'analysis-report') {
+        if (viewTitle) viewTitle.textContent = '課題設定レポート';
+        loadAnalysisReport();
+    } else if (tabId === 'contribution') {
+        if (viewTitle) viewTitle.textContent = '貢献度調査';
+        loadContributionSurvey();
+    } else if (tabId === 'reflection') {
+        if (viewTitle) viewTitle.textContent = '振り返りシート';
+        loadReflectionSheet();
+    } else if (tabId === 'mutual') {
+        if (viewTitle) viewTitle.textContent = '相互評価シート';
+        loadMutualEvaluation();
+    }
 }
 
 function toggleMembersLock() {
@@ -1212,7 +1248,7 @@ function renderGantt() {
                 { name: '事業企画ポスター', type: 'toggle', key: 'poster', target: targets.poster },
                 { name: '事業企画リーフレット', type: 'toggle', key: 'leaflet', target: targets.leaflet },
                 { name: '相互評価シート', type: 'individual', key: 'mutual', targets: targets.mutual },
-                { name: '振り返りシート', type: 'individual', key: 'reflection', targets: targets.reflection },
+                { name: '振り返りシート', type: 'reflection', key: 'reflection', targets: targets.reflection },
                 { name: '製品・サービスパンフレット', type: 'toggle', key: 'pamphlet_25', target: targets.pamphlet },
                 { name: '最終プレゼンスライド', type: 'toggle', key: 'slides_25', target: targets.slides }
             ]
@@ -1321,6 +1357,10 @@ function renderGantt() {
                                 hasDraft = false;
                                 progressText = `0/${memberCount}人完了`;
                             }
+                        } else if (item.type === 'reflection') {
+                            const report = state.reports[itKey];
+                            isSubmitted = report && report.submitted;
+                            hasDraft = !isSubmitted && report && (report.futurePlans || (report.feedbackEntries && report.feedbackEntries.some(e => e.content || e.presentation)));
                         } else if (item.type === 'toggle') {
                             const settings = state.artifactSettings && state.artifactSettings[item.key];
                             // Check if it's one of the complex artifacts
@@ -1365,7 +1405,15 @@ function renderGantt() {
                             } else {
                                 switchView('reports');
                                 if (item.type === 'analysis') switchTab('analysis-report');
-                                else {
+                                else if (item.key === 'reflection') {
+                                    switchTab('reflection');
+                                    currentReflectionKey = itKey;
+                                    loadReflectionSheet();
+                                } else if (item.type === 'mutual' || item.key === 'mutual') {
+                                    switchTab('mutual');
+                                    currentMutualKey = itKey;
+                                    loadMutualEvaluation();
+                                } else {
                                     switchTab('contribution');
                                     currentContributionKey = itKey;
                                     loadContributionSurvey();
@@ -2645,7 +2693,7 @@ function buildTaskFlowAuthorChecks(task) {
 
 
 // --- Reports Logic ---
-let currentContributionKey = '';
+
 
 /* ================================================================
    WORK REPORT - Full Implementation
@@ -3327,8 +3375,15 @@ function updateWrHeader() {
     };
     setEl('wr-group-symbol', state.groupSymbol);
     setEl('wr-group-name', state.groupName || state.themeName);
-    setEl('wr-iter-label', session ? `第${session.id}回` : `第${iter}回`);
+    const iterLabel = session ? `第${session.id}回` : `第${iter}回`;
+    setEl('wr-iter-label', iterLabel);
     setEl('wr-iter-date', session ? formatDate(session.date) : '-');
+
+    // Also update main view title to be more specific
+    const viewTitle = document.getElementById('view-title');
+    if (viewTitle) {
+        viewTitle.textContent = `${iterLabel} 作業報告書作成`;
+    }
 
     // Session info bar
     const infoEl = document.getElementById('wr-session-info');
@@ -4125,6 +4180,195 @@ window.unlockContributionSurvey = () => {
         alert('パスワードが正しくありません。');
     }
 };
+
+/** 振り返りシート関連の機能 */
+window.loadReflectionSheet = () => {
+    if (!currentReflectionKey) return;
+
+    const data = state.reports[currentReflectionKey] || {
+        feedbackEntries: [{ content: '', presentation: '' }],
+        futurePlans: '',
+        submitted: false
+    };
+
+    const themeInput = document.getElementById('reflection-theme');
+    const groupInput = document.getElementById('reflection-group');
+    if (themeInput) themeInput.value = state.themeName || '';
+    if (groupInput) groupInput.value = state.groupName || '';
+
+    // Populate Authors checkboxes
+    const authorContainer = document.getElementById('reflection-author-checks');
+    if (authorContainer) {
+        authorContainer.innerHTML = '';
+        state.members.forEach((m, idx) => {
+            const name = `${m.lastName || ''}${m.firstName || ''}`;
+            const isChecked = Array.isArray(data.author) ? data.author.includes(name) : (data.author === name);
+
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `
+                <input type="checkbox" name="reflection-author" value="${name}" ${isChecked ? 'checked' : ''}>
+                <span>${m.lastName || 'メンバー'}</span>
+            `;
+            authorContainer.appendChild(label);
+        });
+    }
+
+    // Populate feedback list
+    const feedbackList = document.getElementById('reflection-feedback-list');
+    if (feedbackList) {
+        feedbackList.innerHTML = '';
+        const entries = data.feedbackEntries && data.feedbackEntries.length > 0
+            ? data.feedbackEntries
+            : [{ content: '', presentation: '' }];
+        entries.forEach((entry, idx) => {
+            addReflectionFeedbackEntry(entry.content, entry.presentation, idx);
+        });
+    }
+
+    const futurePlansEl = document.getElementById('reflection-future-plans');
+    if (futurePlansEl) {
+        futurePlansEl.value = data.futurePlans || '';
+        updateCharCount('reflection-future-plans', 'reflection-future-count');
+    }
+
+    // Handle submitted status
+    const isSubmitted = data.submitted;
+    const container = document.querySelector('.reflection-editor');
+    if (container) {
+        container.querySelectorAll('input, select, textarea, button:not([onclick*="switchView"])').forEach(el => {
+            el.disabled = isSubmitted;
+        });
+
+        // Remove existing banner if any
+        const existingBanner = document.getElementById('reflection-submitted-banner');
+        if (existingBanner) existingBanner.remove();
+
+        if (isSubmitted) {
+            const banner = document.createElement('div');
+            banner.id = 'reflection-submitted-banner';
+            banner.className = 'wr-status-banner submitted mb-1';
+            banner.style = "margin-bottom: 1rem;";
+            banner.innerHTML = `
+                <div class="wr-status-info" style="display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="lock"></i>
+                    <span>提出済みのため編集できません。修正が必要な場合は教員に申し出てください。</span>
+                </div>
+            `;
+            container.insertBefore(banner, container.firstChild);
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+};
+
+window.addReflectionFeedbackEntry = (content = '', presentation = '', index = -1) => {
+    const list = document.getElementById('reflection-feedback-list');
+    if (!list) return;
+    const idx = index !== -1 ? index : list.querySelectorAll('.reflection-entry').length;
+
+    const div = document.createElement('div');
+    div.className = 'reflection-entry card mb-1';
+    div.style = "background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1rem;";
+
+    const contentId = `reflection-content-${idx}`;
+    const presentationId = `reflection-presentation-${idx}`;
+    const contentCountId = `reflection-content-count-${idx}`;
+    const presentationCountId = `reflection-presentation-count-${idx}`;
+
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <strong style="font-size: 0.8rem; color: var(--accent);">指摘 ${idx + 1}</strong>
+            ${idx > 0 ? `<button class="btn-icon" style="color: var(--danger); padding: 4px;" onclick="removeReflectionFeedbackEntry(${idx})" title="削除"><i data-lucide="trash-2" style="width:16px; height:16px;"></i></button>` : ''}
+        </div>
+        <div class="form-group mb-1">
+            <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display:block;">〔内容面〕</label>
+            <div class="wr-textarea-wrap">
+                <textarea id="${contentId}" class="wr-textarea reflection-content-input" rows="2" style="min-height: 60px;" 
+                    placeholder="内容に関する指摘内容" oninput="updateCharCount('${contentId}', '${contentCountId}')">${content}</textarea>
+                <div class="wr-char-counter"><span id="${contentCountId}">0</span> 文字</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display:block;">〔発表の仕方〕</label>
+            <div class="wr-textarea-wrap">
+                <textarea id="${presentationId}" class="wr-textarea reflection-presentation-input" rows="2" style="min-height: 60px;" 
+                    placeholder="発表の仕方に関する指摘内容" oninput="updateCharCount('${presentationId}', '${presentationCountId}')">${presentation}</textarea>
+                <div class="wr-char-counter"><span id="${presentationCountId}">0</span> 文字</div>
+            </div>
+        </div>
+    `;
+    list.appendChild(div);
+    if (window.lucide) lucide.createIcons();
+
+    // Initial counts
+    updateCharCount(contentId, contentCountId);
+    updateCharCount(presentationId, presentationCountId);
+};
+
+
+window.removeReflectionFeedbackEntry = (idx) => {
+    const list = document.getElementById('reflection-feedback-list');
+    const entries = list.querySelectorAll('.reflection-entry');
+    if (entries[idx]) {
+        entries[idx].remove();
+        // Renumber remaining entries
+        list.querySelectorAll('.reflection-entry').forEach((el, i) => {
+            el.querySelector('strong').textContent = `指摘 ${i + 1}`;
+            const delBtn = el.querySelector('button[onclick*="removeReflectionFeedbackEntry"]');
+            if (i > 0) {
+                if (delBtn) delBtn.setAttribute('onclick', `removeReflectionFeedbackEntry(${i})`);
+            }
+        });
+    }
+};
+
+window.saveReflectionSheet = (isSubmit = false) => {
+    if (!currentReflectionKey) return;
+
+    if (isSubmit && !confirm('提出すると修正できなくなります。\nよろしいですか？')) return;
+
+    const checkedAuthors = Array.from(document.querySelectorAll('input[name="reflection-author"]:checked')).map(el => el.value);
+    const feedbackEntries = [];
+    document.querySelectorAll('.reflection-entry').forEach(el => {
+        const content = el.querySelector('.reflection-content-input').value;
+        const presentation = el.querySelector('.reflection-presentation-input').value;
+        feedbackEntries.push({ content, presentation });
+    });
+    const futurePlans = document.getElementById('reflection-future-plans').value;
+
+    state.reports[currentReflectionKey] = {
+        author: checkedAuthors, // Save as array
+        feedbackEntries,
+        futurePlans,
+        submitted: isSubmit,
+        updatedAt: new Date().toISOString()
+    };
+    saveState();
+
+    if (isSubmit) {
+        alert('振り返りシートを提出しました。ガントチャートに戻ります。');
+        renderGantt();
+        switchView('gantt');
+    } else {
+        const btn = document.getElementById('btn-save-reflection-draft');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i> 保存しました';
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 1500);
+        }
+        renderGantt();
+    }
+};
+
+function updateCharCount(id, countId) {
+    const el = document.getElementById(id);
+    const countEl = document.getElementById(countId);
+    if (el && countEl) {
+        countEl.textContent = el.value.length;
+    }
+}
+
 
 // Legacy handlers kept for HTML compatibility
 function handleImageUpload(e) {
@@ -8468,6 +8712,293 @@ function updatePollNotification() {
     } else {
         badge.style.display = "none";
     }
+
 }
+
+/** 相互評価シート関連の機能 */
+window.handlePresentationScheduleImport = (e, targetIters = null) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            let data = JSON.parse(event.target.result);
+            if (!state.presentationSchedules) state.presentationSchedules = {};
+            if (targetIters) {
+                let teamsList = Array.isArray(data) ? data : null;
+                if (!teamsList && typeof data === 'object') {
+                    const keys = Object.keys(data);
+                    if (keys.length > 0 && Array.isArray(data[keys[0]])) {
+                        teamsList = data[keys[0]];
+                    }
+                }
+                if (!teamsList) throw new Error('Invalid format: Expected an array of teams.');
+                targetIters.forEach(it => {
+                    state.presentationSchedules[it] = teamsList;
+                });
+            } else {
+                if (typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid format: Expected object map.');
+                Object.assign(state.presentationSchedules, data);
+            }
+
+            saveState();
+            alert('発表スケジュールを読み込みました。');
+            if (document.getElementById('report-mutual').classList.contains('active')) {
+                loadMutualEvaluation();
+            }
+        } catch (err) {
+            alert('ファイルの形式が正しくありません。' + err.message);
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset
+};
+
+window.loadMutualEvaluation = () => {
+    if (!currentMutualKey) return;
+
+    const iterMatch = currentMutualKey.match(/\d+/);
+    const iter = iterMatch ? iterMatch[0] : null;
+
+    const schedules = state.presentationSchedules && state.presentationSchedules[iter] ? state.presentationSchedules[iter] : [];
+
+    // Get logged-in member
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
+    const userReport = state.reports[currentMutualKey].users[userId] || { evaluations: {}, submitted: false };
+
+    const container = document.getElementById('mutual-presentation-list');
+    if (!container) return;
+
+    if (schedules.length === 0) {
+        container.innerHTML = '<div class="wr-no-flow">発表スケジュールデータが読み込まれていません。データ管理から読み込んでください。</div>';
+        document.getElementById('mutual-remaining-budget').textContent = '¥5,000,000';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    // Filter out own team
+    const otherTeams = schedules.filter(s => s.symbol !== state.groupSymbol && s.teamName !== state.groupName);
+
+    otherTeams.forEach((team, idx) => {
+        const teamKey = team.symbol || team.teamName;
+        const evalData = userReport.evaluations[teamKey] || { commentContent: '', commentPresentation: '', investment: 0 };
+
+        const div = document.createElement('div');
+        div.className = 'mutual-entry';
+        div.innerHTML = `
+            <div class="mutual-entry-header">
+                <div>
+                    <div class="mutual-team-name">${team.teamName}</div>
+                    <div class="mutual-theme-tag">${team.theme || 'テーマ未設定'}</div>
+                </div>
+                <div class="mutual-investment-area">
+                    <input type="number" class="mutual-investment-input" value="${evalData.investment || 0}" 
+                        min="0" step="100000" onchange="updateMutualInvestment('${teamKey}', this.value)">
+                    <div class="mutual-currency-unit">円を投資</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem;">
+                <div class="form-group">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">【内容面】へのフィードバック</label>
+                    <div class="wr-textarea-wrap">
+                        <textarea class="wr-textarea mutual-comment-input" rows="2" maxlength="200"
+                            placeholder="分析の深さ、アイデアの斬新さなど"
+                            oninput="updateMutualComment('${teamKey}', 'commentContent', this.value)">${evalData.commentContent || ''}</textarea>
+                        <div class="wr-char-counter"><span>${(evalData.commentContent || '').length}</span>文字</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600;">【発表面】へのフィードバック</label>
+                    <div class="wr-textarea-wrap">
+                        <textarea class="wr-textarea mutual-comment-input" rows="2" maxlength="200"
+                            placeholder="スライドの見やすさ、話し方など"
+                            oninput="updateMutualComment('${teamKey}', 'commentPresentation', this.value)">${evalData.commentPresentation || ''}</textarea>
+                        <div class="wr-char-counter"><span>${(evalData.commentPresentation || '').length}</span>文字</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+
+    updateMutualRemainingBudget();
+
+
+    // Lock if submitted
+    const isSubmitted = userReport.submitted || (state.reports[currentMutualKey] && state.reports[currentMutualKey].submitted);
+    const editor = document.querySelector('.mutual-editor');
+    if (editor) {
+        editor.querySelectorAll('input, textarea, button:not([onclick*="switchView"])').forEach(el => {
+            el.disabled = isSubmitted;
+        });
+
+        const existingBanner = document.getElementById('mutual-submitted-banner');
+        if (existingBanner) existingBanner.remove();
+
+        if (isSubmitted) {
+            const banner = document.createElement('div');
+            banner.id = 'mutual-submitted-banner';
+            banner.className = 'wr-status-banner submitted mb-1';
+            banner.style = "margin-bottom: 1rem;";
+            banner.innerHTML = `
+                <div class="wr-status-info" style="display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="lock"></i>
+                    <span>提出済みのため編集できません。</span>
+                </div>
+            `;
+            editor.insertBefore(banner, editor.firstChild);
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+};
+
+window.updateMutualComment = (teamKey, field, val) => {
+    if (!currentMutualKey) return;
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
+    if (!state.reports[currentMutualKey].users[userId]) state.reports[currentMutualKey].users[userId] = { evaluations: {}, submitted: false };
+    if (!state.reports[currentMutualKey].users[userId].evaluations[teamKey]) {
+        state.reports[currentMutualKey].users[userId].evaluations[teamKey] = { commentContent: '', commentPresentation: '', investment: 0 };
+    }
+
+    state.reports[currentMutualKey].users[userId].evaluations[teamKey][field] = val;
+
+    // Update char count UI for this specific textarea
+    const entries = document.querySelectorAll('.mutual-entry');
+    entries.forEach(entry => {
+        const titleEl = entry.querySelector('.mutual-team-name');
+        if (titleEl.textContent === teamKey) {
+            const textareas = entry.querySelectorAll('textarea');
+            textareas.forEach(ta => {
+                if (ta.getAttribute('oninput').includes(`'${field}'`)) {
+                    const counter = ta.parentElement.querySelector('.wr-char-counter span');
+                    if (counter) counter.textContent = val.length;
+                }
+            });
+        }
+    });
+};
+
+window.updateMutualInvestment = (teamKey, val) => {
+    if (!currentMutualKey) return;
+    const amount = parseInt(val) || 0;
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
+    if (!state.reports[currentMutualKey].users[userId]) state.reports[currentMutualKey].users[userId] = { evaluations: {}, submitted: false };
+    if (!state.reports[currentMutualKey].users[userId].evaluations[teamKey]) state.reports[currentMutualKey].users[userId].evaluations[teamKey] = { comment: '', investment: 0 };
+
+    state.reports[currentMutualKey].users[userId].evaluations[teamKey].investment = amount;
+    updateMutualRemainingBudget();
+};
+
+window.updateMutualRemainingBudget = () => {
+    if (!currentMutualKey) return;
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    if (!state.reports[currentMutualKey] || !state.reports[currentMutualKey].users[userId]) return;
+
+    const TOTAL_CAPITAL = 5000000;
+    let spent = 0;
+    Object.values(state.reports[currentMutualKey].users[userId].evaluations).forEach(e => {
+        spent += (e.investment || 0);
+    });
+    const remaining = TOTAL_CAPITAL - spent;
+    const el = document.getElementById('mutual-remaining-budget');
+    if (el) {
+        el.textContent = `¥${remaining.toLocaleString()}`;
+        el.style.color = remaining < 0 ? 'var(--danger)' : '#10b981';
+    }
+};
+
+window.saveMutualEvaluation = (isSubmit = false) => {
+    if (!currentMutualKey) return;
+
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
+    const userReport = state.reports[currentMutualKey].users[userId];
+    if (!userReport) return;
+
+    if (isSubmit) {
+        let spent = 0;
+        Object.values(userReport.evaluations).forEach(e => spent += e.investment);
+        if (spent > 5000000) {
+            alert('投資額の合計が500万円を超えています。');
+            return;
+        }
+        if (!confirm('提出すると修正できなくなります。よろしいですか？')) return;
+    }
+
+    userReport.submitted = isSubmit;
+    userReport.updatedAt = new Date().toISOString();
+    saveState();
+
+    if (isSubmit) {
+        alert('相互評価（個人分）を提出しました。');
+        renderGantt();
+        switchView('gantt');
+    } else {
+        const btn = document.getElementById('btn-save-mutual-draft');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i> 保存しました';
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 1500);
+        }
+        renderGantt();
+    }
+};
+
+/** ダミーの発表スケジュールを生成（動作確認用） */
+window.generateDummyPresentationData = () => {
+    const dummyData = {
+        "13": [],
+        "26": [],
+        "27": []
+    };
+
+    const themes = [
+        "AIを活用した地域見守りシステム", "循環型農業のIT支援プラットフォーム", "学生向けスキルシェアマーケット",
+        "商店街活性化のためのARスタンプラリー", "学食の混雑緩和予測アプリ", "リサイクル素材によるプロダクトデザイン",
+        "高齢者向けスマートフィットネス", "地産地消を推進するECサイト", "オープンデータによる災害避難シミュレータ",
+        "マイクロモビリティのシェアリング管理", "伝統工芸のデジタルアーカイブ", "キャンパス内デリバリーロボット",
+        "ボランティア活動のマッチングハブ", "VRによる歴史建造物の再現", "音声認識による議事録自動作成ツール",
+        "エネルギー消費可視化スマートホーム"
+    ];
+
+    const symbols = "ABCDEFGHIJKLMNOP".split("");
+
+    symbols.forEach((s, idx) => {
+        const team = {
+            symbol: s,
+            teamName: `チーム ${s} (${themes[idx].slice(0, 4)})`,
+            theme: themes[idx]
+        };
+        // In dummy mode, put all 16 teams into both midterm and final
+        dummyData["13"].push(team);
+        dummyData["26"].push(team);
+        dummyData["27"].push(team);
+    });
+
+    state.presentationSchedules = dummyData;
+    saveState();
+    alert('ダミーの発表スケジュール（16件）を生成しました。');
+    if (document.getElementById('report-mutual').classList.contains('active')) {
+        loadMutualEvaluation();
+    }
+};
+
 
 

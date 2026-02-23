@@ -4847,3 +4847,98 @@ th {
         display: none !important;
     }
 }
+
+/* Mutual Evaluation Sheet Styles */
+.investment-summary-card {
+    display: flex;
+    gap: 2rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.investment-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.investment-stat .label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.investment-stat .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.mutual-entry {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.mutual-entry:hover {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.mutual-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.mutual-team-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.mutual-theme-tag {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.mutual-investment-area {
+    width: 200px;
+    text-align: right;
+}
+
+.mutual-investment-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: #10b981;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    text-align: right;
+}
+
+.mutual-investment-input:focus {
+    border-color: #10b981;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.mutual-currency-unit {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
