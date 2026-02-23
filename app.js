@@ -8995,6 +8995,9 @@ function saveNewPoll() {
     const title = document.getElementById("poll-title-input").value.trim();
     if (!title) { alert("タイトルを入力してください"); return; }
 
+    const deadlineStr = document.getElementById("poll-deadline-input").value;
+    const deadline = deadlineStr ? new Date(deadlineStr).getTime() : null;
+
     let options = [];
     if (pollCreationMode === 'text') {
         const optionInputs = document.querySelectorAll(".poll-option-text");
