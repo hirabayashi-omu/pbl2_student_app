@@ -281,8 +281,48 @@ body {
 .top-bar-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem;
 }
+
+.header-avatars-container {
+    display: flex;
+    align-items: center;
+    margin-left: 0.5rem;
+}
+
+.header-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-sidebar);
+    margin-left: -8px;
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.header-avatar:first-child {
+    margin-left: 0;
+}
+
+.header-avatar:hover {
+    transform: translateY(-2px);
+    z-index: 10;
+}
+
+.header-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 
 .btn-icon {
     background: transparent;
@@ -450,6 +490,16 @@ body {
 .btn-danger {
     background: var(--danger);
     color: white;
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
 }
 
 /* Gantt Chart Custom Styles */

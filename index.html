@@ -107,6 +107,7 @@
                         <i data-lucide="menu"></i>
                     </button>
                     <h1 id="view-title">ダッシュボード</h1>
+                    <div id="header-avatars" class="header-avatars-container"></div>
                 </div>
                 <div class="top-bar-actions">
                     <span id="current-date-display">2026-02-18</span>
@@ -427,6 +428,13 @@
                     <div class="analysis-report-editor card">
                         <h2>課題設定レポート</h2>
                         <p class="subtitle">中間発表前に作成</p>
+                        <div id="analysis-submitted-banner" class="wr-status-banner submitted mb-1"
+                            style="display:none; margin-bottom: 1rem;">
+                            <div class="wr-status-info" style="display:flex; align-items:center; gap:8px;">
+                                <i data-lucide="lock"></i>
+                                <span>提出済みのため編集できません。修正が必要な場合は教員に申し出てください。</span>
+                            </div>
+                        </div>
                         <hr>
                         <div class="form-row">
                             <div class="form-group">
@@ -453,10 +461,19 @@
                             <textarea id="analysis-solution" name="analysisSolution" rows="5"
                                 placeholder="どのようなIT技術や仕組みを用いて解決しますか？"></textarea>
                         </div>
-                        <button class="btn btn-primary" id="btn-save-analysis">レポートを保存</button>
-                        <button class="btn btn-secondary mt-1" onclick="switchView('gantt')">
-                            <i data-lucide="arrow-left"></i> ガントチャートに戻る
-                        </button>
+                        <div class="wr-submit-row" style="margin-top: 2rem;">
+                            <button class="btn btn-secondary" onclick="switchView('gantt')">
+                                <i data-lucide="arrow-left"></i> ガントチャートに戻る
+                            </button>
+                            <div style="display:flex;gap:.75rem;align-items:center;">
+                                <button class="btn btn-draft btn-lg" id="btn-save-analysis">
+                                    <i data-lucide="file"></i> 一時保存
+                                </button>
+                                <button class="btn btn-submit btn-lg" id="btn-submit-analysis">
+                                    <i data-lucide="send"></i> 最終提出
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -767,10 +784,7 @@
                         <button class="btn btn-primary" id="btn-export-json" style="margin-bottom: 0.5rem;">
                             <i data-lucide="download"></i> JSONを書き出す（バックアップ）
                         </button>
-                        <button class="btn btn-secondary" id="btn-export-teacher-json"
-                            style="width: 100%; justify-content: center; font-size: 0.8rem;">
-                            <i data-lucide="file-output"></i> 教師配布用ファイルを書き出す
-                        </button>
+
                     </div>
 
                     <div class="data-actions card">
@@ -778,7 +792,7 @@
                         <p>受け取ったJSONファイルを読み込んでデータを復元します。</p>
                         <input type="file" id="import-json-file" name="importJsonFile" aria-label="JSONファイルのインポート"
                             hidden accept=".json">
-                        <button class="btn btn-secondary" id="btn-trigger-import">
+                        <button class="btn btn-success" id="btn-trigger-import">
                             <i data-lucide="upload"></i> JSONを読み込む
                         </button>
                     </div>

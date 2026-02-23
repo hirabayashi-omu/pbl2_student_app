@@ -70,6 +70,12 @@
     display: inline-block;
 }
 
+.member-course {
+    font-size: 0.75rem;
+    color: var(--success);
+    margin-top: 2px;
+}
+
 .member-info-section {
     margin-bottom: 1rem;
 }

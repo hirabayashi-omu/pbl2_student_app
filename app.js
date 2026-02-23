@@ -609,7 +609,7 @@ function initEventListeners() {
 
     // Data Export/Import
     document.getElementById('btn-export-json').addEventListener('click', exportData);
-    document.getElementById('btn-export-teacher-json')?.addEventListener('click', exportTeacherSetup);
+
     document.getElementById('btn-trigger-import').addEventListener('click', () => {
         document.getElementById('import-json-file').click();
     });
@@ -653,7 +653,8 @@ function initEventListeners() {
     });
 
     // Save Analysis & Contribution
-    document.getElementById('btn-save-analysis').addEventListener('click', saveAnalysisReport);
+    document.getElementById('btn-save-analysis').addEventListener('click', () => saveAnalysisReport(false));
+    document.getElementById('btn-submit-analysis').addEventListener('click', () => saveAnalysisReport(true));
     document.getElementById('btn-save-contribution-draft')?.addEventListener('click', () => saveContributionSurvey(false));
     document.getElementById('btn-submit-contribution')?.addEventListener('click', () => saveContributionSurvey(true));
 
@@ -704,9 +705,52 @@ function initEventListeners() {
     // Bookmarks - Handled via direct table interaction
 }
 
+/** ヘッダーのアバター表示を更新 */
+function updateHeaderAvatars(mode) {
+    const container = document.getElementById('header-avatars');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const membersToShow = [];
+    if (mode === 'group') {
+        // 全メンバー
+        (state.members || []).forEach(m => membersToShow.push(m));
+    } else if (mode === 'individual') {
+        // 自分のみ
+        const self = (state.members || []).find(m => m.isSelf);
+        if (self) membersToShow.push(self);
+    }
+
+    membersToShow.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'header-avatar';
+        div.title = `${m.lastName || ''}${m.firstName || ''}`;
+
+        if (m.avatarImage) {
+            const img = document.createElement('img');
+            img.src = m.avatarImage;
+            div.appendChild(img);
+        } else {
+            const initial = (m.lastName || '?')[0];
+            div.textContent = initial;
+            // Use avatar color or default
+            const colorIdx = Math.abs(m.id || 0) % AVATAR_COLORS.length;
+            div.style.backgroundColor = AVATAR_COLORS[colorIdx];
+        }
+        container.appendChild(div);
+    });
+}
+
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(`view-${viewId}`).classList.add('active');
+
+    // Clear avatars for non-report views. For reports, switchTab will call updateHeaderAvatars.
+    if (viewId !== 'reports') {
+        const avatarsContainer = document.getElementById('header-avatars');
+        if (avatarsContainer) avatarsContainer.innerHTML = '';
+    }
+
 
     document.querySelectorAll('.nav-item').forEach(n => {
         n.classList.remove('active');
@@ -816,19 +860,23 @@ function switchTab(tabId) {
     const viewTitle = document.getElementById('view-title');
     if (tabId === 'work-report') {
         loadWorkReport();
-        // viewTitle is also updated inside loadWorkReport -> updateWrHeader
+        updateHeaderAvatars('group');
     } else if (tabId === 'analysis-report') {
         if (viewTitle) viewTitle.textContent = '課題設定レポート';
         loadAnalysisReport();
+        updateHeaderAvatars('group');
     } else if (tabId === 'contribution') {
         if (viewTitle) viewTitle.textContent = '貢献度調査';
         loadContributionSurvey();
+        updateHeaderAvatars('individual');
     } else if (tabId === 'reflection') {
         if (viewTitle) viewTitle.textContent = '振り返りシート';
         loadReflectionSheet();
+        updateHeaderAvatars('individual');
     } else if (tabId === 'mutual') {
         if (viewTitle) viewTitle.textContent = '相互評価シート';
         loadMutualEvaluation();
+        updateHeaderAvatars('individual');
     }
 }
 
@@ -3873,25 +3921,66 @@ window.removeWrImage = (section, idx) => {
 };
 
 function loadAnalysisReport() {
-    const data = state.reports['analysis'] || { bg: '', problem: '', solution: '' };
+    const data = state.reports['analysis'] || { bg: '', problem: '', solution: '', submitted: false };
     document.getElementById('analysis-theme-title').value = state.themeName || '';
     document.getElementById('analysis-group-name').value = state.groupName || '';
     document.getElementById('analysis-bg').value = data.bg || '';
     document.getElementById('analysis-problem').value = data.problem || '';
     document.getElementById('analysis-solution').value = data.solution || '';
+
+    // Handle lock state
+    const isSubmitted = data.submitted || false;
+    const editor = document.querySelector('.analysis-report-editor');
+    const banner = document.getElementById('analysis-submitted-banner');
+
+    if (editor) {
+        editor.querySelectorAll('input, textarea, button:not([onclick*="switchView"])').forEach(el => {
+            el.disabled = isSubmitted;
+        });
+        if (banner) banner.style.display = isSubmitted ? 'block' : 'none';
+        if (isSubmitted && window.lucide) lucide.createIcons();
+    }
 }
 
-function saveAnalysisReport() {
+function saveAnalysisReport(isSubmit = false) {
+    if (isSubmit) {
+        if (!confirm('最終提出すると、以降は修正できなくなります（教員への申し出が必要）。よろしいですか？')) return;
+    }
+
     const bg = document.getElementById('analysis-bg').value;
     const problem = document.getElementById('analysis-problem').value;
     const solution = document.getElementById('analysis-solution').value;
     const content = `${bg}\n${problem}\n${solution}`.trim();
-    state.reports['analysis'] = { bg, problem, solution, content, updatedAt: new Date().toISOString() };
+
+    state.reports['analysis'] = {
+        bg,
+        problem,
+        solution,
+        content,
+        submitted: isSubmit,
+        updatedAt: new Date().toISOString()
+    };
     saveState();
-    alert('課題設定レポ�Eトを保存しました');
+
+    if (isSubmit) {
+        alert('課題設定レポートを最終提出しました。');
+        loadAnalysisReport();
+    } else {
+        const btn = document.getElementById('btn-save-analysis');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check"></i> 保存済み';
+            if (window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 1500);
+        }
+    }
     renderGantt();
 }
+/*
+alert('課題設定レポ�Eトを保存しました');
 
+
+*/
 const CONTRIBUTION_ROLES = [
     '発表プレゼンテーション',
     '質問対応',
@@ -6045,6 +6134,7 @@ window.renderTeamwork = () => {
                 <div>
                     <div class="member-name">${fullName}</div>
                     <div class="member-role">${m.role || 'メンバー'}</div>
+                    <div class="member-course">${m.course || 'コース未設定'}</div>
                 </div>
             </div>
             
@@ -8251,6 +8341,9 @@ function renderPollList() {
         const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
         const isUnvoted = !isClosed && totalVotes === 0;
 
+        const creator = (state.members || []).find(m => m.id === poll.createdBy);
+        const creatorName = creator ? (creator.lastName || '') : 'ゲスト';
+
         return `
             <div class="poll-item ${isActive ? "active-poll" : ""} ${isUnvoted ? "unvoted-poll" : ""}" onclick="selectPoll('${poll.id}')">
                 <div class="poll-item-title">
@@ -8260,6 +8353,7 @@ function renderPollList() {
                 <div class="poll-item-meta">
                     <span class="poll-status-badge ${!isClosed ? "poll-status-active" : "poll-status-closed"}">${statusLabel}</span>
                     <span>${totalVotes} 票</span>
+                    <span title="作成者: ${creatorName}">${creatorName}</span>
                 </div>
             </div>
         `;
@@ -8294,6 +8388,9 @@ function renderActivePoll() {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
     const isCreator = poll.createdBy === userId;
+
+    const creator = (state.members || []).find(m => m.id === poll.createdBy);
+    const creatorName = creator ? `${creator.lastName || ''}${creator.firstName || ''}` : 'ゲスト';
 
     const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
     const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
@@ -8374,6 +8471,7 @@ function renderActivePoll() {
                     <span class="poll-status-badge ${!isClosed ? "poll-status-active" : "poll-status-closed"}">${statusLabel}</span>
                     <span style="color: var(--text-dim); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">${poll.type === "multiple" ? "複数選択可" : "単一選択"}</span>
                     <span style="color: var(--text-dim); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">${anonymityLabel}</span>
+                    <span style="color: var(--text-dim); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;"><i data-lucide="user" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"></i>作成者: ${creatorName}</span>
                 </div>
             </div>
             ${adminControls}
