@@ -47,6 +47,9 @@
 
                 <div class="nav-separator"></div>
 
+                <button class="nav-item" data-view="teamwork">
+                    <i data-lucide="users-2"></i> <span>チームワーク</span>
+                </button>
                 <button class="nav-item" data-view="members">
                     <i data-lucide="users"></i> <span>メンバー・テーマ</span>
                 </button>
@@ -58,9 +61,6 @@
 
                 <button class="nav-item" data-view="mindmap">
                     <i data-lucide="network"></i> <span>マインドマップ</span>
-                </button>
-                <button class="nav-item" data-view="teamwork">
-                    <i data-lucide="users-2"></i> <span>チームワーク</span>
                 </button>
                 <button class="nav-item" data-view="tech-core">
                     <i data-lucide="cpu"></i> <span>技術コア開発</span>
@@ -748,6 +748,29 @@
 
                     <div id="mindmap-toolbar" class="mindmap-toolbar">
                         <div class="actions">
+                            <!-- 事例チュートリアル -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-right: 0.5rem;">
+                                <span
+                                    style="font-size: 0.75rem; color: #f59e0b; font-weight: 700; white-space: nowrap;">
+                                    <i class="fas fa-lightbulb" style="font-size:12px; vertical-align: middle;"></i>
+                                    事例:
+                                </span>
+                                <select id="mm-tutorial-select"
+                                    onchange="MindMapModule.loadTutorial(this.value); this.value='';"
+                                    style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b; border-radius: 6px; padding: 2px 8px; font-size: 0.8rem; cursor: pointer; outline: none; font-weight: 600;">
+                                    <option value="" disabled selected>選択...</option>
+                                    <option value="launch">新製品ローンチ</option>
+                                    <option value="marketing">マーケティング戦略</option>
+                                    <option value="service">Webサービス設計</option>
+                                    <option value="event">展示会イベント計画</option>
+                                    <option value="meeting">会議の議事進行</option>
+                                    <option value="prototype">製品試作</option>
+                                    <option value="org">組織図</option>
+                                    <option value="presentation">プレゼン発表</option>
+                                </select>
+                            </div>
+                            <div class="divider"></div>
+
                             <!-- 履歴 -->
                             <button id="mm-undo-btn" class="mm-undo-btn" title="元に戻す (Ctrl+Z)"><i
                                     class="fas fa-undo"></i></button>
@@ -757,24 +780,24 @@
 
                             <!-- ノード操作 -->
                             <button id="mm-add-child-btn" class="mm-add-child-btn" title="子ノード追加 (Tab)"><i
-                                    class="fas fa-level-down-alt"></i><span class="btn-text"> 子</span></button>
+                                    class="fas fa-level-down-alt"></i></button>
                             <button id="mm-add-sibling-btn" class="mm-add-sibling-btn" title="兄弟ノード追加 (Enter)"><i
-                                    class="fas fa-plus"></i><span class="btn-text"> 兄弟</span></button>
+                                    class="fas fa-plus"></i></button>
                             <button id="mm-move-up-btn" class="mm-move-up-btn" title="上に移動 (Alt+Up)"><i
                                     class="fas fa-arrow-up"></i></button>
                             <button id="mm-move-down-btn" class="mm-move-down-btn" title="下に移動 (Alt+Down)"><i
                                     class="fas fa-arrow-down"></i></button>
                             <button id="mm-delete-btn" class="mm-delete-btn" title="削除 (Del)"><i
-                                    class="fas fa-trash"></i><span class="btn-text"> 削除</span></button>
+                                    class="fas fa-trash"></i></button>
                             <div class="divider"></div>
 
                             <!-- 作図・装飾 -->
                             <button id="mm-add-image-btn" class="mm-add-image-btn" title="画像フレーム追加"><i
-                                    class="fas fa-image"></i><span class="btn-text"> 画像</span></button>
+                                    class="fas fa-image"></i></button>
                             <button id="mm-add-text-btn" class="mm-add-text-btn" title="テキスト追加"><i
-                                    class="fas fa-font"></i><span class="btn-text"> テキスト</span></button>
+                                    class="fas fa-font"></i></button>
                             <button id="mm-draw-btn" class="mm-draw-btn" title="自由描画モード (P)"><i
-                                    class="fas fa-pen-nib"></i><span class="btn-text"> 描画</span></button>
+                                    class="fas fa-pen-nib"></i></button>
                             <div id="mm-draw-options" class="mm-draw-options"
                                 style="display:none; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; margin:0 4px;">
                                 <div class="draw-colors" style="display:flex; gap:4px;">
@@ -812,7 +835,7 @@
                                 </select>
                             </div>
                             <button id="mm-shape-btn" class="mm-shape-btn" title="図形描画モード"><i
-                                    class="fas fa-shapes"></i><span class="btn-text"> 図形</span></button>
+                                    class="fas fa-shapes"></i></button>
                             <div id="mm-shape-options" class="mm-shape-options"
                                 style="display:none; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; margin:0 4px;">
                                 <div class="shape-colors" style="display:flex; gap:4px;">
@@ -854,15 +877,10 @@
 
                             <!-- 保存・復元 -->
                             <button id="mm-clear-all-btn" title="すべてクリア" style="color: #ef4444;"><i
-                                    class="fas fa-bomb"></i><span class="btn-text"> クリア</span></button>
-                            <button id="mm-export-btn" title="JSON保存"><i class="fas fa-download"></i><span
-                                    class="btn-text">
-                                    保存</span></button>
-                            <button id="mm-import-btn-trigger" title="JSON読み込み"><i class="fas fa-upload"></i><span
-                                    class="btn-text"> 読込</span></button>
-                            <button id="mm-export-pdf-btn" title="PDF出力"><i class="fas fa-file-pdf"></i><span
-                                    class="btn-text">
-                                    PDF</span></button>
+                                    class="fas fa-bomb"></i></button>
+                            <button id="mm-export-btn" title="JSON保存"><i class="fas fa-download"></i></button>
+                            <button id="mm-import-btn-trigger" title="JSON読み込み"><i class="fas fa-upload"></i></button>
+                            <button id="mm-export-pdf-btn" title="PDF出力"><i class="fas fa-file-pdf"></i></button>
                             <input type="file" id="mm-import-input" name="mmImportInput" aria-label="マインドマップJSON読み込み"
                                 accept=".json" style="display: none;">
                             <input type="file" id="mm-image-upload-input" name="mmImageUploadInput"

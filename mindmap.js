@@ -3899,6 +3899,138 @@ var MindMapModule = window.MindMapModule = (() => {
         }
     }
 
+    function loadTutorial(id) {
+        if (!id) return;
+
+        const names = {
+            launch: "新製品ローンチ",
+            marketing: "マーケティング戦略",
+            service: "Webサービス設計",
+            event: "展示会イベント計画",
+            meeting: "会議の議事進行",
+            prototype: "製品試作",
+            org: "組織図",
+            presentation: "プレゼン発表"
+        };
+
+        if (!confirm(`既存のマインドマップをクリアして、${names[id]}の事例を読み込みますか？`)) return;
+
+        saveState();
+
+        const structures = {
+            launch: {
+                text: "新製品ローンチ",
+                color: "#3b82f6",
+                children: [
+                    { text: "市場調査", color: "#10b981", children: [{ text: "競合分析" }, { text: "ターゲット選定" }, { text: "ニーズ調査" }] },
+                    { text: "コンセプト設計", color: "#f59e0b", children: [{ text: "製品名決定" }, { text: "価格戦略" }, { text: "USP定義" }] },
+                    { text: "開発・製造", color: "#ef4444", children: [{ text: "試作" }, { text: "品質テスト" }, { text: "量産計画" }] },
+                    { text: "プロモーション", color: "#8b5cf6", children: [{ text: "広告展開" }, { text: "SNS運用" }, { text: "プレスリリース" }] },
+                    { text: "発売・評価", color: "#ec4899", children: [{ text: "販売開始" }, { text: "成果分析" }, { text: "次期改善" }] }
+                ]
+            },
+            marketing: {
+                text: "マーケティング戦略",
+                color: "#3b82f6",
+                children: [
+                    { text: "現状分析", color: "#10b981", children: [{ text: "3C分析" }, { text: "SWOT分析" }, { text: "PEST分析" }] },
+                    { text: "STP分析", color: "#f59e0b", children: [{ text: "セグメンテーション" }, { text: "ターゲティング" }, { text: "ポジショニング" }] },
+                    { text: "4P施策", color: "#ef4444", children: [{ text: "Product (製品)" }, { text: "Price (価格)" }, { text: "Place (流通)" }, { text: "Promotion (宣伝)" }] },
+                    { text: "KGI/KPI設定", color: "#8b5cf6", children: [{ text: "売上目標" }, { text: "認知度" }, { text: "リピート率" }] }
+                ]
+            },
+            service: {
+                text: "Webサービス設計",
+                color: "#3b82f6",
+                children: [
+                    { text: "要件定義", color: "#10b981", children: [{ text: "ペルソナ設定" }, { text: "カスタマージャーニー" }, { text: "機能一覧" }] },
+                    { text: "UI/UXデザイン", color: "#f59e0b", children: [{ text: "ワイヤーフレーム" }, { text: "モックアップ" }, { text: "プロトタイプ" }] },
+                    { text: "システム設計", color: "#ef4444", children: [{ text: "DB設計" }, { text: "API設計" }, { text: "インフラ構成" }] },
+                    { text: "ロードマップ", color: "#8b5cf6", children: [{ text: "MVPリリース" }, { text: "追加機能" }, { text: "マーケティング" }] }
+                ]
+            },
+            event: {
+                text: "展示会イベント計画",
+                color: "#3b82f6",
+                children: [
+                    { text: "企画・目標", color: "#10b981", children: [{ text: "出展目的" }, { text: "メインテーマ" }, { text: "数値目標" }] },
+                    { text: "ブース設計", color: "#f59e0b", children: [{ text: "レイアウト" }, { text: "装飾デザイン" }, { text: "什器手配" }] },
+                    { text: "コンテンツ", color: "#ef4444", children: [{ text: "デモ展示" }, { text: "プレゼン資料" }, { text: "ノベルティ" }] },
+                    { text: "当日運営", color: "#8b5cf6", children: [{ text: "タイムスケジュール" }, { text: "スタッフ配員" }, { text: "来客対応" }] }
+                ]
+            },
+            meeting: {
+                text: "プロジェクト進捗会議",
+                color: "#3b82f6",
+                children: [
+                    { text: "議題・目的", color: "#10b981", children: [{ text: "進捗確認" }, { text: "課題の共有" }, { text: "リスク検討" }] },
+                    { text: "議論・意見", color: "#f59e0b", children: [{ text: "技術的ボトルネック" }, { text: "リソース不足" }, { text: "スケジュール遅延" }] },
+                    { text: "決定事項", color: "#ef4444", children: [{ text: "人員追加の承認" }, { text: "仕様の簡略化" }, { text: "中間報告日の決定" }] },
+                    { text: "ネクストアクション", color: "#8b5cf6", children: [{ text: "タスク再割り当て" }, { text: "ベンダー連絡" }, { text: "定例会議の設定" }] }
+                ]
+            },
+            prototype: {
+                text: "次世代EV充電器プロトタイプ",
+                color: "#3b82f6",
+                children: [
+                    { text: "仕様定義", color: "#10b981", children: [{ text: "出力電力目標" }, { text: "筐体サイズ" }, { text: "冷却方式" }] },
+                    { text: "要素技術選定", color: "#f59e0b", children: [{ text: "パワー半導体(SiC)" }, { text: "制御マイコン" }, { text: "通信モジュール" }] },
+                    { text: "試作開発", color: "#ef4444", children: [{ text: "回路設計" }, { text: "制御ロジック" }, { text: "3Dモデル製作" }] },
+                    { text: "評価・検証", color: "#8b5cf6", children: [{ text: "効率測定" }, { text: "温度上昇試験" }, { text: "耐環境テスト" }] }
+                ]
+            },
+            org: {
+                text: "プロジェクト実行組織",
+                color: "#3b82f6",
+                children: [
+                    { text: "経営・統括", color: "#10b981", children: [{ text: "プロジェクトリーダー" }, { text: "経営企画室" }, { text: "外部アドバイザー" }] },
+                    { text: "製品開発部", color: "#f59e0b", children: [{ text: "ソフトウェア開発チーム" }, { text: "ハードウェア設計班" }, { text: "品質管理・評価室" }] },
+                    { text: "マーケティング部", color: "#ef4444", children: [{ text: "国内・海外営業" }, { text: "デジタル販促課" }, { text: "カスタマー体験設計" }] },
+                    { text: "管理部", color: "#8b5cf6", children: [{ text: "人事・採用ユニット" }, { text: "財務・経理" }, { text: "法務・知財管理" }] }
+                ]
+            },
+            presentation: {
+                text: "プレゼン構成：スマートシティ構想",
+                color: "#3b82f6",
+                children: [
+                    { text: "イントロ", color: "#10b981", children: [{ text: "背景と目的" }, { text: "現在の都市課題" }, { text: "目指すべき姿" }] },
+                    { text: "ソリューション", color: "#f59e0b", children: [{ text: "AI交通最適化" }, { text: "再エネグリッド" }, { text: "住民参加型PF" }] },
+                    { text: "期待される効果", color: "#ef4444", children: [{ text: "CO2排出量削減" }, { text: "移動時間短縮" }, { text: "地域コミュニティ活性" }] },
+                    { text: "まとめ・質疑", color: "#8b5cf6", children: [{ text: "今後の展望" }, { text: "サンクススライド" }, { text: "Q&A対応用バックアップ" }] }
+                ]
+            }
+        };
+
+        const data = JSON.parse(JSON.stringify(structures[id]));
+        if (!data) return;
+
+        function processNode(node, column, parentColor = null) {
+            node.id = generateUUID();
+            node.column = column;
+            // Inherit parent color for level 2+ if node itself doesn't have it
+            if (!node.color && parentColor) {
+                node.color = parentColor;
+            }
+            node.children = node.children || [];
+            node.children.forEach(child => processNode(child, column + 1, node.color));
+        }
+
+        processNode(data, 0);
+
+
+        mindMapState.root = data;
+        mindMapState.images = [];
+        mindMapState.drawings = [];
+        mindMapState.shapes = [];
+        mindMapState.annotations = [];
+        mindMapState.columnLabels = {};
+
+        updateLayout();
+        render();
+        fitToScreen();
+        showToast(`${names[id]}の事例を読み込みました。`);
+    }
+
     function setRootText(text) {
         if (mindMapState.root) {
             mindMapState.root.text = text || '';
@@ -3914,6 +4046,7 @@ var MindMapModule = window.MindMapModule = (() => {
     return {
         init: init,
         loadData: loadData,
+        loadTutorial: loadTutorial,
         setRootText: setRootText,
         setAssigneeFilter: setAssigneeFilter,
         exportData: exportData,
