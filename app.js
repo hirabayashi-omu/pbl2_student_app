@@ -12,6 +12,47 @@ const DEFAULT_DELIVERABLE_TARGETS = {
     slides: 25
 };
 
+/** Master list for syncing Gantt and Deliverables folders (Aliases) */
+const DELIVERABLE_MASTER_LIST = [
+    { id: 'reports', name: '作業報告書提出', icon: 'file-text', color: '#6366f1', group: 'effort', viewId: 'reports', tabId: 'work-report', desc: '活動報告書 (第3回〜)' },
+    { id: 'assignment', name: '課題設定レポート', icon: 'clipboard-list', color: '#10b981', group: 'effort', viewId: 'reports', tabId: 'analysis-report', desc: 'テーマ設定・課題定義' },
+    { id: 'contribution', name: '貢献度調査', icon: 'users-2', color: '#ec4899', group: 'effort', viewId: 'reports', tabId: 'contribution', desc: 'メンバー相互評価' },
+    { id: 'poster', name: '事業企画ポスター', icon: 'file-text', color: '#3b82f6', group: 'presentation', viewId: 'deliverables', artifactKey: 'poster', desc: '（中間発表用）' },
+    { id: 'leaflet', name: '事業企画リーフレット', icon: 'book-open', color: '#10b981', group: 'presentation', viewId: 'deliverables', artifactKey: 'leaflet', desc: '（中間発表用）' },
+    { id: 'group_eval', name: '相互評価シート', icon: 'vibrate', color: '#8b5cf6', group: 'presentation', viewId: 'reports', tabId: 'mutual', desc: 'グループ相互評価' },
+    { id: 'feedback', name: '振り返りシート', icon: 'refresh-ccw', color: '#0ea5e9', group: 'presentation', viewId: 'reports', tabId: 'reflection', desc: '発表フィードバック' },
+    { id: 'pamphlet', name: '製品・サービスパンフレット', icon: 'layout', color: '#f59e0b', group: 'presentation', viewId: 'deliverables', artifactKey: 'pamphlet', desc: '（最終発表用）' },
+    { id: 'slides', name: '最終プレゼンスライド', icon: 'presentation', color: '#ef4444', group: 'presentation', viewId: 'deliverables', artifactKey: 'slides', desc: '（最終発表用）' }
+];
+
+function gotoDeliverable(id, iteration = null) {
+    const item = DELIVERABLE_MASTER_LIST.find(d => d.id === id);
+    if (!item) return;
+
+    if (item.viewId === 'reports') {
+        const iterSuffix = iteration ? `_${iteration}` : '_13';
+        if (id === 'contribution') {
+            currentContributionKey = `${id}${iterSuffix}`;
+        } else if (id === 'group_eval') {
+            currentMutualKey = `${id}${iterSuffix}`;
+        } else if (id === 'feedback') {
+            currentReflectionKey = `${id}${iterSuffix}`;
+        }
+
+        switchView('reports');
+        if (item.tabId) switchTab(item.tabId);
+    } else if (item.viewId === 'deliverables') {
+        if (item.artifactKey) {
+            switchView('deliverables');
+            renderDeliverables('presentation');
+            openArtifactEditor(item.artifactKey, item.name);
+        } else {
+            switchView('deliverables');
+            renderDeliverables(id);
+        }
+    }
+}
+
 // --- State Management ---
 let state = {
     themeName: '',
@@ -99,6 +140,53 @@ let currentArtifactKey = null;
 let currentSlideIndex = -1;
 let isDrawingHotspot = false;
 let hotspotStartPos = { x: 0, y: 0 };
+let artifactZoom = 1.0;
+let artifactEditorMode = 'draw'; // 'draw' or 'drag'
+let isPanningViewer = false;
+let panStartScroll = { left: 0, top: 0 };
+let panStartMouse = { x: 0, y: 0 };
+
+/** Mode toggle for viewer */
+function setArtifactMode(mode) {
+    artifactEditorMode = mode;
+    const drawBtn = document.getElementById('btn-mode-draw');
+    const dragBtn = document.getElementById('btn-mode-drag');
+    const container = document.getElementById('hotspot-container');
+
+    if (drawBtn) drawBtn.classList.toggle('active', mode === 'draw');
+    if (dragBtn) dragBtn.classList.toggle('active', mode === 'drag');
+
+    if (container) {
+        container.style.cursor = mode === 'draw' ? 'crosshair' : 'grab';
+    }
+}
+
+/** Zoom controls for artifact viewer */
+function changeArtifactZoom(delta) {
+    artifactZoom = Math.max(0.5, Math.min(3.0, artifactZoom + delta));
+    applyArtifactZoomUI();
+}
+
+function resetArtifactZoom() {
+    artifactZoom = 1.0;
+    applyArtifactZoomUI();
+}
+
+function applyArtifactZoomUI() {
+    const container = document.getElementById('hotspot-container');
+    const zoomText = document.getElementById('artifact-zoom-level');
+    if (container) {
+        const zoomValue = Math.round(artifactZoom * 100);
+        // Force dimensions to trigger overflow in the parent .artifact-main
+        container.style.width = zoomValue + '%';
+        container.style.minWidth = zoomValue + '%';
+        container.style.maxWidth = 'none';
+
+        if (zoomText) {
+            zoomText.textContent = zoomValue + '%';
+        }
+    }
+}
 
 // --- Poll Creation Modal State ---
 let pollCreationMode = 'text'; // 'text' or 'calendar'
@@ -467,6 +555,9 @@ function updateDisplayInfo() {
 
     // --- Storage Usage Update ---
     updateStorageUsage();
+
+    // --- Header Graphs Update ---
+    renderHeaderGraphs();
 }
 
 function updateStorageUsage() {
@@ -644,13 +735,6 @@ function initEventListeners() {
     document.getElementById('btn-save-poll')?.addEventListener('click', saveNewPoll);
     document.getElementById('btn-cancel-poll')?.addEventListener('click', hidePollCreateForm);
 
-    // Report Tabs switching
-    document.querySelectorAll('.report-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const reportId = tab.getAttribute('data-report');
-            switchTab(reportId);
-        });
-    });
 
     // Save Analysis & Contribution
     document.getElementById('btn-save-analysis').addEventListener('click', () => saveAnalysisReport(false));
@@ -773,7 +857,7 @@ function switchView(viewId) {
         messages: 'メンバー伝言板',
         bookmarks: 'ブックマーク・参考ソース',
         polls: '投票・日程調整',
-        deliverables: '成果物フォルダ',
+        deliverables: '提出物フォルダ',
         teamwork: 'チームワーク形成',
         'tech-core': '技術コア開発',
         bmc: 'ビジネス分析'
@@ -867,14 +951,23 @@ function switchTab(tabId) {
         updateHeaderAvatars('group');
     } else if (tabId === 'contribution') {
         if (viewTitle) viewTitle.textContent = '貢献度調査';
+        if (!currentContributionKey) {
+            currentContributionKey = 'contribution_13'; // Default fallback
+        }
         loadContributionSurvey();
         updateHeaderAvatars('individual');
     } else if (tabId === 'reflection') {
         if (viewTitle) viewTitle.textContent = '振り返りシート';
+        if (!currentReflectionKey) {
+            currentReflectionKey = 'feedback_13'; // Default fallback
+        }
         loadReflectionSheet();
         updateHeaderAvatars('individual');
     } else if (tabId === 'mutual') {
         if (viewTitle) viewTitle.textContent = '相互評価シート';
+        if (!currentMutualKey) {
+            currentMutualKey = 'group_eval_13'; // Default fallback
+        }
         loadMutualEvaluation();
         updateHeaderAvatars('individual');
     }
@@ -1278,33 +1371,12 @@ function renderGantt() {
     const targets = state.deliverableTargets || DEFAULT_DELIVERABLE_TARGETS;
 
     const deliverableGroups = [
-        {
-            id: 'effort',
-            name: '取り組み',
-            color: '#ef4444', // Red
-            items: [
-                { name: '作業報告書提出', type: 'report', key: 'work-reports' },
-                { name: '課題設定レポート', type: 'analysis', key: 'analysis', target: targets.analysis },
-                { name: '貢献度調査', type: 'contribution', key: 'contribution', targets: targets.contribution }
-            ]
-        },
-        {
-            id: 'presentation',
-            name: '発表成果',
-            color: '#f59e0b', // Orange
-            items: [
-                { name: '事業企画ポスター', type: 'toggle', key: 'poster', target: targets.poster },
-                { name: '事業企画リーフレット', type: 'toggle', key: 'leaflet', target: targets.leaflet },
-                { name: '相互評価シート', type: 'individual', key: 'mutual', targets: targets.mutual },
-                { name: '振り返りシート', type: 'reflection', key: 'reflection', targets: targets.reflection },
-                { name: '製品・サービスパンフレット', type: 'toggle', key: 'pamphlet_25', target: targets.pamphlet },
-                { name: '最終プレゼンスライド', type: 'toggle', key: 'slides_25', target: targets.slides }
-            ]
-        }
+        { id: 'effort', name: '取り組み', color: '#ef4444', items: DELIVERABLE_MASTER_LIST.filter(d => d.group === 'effort') },
+        { id: 'presentation', name: '発表成果', color: '#f59e0b', items: DELIVERABLE_MASTER_LIST.filter(d => d.group === 'presentation') }
     ];
 
     deliverableGroups.forEach(group => {
-        // Render Category Header
+        // Category Header
         const headerLabel = document.createElement('div');
         headerLabel.className = 'gantt-label category-header-label';
         headerLabel.style.color = group.color;
@@ -1331,16 +1403,35 @@ function renderGantt() {
         }
         ganttTable.appendChild(headerGrid);
 
-        // Render Pre-defined Deliverables for this category
         group.items.forEach(item => {
             const labelCell = document.createElement('div');
-            labelCell.className = 'gantt-label deliverable-label';
+            labelCell.className = 'gantt-label deliverable-label task-link';
             labelCell.style.borderLeftColor = group.color;
-            labelCell.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.name}">${item.name}</span>`;
+            labelCell.title = `${item.name}を開く`;
+            labelCell.innerHTML = `
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                <i data-lucide="external-link" style="width:10px; height:10px; opacity:0.3; margin-left:4px;"></i>
+            `;
+            labelCell.onclick = () => gotoDeliverable(item.id);
             ganttTable.appendChild(labelCell);
 
             const gridCell = document.createElement('div');
             gridCell.className = 'gantt-grid';
+
+            // Target mapping
+            const targetKeyMap = {
+                reports: 'report',
+                assignment: 'analysis',
+                contribution: 'contribution',
+                poster: 'poster',
+                leaflet: 'leaflet',
+                group_eval: 'mutual',
+                feedback: 'reflection',
+                pamphlet: 'pamphlet',
+                slides: 'slides'
+            };
+            const targetKey = targetKeyMap[item.id];
+            const itemTargets = targetKey === 'report' ? null : targets[targetKey];
 
             for (let i = 1; i <= 28; i++) {
                 const cell = document.createElement('div');
@@ -1351,123 +1442,59 @@ function renderGantt() {
                 if (i === 27) cell.classList.add('exam-border-final');
                 if (i === currentIteration) cell.classList.add('is-today');
 
-                // Logic for different item types
-                if (item.type === 'report') {
-                    const iter = i; // iter = actual session number (matches DEFAULT_SCHEDULE id)
-                    const startIter = targets.workReportStart || 3;
-                    if (iter >= startIter) { // Reports start from defined session
-                        const report = state.reports[iter];
-                        const isSubmitted = report && report.submitted;
-                        const hasDraft = report && report.content && !isSubmitted;
-
+                if (item.id === 'reports') {
+                    if (i >= targets.workReportStart) {
+                        const r = state.reports[i];
+                        const isSub = !!r?.submitted;
+                        const hasD = !!r?.content && !isSub;
                         const marker = document.createElement('div');
-                        marker.className = `report-marker ${isSubmitted ? 'submitted' : (hasDraft ? 'draft' : 'pending')} category-effort`;
-
-                        if (isSubmitted) {
-                            marker.innerHTML = '<i data-lucide="check"></i>';
-                        } else if (hasDraft) {
-                            marker.innerHTML = '<span class="dot-icon">●</span>';
-                        }
-
-                        marker.title = `第${iter}回 作業報告書: ${isSubmitted ? '提出済' : (hasDraft ? '下書き保存中' : '未作成')}\nクリックで編集へ`;
-                        marker.onclick = () => openWorkReport(iter);
+                        marker.className = `report-marker ${isSub ? 'submitted' : (hasD ? 'draft' : 'pending')} category-effort`;
+                        if (isSub) marker.innerHTML = '<i data-lucide="check"></i>';
+                        else if (hasD) marker.innerHTML = '<span class="dot-icon">●</span>';
+                        marker.title = `第${i}回 報告書: ${isSub ? '提出済' : (hasD ? '下書き' : '未作成')}`;
+                        marker.onclick = (e) => { e.stopPropagation(); switchView('reports'); switchTab('work-report'); openWorkReport(i); };
                         cell.appendChild(marker);
                     }
-                } else {
-                    const isTarget = item.target === i || (item.targets && item.targets.includes(i));
+                } else if (itemTargets) {
+                    const isTarget = Array.isArray(itemTargets) ? itemTargets.includes(i) : itemTargets === i;
                     if (isTarget) {
-                        const itKey = item.targets ? `${item.key}_${i}` : item.key;
-                        let isSubmitted = false;
-                        let hasDraft = false;
+                        const storageKey = Array.isArray(itemTargets) ? `${item.id}_${i}` : (item.tabId || item.id);
+                        let isSub = false;
+                        let hasD = false;
 
-                        let progressText = '';
-                        if (item.type === 'contribution' || item.type === 'individual') {
-                            const reportGroup = state.reports[itKey];
-                            const memberCount = (state.members || []).length;
-                            if (reportGroup && memberCount > 0) {
-                                let startedCount = 0;
-                                let submittedCount = 0;
-                                (state.members || []).forEach(m => {
-                                    const userRep = reportGroup[m.id];
-                                    if (userRep) {
-                                        if (userRep.submitted) submittedCount++;
-                                        const hasInteraction = (userRep.ratings && Object.keys(userRep.ratings).length > 0) ||
-                                            (userRep.roles && Object.keys(userRep.roles).length > 0) ||
-                                            userRep.content;
-                                        if (hasInteraction || userRep.submitted) startedCount++;
-                                    }
-                                });
-                                isSubmitted = submittedCount >= memberCount;
-                                hasDraft = !isSubmitted && startedCount > 0;
-                                progressText = `${submittedCount}/${memberCount}人完了`;
+                        if (item.artifactKey) {
+                            const sets = state.artifactSettings?.[item.artifactKey];
+                            isSub = !!sets?.submitted;
+                            hasD = !isSub && !!sets?.slides?.length;
+                        } else if (item.tabId) {
+                            if (['contribution', 'mutual'].includes(item.tabId)) {
+                                const rg = state.reports[storageKey];
+                                const mc = (state.members || []).length;
+                                if (rg && mc > 0) {
+                                    let subCount = 0; let startCount = 0;
+                                    (state.members || []).forEach(m => {
+                                        const ur = rg[m.id];
+                                        if (ur) {
+                                            if (ur.submitted) subCount++;
+                                            if (ur.content || (ur.ratings && Object.keys(ur.ratings).length)) startCount++;
+                                        }
+                                    });
+                                    isSub = subCount >= mc;
+                                    hasD = !isSub && startCount > 0;
+                                }
                             } else {
-                                isSubmitted = false;
-                                hasDraft = false;
-                                progressText = `0/${memberCount}人完了`;
+                                const r = state.reports[item.tabId];
+                                isSub = !!r?.submitted;
+                                hasD = !isSub && !!r?.content;
                             }
-                        } else if (item.type === 'reflection') {
-                            const report = state.reports[itKey];
-                            isSubmitted = report && report.submitted;
-                            hasDraft = !isSubmitted && report && (report.futurePlans || (report.feedbackEntries && report.feedbackEntries.some(e => e.content || e.presentation)));
-                        } else if (item.type === 'toggle') {
-                            const settings = state.artifactSettings && state.artifactSettings[item.key];
-                            // Check if it's one of the complex artifacts
-                            if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
-                                isSubmitted = settings && settings.submitted;
-                                hasDraft = !isSubmitted && settings && settings.slides && settings.slides.length > 0;
-                            } else {
-                                // Simple toggle
-                                isSubmitted = state.artifacts[itKey];
-                                hasDraft = false;
-                            }
-                        } else {
-                            const report = state.reports[itKey];
-                            isSubmitted = report && report.submitted;
-                            hasDraft = !isSubmitted && report && report.content;
                         }
 
                         const marker = document.createElement('div');
                         const catClass = group.id === 'effort' ? 'category-effort' : 'category-presentation';
-                        marker.className = `report-marker ${isSubmitted ? 'submitted' : (hasDraft ? 'draft' : 'pending')} ${catClass}`;
-
-                        if (isSubmitted) {
-                            marker.innerHTML = '<i data-lucide="check"></i>';
-                        } else if (hasDraft) {
-                            marker.innerHTML = '<span class="dot-icon">●</span>';
-                        }
-
-                        let statusText = isSubmitted ? '提出済' : (hasDraft ? '作成中(下書きあり)' : '未着手');
-                        if (progressText) statusText += ` (${progressText})`;
-                        marker.title = `${item.name} (${i}回目): ${statusText}\nクリックで編集・登録`;
-                        marker.onclick = () => {
-                            if (item.type === 'toggle') {
-                                if (['poster', 'leaflet', 'pamphlet_25', 'slides_25'].includes(item.key)) {
-                                    // Special interactive modal for detailed deliverables
-                                    openArtifactModal(itKey, item.name);
-                                } else {
-                                    // Simple toggle for others
-                                    state.artifacts[itKey] = !state.artifacts[itKey];
-                                    saveState();
-                                    renderGantt();
-                                }
-                            } else {
-                                switchView('reports');
-                                if (item.type === 'analysis') switchTab('analysis-report');
-                                else if (item.key === 'reflection') {
-                                    switchTab('reflection');
-                                    currentReflectionKey = itKey;
-                                    loadReflectionSheet();
-                                } else if (item.type === 'mutual' || item.key === 'mutual') {
-                                    switchTab('mutual');
-                                    currentMutualKey = itKey;
-                                    loadMutualEvaluation();
-                                } else {
-                                    switchTab('contribution');
-                                    currentContributionKey = itKey;
-                                    loadContributionSurvey();
-                                }
-                            }
-                        };
+                        marker.className = `report-marker ${isSub ? 'submitted' : (hasD ? 'draft' : 'pending')} ${catClass}`;
+                        if (isSub) marker.innerHTML = '<i data-lucide="check"></i>';
+                        else if (hasD) marker.innerHTML = '<span class="dot-icon">●</span>';
+                        marker.onclick = (e) => { e.stopPropagation(); gotoDeliverable(item.id, i); };
                         cell.appendChild(marker);
                     }
                 }
@@ -1882,11 +1909,39 @@ function deleteTask(index) {
 
 /** Open the detailed artifact setup modal (e.g. for Poster) */
 function openArtifactModal(key, name) {
+    // Redirect to the new Board View instead of opening a modal
+    switchView('deliverables');
+    renderArtifactBoard();
+    openArtifactEditor(key, name);
+}
+
+function openArtifactEditor(key, name) {
     currentArtifactKey = key;
     currentSlideIndex = -1;
-    document.getElementById('artifact-modal-title').textContent = `${name} 詳細設定`;
 
-    // Initialize data if not exists
+    // Show Editor, hide board and folder content
+    document.getElementById('deliverables-content').style.display = 'none';
+    document.getElementById('deliverables-board').style.display = 'none';
+    document.getElementById('deliverables-editor').style.display = 'flex';
+
+    document.getElementById('board-editor-title').textContent = `${name} 詳細編集`;
+
+    const editorTopBar = document.getElementById('board-editor-top-bar');
+    const modalHeaderInner = document.querySelector('#modal-artifact-detail .modal-header > div');
+    if (modalHeaderInner && !editorTopBar.contains(modalHeaderInner)) {
+        editorTopBar.appendChild(modalHeaderInner);
+        // Hide redundant title in the moved header
+        const oldTitle = modalHeaderInner.querySelector('h3');
+        if (oldTitle) oldTitle.style.display = 'none';
+    }
+
+    const editorContent = document.getElementById('board-editor-content');
+    const modalContent = document.querySelector('#modal-artifact-detail .artifact-detail-grid');
+
+    if (modalContent && !editorContent.contains(modalContent)) {
+        editorContent.appendChild(modalContent);
+    }
+
     if (!state.artifactSettings) state.artifactSettings = {};
     if (!state.artifactSettings[key]) {
         state.artifactSettings[key] = { slides: [], submitted: false };
@@ -1896,57 +1951,203 @@ function openArtifactModal(key, name) {
     renderArtifactSlides();
     renderArtifactMemberList();
 
+    // For current slide's presenters
+    renderArtifactPresenterChecks();
+    renderContributorChart();
+
     // Reset viewer
     document.getElementById('hotspot-container').style.display = 'none';
     document.getElementById('presenters-section').style.display = 'none';
     document.getElementById('viewer-placeholder').style.display = 'block';
 
-    // Apply Locking
     applyArtifactLockState(data.submitted, data.submittedAt);
 
-    document.getElementById('modal-artifact-detail').classList.add('active');
-    renderContributorChart();
-    if (window.lucide) lucide.createIcons();
+    document.getElementById('btn-board-draft-artifact').onclick = () => {
+        saveArtifactData();
+        showDeliverablesBoard();
+    };
+    document.getElementById('btn-board-submit-artifact').onclick = () => {
+        submitArtifactData();
+        showDeliverablesBoard();
+    };
+    document.getElementById('btn-board-close-editor').onclick = () => {
+        showDeliverablesBoard();
+    };
+
+    if (window.lucide) window.lucide.createIcons();
 }
+
+function showDeliverablesBoard() {
+    document.getElementById('deliverables-editor').style.display = 'none';
+    document.getElementById('deliverables-board').style.display = 'flex';
+    document.getElementById('deliverables-content').style.display = 'none';
+    renderArtifactBoard();
+}
+
+function renderArtifactBoard() {
+    const board = document.getElementById('deliverables-board');
+    const grid = document.getElementById('artifact-board-grid');
+    if (!board || !grid) return;
+
+    grid.innerHTML = '';
+
+    const ARTIFACT_DEFS = [
+        { key: 'poster', name: '事業企画ポスター（中間発表）', icon: 'image', color: '#4f46e5', desc: 'A1サイズ・縦' },
+        { key: 'leaflet', name: '事業企画リーフレット（中間発表）', icon: 'file-text', color: '#0ea5e9', desc: 'A4三つ折り・両面' },
+        { key: 'pamphlet_25', name: '製品・サービスパンフレット（最終発表）', icon: 'book-open', color: '#10b981', desc: 'A4・4P構成' },
+        { key: 'slides_25', name: '最終プレゼンスライド（最終発表）', icon: 'presentation', color: '#f59e0b', desc: '10〜15枚程度' }
+    ];
+
+    ARTIFACT_DEFS.forEach(def => {
+        const data = state.artifactSettings?.[def.key] || { slides: [], submitted: false };
+        const slides = Array.isArray(data.slides) ? data.slides : [];
+        const hasDraft = slides.length > 0;
+        const isSubmitted = !!data.submitted;
+
+        const card = document.createElement('div');
+        card.className = 'artifact-board-card';
+
+        const statusLabel = isSubmitted ? '提出済' : (hasDraft ? '作成中' : '未着手');
+        const statusClass = isSubmitted ? 'status-submitted' : (hasDraft ? 'status-draft' : 'status-pending');
+
+        // Presenters preview
+        let presenterAvatarsHTML = '';
+        if (hasDraft) {
+            const allPresenters = new Set();
+            slides.forEach(s => {
+                if (s && Array.isArray(s.presenters)) {
+                    s.presenters.forEach(p => {
+                        if (p !== undefined && p !== null) allPresenters.add(p);
+                    });
+                }
+            });
+            Array.from(allPresenters).slice(0, 3).forEach(pId => {
+                const m = state.members && state.members[pId];
+                if (m) {
+                    const initial = (m.lastName || '?').charAt(0);
+                    presenterAvatarsHTML += `<div class="mini-avatar" title="${escapeHtml(m.lastName || '')}">${escapeHtml(initial)}</div>`;
+                }
+            });
+            if (allPresenters.size > 3) {
+                presenterAvatarsHTML += `<div class="mini-avatar" style="background:#555">+${allPresenters.size - 3}</div>`;
+            }
+        }
+
+        const previewImg = (hasDraft && slides[0].src) ? slides[0].src : '';
+
+        card.innerHTML = `
+            <div class="card-status-badge ${statusClass}">${statusLabel}</div>
+            <div class="card-main-info">
+                <div class="card-icon-box" style="background: ${def.color}22; color: ${def.color}">
+                    <i data-lucide="${def.icon}"></i>
+                </div>
+                <div class="card-title-group">
+                    <h3 style="font-size: 1.05rem; margin:0;">${escapeHtml(def.name)}</h3>
+                    <p style="font-size: 0.75rem; color: var(--text-dim); margin:0;">${escapeHtml(def.desc)}</p>
+                </div>
+            </div>
+            <div class="thumbnail-preview" onclick="openArtifactEditor('${def.key}', '${escapeHtml(def.name)}')" style="cursor:pointer;">
+                ${previewImg ? `<img src="${previewImg}" alt="Preview" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">` : `
+                    <div class="thumbnail-empty">
+                        <i data-lucide="image-plus" style="width:24px; height:24px; opacity:0.3;"></i>
+                        <span>構成案を追加</span>
+                    </div>
+                `}
+            </div>
+            <div class="card-meta">
+                <div style="display:flex; align-items:center;">
+                    <span style="opacity:0.6; font-size: 0.8rem;">担当:</span>
+                    <div class="presenter-avatars">${presenterAvatarsHTML || '<span style="margin-left:5px; opacity:0.4;">--</span>'}</div>
+                </div>
+                <div style="opacity:0.6; font-size: 0.8rem;">${slides.length} 枚</div>
+            </div>
+            <button class="btn-card-action" onclick="openArtifactEditor('${def.key}', '${escapeHtml(def.name)}')" style="width:100%;">
+                <i data-lucide="edit-3"></i> 詳細設定・構成
+            </button>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+/** Open the detailed artifact setup modal (e.g. for Poster) */
+// This function is now replaced by openArtifactEditor, but keeping it for context if needed.
+// function openArtifactModal(key, name) {
+//     currentArtifactKey = key;
+//     currentSlideIndex = -1;
+//     document.getElementById('artifact-modal-title').textContent = `${name} 詳細設定`;
+
+//     // Initialize data if not exists
+//     if (!state.artifactSettings) state.artifactSettings = {};
+//     if (!state.artifactSettings[key]) {
+//         state.artifactSettings[key] = { slides: [], submitted: false };
+//     }
+//     const data = state.artifactSettings[key];
+
+//     renderArtifactSlides();
+//     renderArtifactMemberList();
+
+//     // Reset viewer
+//     document.getElementById('hotspot-container').style.display = 'none';
+//     document.getElementById('presenters-section').style.display = 'none';
+//     document.getElementById('viewer-placeholder').style.display = 'block';
+
+//     // Apply Locking
+//     applyArtifactLockState(data.submitted, data.submittedAt);
+
+//     document.getElementById('modal-artifact-detail').classList.add('active');
+//     renderContributorChart();
+//     if (window.lucide) lucide.createIcons();
+// }
 
 /** Apply or remove the locked state on the artifact modal */
 function applyArtifactLockState(isLocked, submittedAt) {
-    const modal = document.getElementById('modal-artifact-detail');
+    // This function now applies to the editor view, not a modal
+    const editor = document.getElementById('deliverables-editor');
     const banner = document.getElementById('artifact-submitted-banner');
     const atEl = document.getElementById('artifact-submitted-at');
-    const footerBtns = document.getElementById('artifact-modal-footer-btns');
+    const footerBtns = document.getElementById('artifact-modal-footer-btns'); // These buttons are now in the editor footer
 
     // Controls to disable
     const controls = [
         document.getElementById('btn-add-artifact-slide'),
-        document.getElementById('btn-draft-artifact-data'),
-        document.getElementById('btn-submit-artifact-data'),
+        document.getElementById('btn-draft-artifact-data'), // This is the old modal draft button
+        document.getElementById('btn-submit-artifact-data'), // This is the old modal submit button
         document.getElementById('btn-clear-hotspots'),
-        document.getElementById('btn-clear-all-hotspots')
+        document.getElementById('btn-clear-all-hotspots'),
+        document.getElementById('btn-board-draft-artifact'), // New editor draft button
+        document.getElementById('btn-board-submit-artifact') // New editor submit button
     ];
 
     if (isLocked) {
-        modal.classList.add('locked');
-        banner.style.display = 'flex';
+        editor.classList.add('locked');
+        if (banner) banner.style.display = 'flex';
         if (atEl && submittedAt) {
             atEl.textContent = `提出日時: ${new Date(submittedAt).toLocaleString('ja-JP')}`;
         }
         controls.forEach(c => { if (c) c.style.display = 'none'; });
         // Enable Rich Editor readonly if possible, or just overlay
-        document.getElementById('artifact-presentation-script').contentEditable = "false";
+        const scriptArea = document.getElementById('artifact-presentation-script');
+        if (scriptArea) scriptArea.contentEditable = "false";
     } else {
-        modal.classList.remove('locked');
-        banner.style.display = 'none';
+        editor.classList.remove('locked');
+        if (banner) banner.style.display = 'none';
         controls.forEach(c => { if (c) c.style.display = 'flex'; });
         // Restore buttons that were 'flex' originally
-        document.getElementById('btn-add-artifact-slide').style.display = 'block';
-        document.getElementById('artifact-presentation-script').contentEditable = "true";
+        const addSlideBtn = document.getElementById('btn-add-artifact-slide');
+        if (addSlideBtn) addSlideBtn.style.display = 'block';
+        const scriptArea = document.getElementById('artifact-presentation-script');
+        if (scriptArea) scriptArea.contentEditable = "true";
     }
 }
 
 /** Close the artifact modal */
 function closeArtifactModal() {
-    document.getElementById('modal-artifact-detail').classList.remove('active');
+    // This function is now replaced by showDeliverablesBoard()
+    // document.getElementById('modal-artifact-detail').classList.remove('active');
+    showDeliverablesBoard();
 }
 
 /** Clear all presenter assignments for the current slide */
@@ -1994,7 +2195,7 @@ function clearAllArtifactSlides() {
     if (!state.artifactSettings[currentArtifactKey] || !state.artifactSettings[currentArtifactKey].slides) return;
     if (state.artifactSettings[currentArtifactKey].slides.length === 0) return;
 
-    if (!confirm('この成果物のすべてのスライドと担当設定を完全に削除しますか？\n(削除後、元に戻すことはできません)')) return;
+    if (!confirm('この提出物のすべてのスライドと担当設定を完全に削除しますか？\n(削除後、元に戻すことはできません)')) return;
 
     state.artifactSettings[currentArtifactKey].slides = [];
     currentSlideIndex = -1;
@@ -2132,12 +2333,12 @@ function exportArtifactScript() {
             for (const task of Object.values(phase.tasks || {})) {
                 if (task.artifacts) {
                     for (const art of task.artifacts) {
-                        if (art.key === currentArtifactKey) return art.name || '成果物';
+                        if (art.key === currentArtifactKey) return art.name || '提出物';
                     }
                 }
             }
         }
-        return '成果物';
+        return '提出物';
     })();
 
     const slidePages = settings.slides.map((slide, idx) => {
@@ -2290,7 +2491,6 @@ ${slidePages}
     win.document.close();
 }
 
-
 /** Render contributor ratio bar chart in the modal footer */
 function renderContributorChart() {
     const container = document.getElementById('artifact-contributor-chart');
@@ -2366,6 +2566,109 @@ function renderContributorChart() {
             </div>
         </div>
     `;
+
+    // Also update global header stats
+    renderHeaderGraphs();
+}
+
+/** Render tiny contributor graphs in the application header */
+function renderHeaderGraphs() {
+    const statsContainer = document.getElementById('header-stats');
+    if (!statsContainer) return;
+
+    if (!currentArtifactKey) {
+        statsContainer.style.display = 'none';
+        return;
+    }
+
+    // Use currentArtifactKey to get the stats for the currently opened artifact
+    const artifactData = state.artifactSettings ? state.artifactSettings[currentArtifactKey] : null;
+    if (!artifactData || !artifactData.slides || artifactData.slides.length === 0) {
+        statsContainer.innerHTML = '';
+        statsContainer.style.display = 'none';
+        return;
+    }
+    statsContainer.style.display = 'flex';
+    statsContainer.style.gap = '2rem';
+
+    const slides = artifactData.slides;
+
+    // 1. Presentation Ratio
+    const presMap = {};
+    slides.forEach(slide => {
+        (slide.presenters || []).forEach(idx => {
+            presMap[idx] = (presMap[idx] || 0) + 1;
+        });
+    });
+    const presTotal = Object.values(presMap).reduce((s, v) => s + v, 0);
+
+    // 2. Creation Ratio
+    const areaMap = {};
+    slides.forEach(slide => {
+        (slide.hotspots || []).forEach(hs => {
+            const idx = hs.authorIdx;
+            const area = (hs.rect.w * hs.rect.h) / 10000;
+            areaMap[idx] = (areaMap[idx] || 0) + area;
+        });
+    });
+    const areaTotal = Object.values(areaMap).reduce((s, v) => s + v, 0);
+
+    const buildChart = (map, total, label) => {
+        if (total === 0) return '';
+        const memberColors = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#06b6d4'];
+
+        const segs = Object.keys(map)
+            .sort((a, b) => parseInt(a) - parseInt(b)) // sort by id for legend
+            .map(idxKey => {
+                const val = map[idxKey];
+                const idx = parseInt(idxKey);
+                const color = memberColors[idx % memberColors.length];
+                const pct = Math.round((val / total) * 100);
+                const member = state.members[idx];
+                const name = member ? (member.lastName || `M${idx}`) : `M${idx}`;
+                return { name, pct, color, idx };
+            }).filter(s => s.pct > 0).sort((a, b) => b.pct - a.pct);
+
+        const bars = Object.keys(map)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .map(idxKey => {
+                const val = map[idxKey];
+                const idx = parseInt(idxKey);
+                const pct = (val / total) * 100;
+                const color = memberColors[idx % memberColors.length];
+                const member = state.members[idx];
+                const name = member ? (member.lastName || `M${idx}`) : `M${idx}`;
+                return `<div title="${name}: ${Math.round(pct)}%" style="flex:${pct}; background:${color}; height:100%;"></div>`;
+            }).join('');
+
+        const legend = segs.map(s =>
+            `<span style="display:inline-flex; align-items:center; gap:3px; font-size:10px; color:var(--text-dim); white-space:nowrap;">
+                <span style="width:8px;height:8px;border-radius:2px;background:${s.color};display:inline-block;"></span>
+                ${s.name} ${s.pct}%
+            </span>`
+        ).join('');
+
+        return `
+        <div style="display:flex; flex-direction:column; gap:6px; min-width: 140px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size: 11px; font-weight:600; color:var(--text-main); white-space:nowrap;">${label}</span>
+                <div style="flex:1; height:8px; background:rgba(255,255,255,0.05); border-radius:4px; display:flex; overflow:hidden; gap:1px; width: 120px;">
+                    ${bars}
+                </div>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; line-height:1;">
+                ${legend}
+            </div>
+        </div>`;
+    };
+
+    const presHtml = buildChart(presMap, presTotal, '🎤 発表担当');
+    const creationHtml = buildChart(areaMap, areaTotal, '🎨 制作担当');
+
+    statsContainer.innerHTML = `
+        ${presHtml}
+        ${creationHtml}
+    `;
 }
 
 /** Render slide thumbnail list in sidebar */
@@ -2403,6 +2706,7 @@ function renderArtifactSlides() {
 /** Select a slide to view/edit hotspots */
 function selectArtifactSlide(idx) {
     currentSlideIndex = idx;
+    resetArtifactZoom(); // Reset zoom when switching slides
     renderArtifactSlides();
 
     const slide = state.artifactSettings[currentArtifactKey].slides[idx];
@@ -2478,30 +2782,46 @@ function removeArtifactSlide(idx) {
 
 /** Set up mousedown/move/up listeners for rectangle drawing */
 function initHotspotLogic() {
+    const viewer = document.getElementById('artifact-viewer');
     const container = document.getElementById('hotspot-container');
     const drawingRect = document.getElementById('drawing-rect');
 
     container.addEventListener('mousedown', (e) => {
         if (currentSlideIndex === -1) return;
         const rect = container.getBoundingClientRect();
-        isDrawingHotspot = true;
 
-        // Use clientX/Y to get consistent coordinates regardless of where mousedown originated
-        hotspotStartPos = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
+        if (artifactEditorMode === 'drag') {
+            isPanningViewer = true;
+            container.style.cursor = 'grabbing';
+            panStartScroll = { left: viewer.scrollLeft, top: viewer.scrollTop };
+            panStartMouse = { x: e.clientX, y: e.clientY };
+        } else {
+            isDrawingHotspot = true;
+            // Coordinates relative to the container as it is right now (with zoom)
+            hotspotStartPos = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
 
-        drawingRect.style.left = hotspotStartPos.x + 'px';
-        drawingRect.style.top = hotspotStartPos.y + 'px';
-        drawingRect.style.width = '0px';
-        drawingRect.style.height = '0px';
-        drawingRect.style.display = 'block';
+            drawingRect.style.left = hotspotStartPos.x + 'px';
+            drawingRect.style.top = hotspotStartPos.y + 'px';
+            drawingRect.style.width = '0px';
+            drawingRect.style.height = '0px';
+            drawingRect.style.display = 'block';
+        }
 
-        e.preventDefault(); // Prevent text selection
+        e.preventDefault();
     });
 
     window.addEventListener('mousemove', (e) => {
+        if (isPanningViewer) {
+            const dx = e.clientX - panStartMouse.x;
+            const dy = e.clientY - panStartMouse.y;
+            viewer.scrollLeft = panStartScroll.left - dx;
+            viewer.scrollTop = panStartScroll.top - dy;
+            return;
+        }
+
         if (!isDrawingHotspot) return;
         const rect = container.getBoundingClientRect();
         const currentX = e.clientX - rect.left;
@@ -2519,6 +2839,12 @@ function initHotspotLogic() {
     });
 
     window.addEventListener('mouseup', (e) => {
+        if (isPanningViewer) {
+            isPanningViewer = false;
+            container.style.cursor = 'grab';
+            return;
+        }
+
         if (!isDrawingHotspot) return;
         isDrawingHotspot = false;
         drawingRect.style.display = 'none';
@@ -2538,7 +2864,8 @@ function initHotspotLogic() {
 
         if (w < 10 || h < 10) return; // Ignore tiny rects
 
-        // Convert to Percentages for responsiveness
+        // Convert to Percentages relative to the current container size
+        // Since hotspots use %, this works regardless of current zoom
         const px = (x1 / rect.width) * 100;
         const py = (y1 / rect.height) * 100;
         const pw = (w / rect.width) * 100;
@@ -2647,7 +2974,7 @@ function saveArtifactData() {
     if (!currentArtifactKey) return;
     const data = state.artifactSettings[currentArtifactKey];
     if (data && data.submitted) {
-        alert('この成果物はすでに提出済みです。');
+        alert('この提出物はすでに提出済みです。');
         return;
     }
 
@@ -2660,11 +2987,12 @@ function saveArtifactData() {
     saveState();
 
     // Visual feedback
-    const btn = document.getElementById('btn-draft-artifact-data');
-    const orig = btn.innerText;
-    btn.innerText = '保存しました';
+    const btn = document.getElementById('btn-board-draft-artifact'); // Updated to new button ID
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="check"></i> 保存しました';
     btn.style.background = '#059669';
-    setTimeout(() => { btn.innerText = orig; btn.style.background = ''; }, 1500);
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; if (window.lucide) lucide.createIcons(); }, 1500);
 
     renderGantt();
     updateDisplayInfo();
@@ -2680,7 +3008,7 @@ function submitArtifactData() {
         return;
     }
 
-    if (!confirm('この成果物を「最終提出」しますか？\n提出後の編集はできなくなります（解除にはパスワードが必要です）。')) return;
+    if (!confirm('この提出物を「最終提出」しますか？\n提出後の編集はできなくなります（解除にはパスワードが必要です）。')) return;
 
     data.submitted = true;
     data.submittedAt = new Date().toISOString();
@@ -2835,7 +3163,7 @@ function setupWrCounter(textareaId, countId, statusId, min, max) {
         } else if (len < min) {
             statusEl.classList.add('low'); statusEl.textContent = 'もう少し';
         } else {
-            statusEl.classList.add('over'); statusEl.textContent = '趁E��';
+            statusEl.classList.add('over'); statusEl.textContent = '趁E';
         }
     };
     ta.addEventListener('input', () => {
@@ -2937,7 +3265,7 @@ function buildTaskCheckboxes() {
     container.innerHTML = '';
 
     if (!state.tasks || state.tasks.length === 0) {
-        container.innerHTML = '<p class="wr-hint">タスクが登録されてぁE��せん�E�ガントチャートで追加してください�E�E/p>';
+        container.innerHTML = '<p class="wr-hint">タスクが登録されてぁEせんEガントチャートで追加してくださいEE/p>';
         return;
     }
 
@@ -2946,7 +3274,7 @@ function buildTaskCheckboxes() {
 
     // Group tasks by category
     const groups = [
-        { id: 'effort', label: '取り絁E��タスク', color: '#6366f1', tasks: state.tasks.filter(t => !t.category || t.category === 'effort') },
+        { id: 'effort', label: '取り絁Eタスク', color: '#6366f1', tasks: state.tasks.filter(t => !t.category || t.category === 'effort') },
         { id: 'presentation', label: '発表・成果タスク', color: '#f59e0b', tasks: state.tasks.filter(t => t.category === 'presentation') }
     ];
 
@@ -3022,7 +3350,7 @@ function renderProcessFlows() {
         } else {
             item.innerHTML = `
                 <div class="wr-process-flow-label">${task.name}</div>
-                <div class="wr-no-flow" style="padding:1rem;">プロセスフロー未登録<br><small>タスクを編雁E��てマインド�EチE�Eを保存してください</small></div>
+                <div class="wr-no-flow" style="padding:1rem;">プロセスフロー未登録<br><small>タスクを編雁EてマインドEチEEを保存してください</small></div>
             `;
         }
         gallery.appendChild(item);
@@ -3299,7 +3627,7 @@ function buildMindMapSvgForPrint(pf) {
                 defs.appendChild(clipPath);
                 group.appendChild(defs);
 
-                const img = mk('image', { x: x - r, y: y - r, width: r * 2, height: r * 2, href: m.avatarImage, 'clip-path': `url(#${clipId})`, preserveAspectRatio: 'xMidYMid slice' });
+                const img = mk('image', { x: x, y: y, width: r * 2, height: r * 2, href: m.avatarImage, 'clip-path': `url(#${clipId})`, preserveAspectRatio: 'xMidYMid slice' });
                 group.appendChild(img);
             } else {
                 const txt = mk('text', { x: x, y: y + 3, 'text-anchor': 'middle', fill: '#fff', 'font-size': '9', 'font-weight': 'bold', 'font-family': 'sans-serif' });
@@ -3310,8 +3638,8 @@ function buildMindMapSvgForPrint(pf) {
         svg.appendChild(group);
     };
 
-    // Map to store node center coordinates for relations - already declared at top of function if added properly, 
-    // but looking at previous step, it was added at line 2379. 
+    // Map to store node center coordinates for relations - already declared at top of function if added properly,
+    // but looking at previous step, it was added at line 2379.
     // Let's just ensure we use the one instance.
     const rootCY = H / 2;
 
@@ -3977,7 +4305,7 @@ function saveAnalysisReport(isSubmit = false) {
     renderGantt();
 }
 /*
-alert('課題設定レポ�Eトを保存しました');
+alert('課題設定レポEトを保存しました');
 
 
 */
@@ -4372,7 +4700,7 @@ window.addReflectionFeedbackEntry = (content = '', presentation = '', index = -1
         <div class="form-group mb-1">
             <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display:block;">〔内容面〕</label>
             <div class="wr-textarea-wrap">
-                <textarea id="${contentId}" class="wr-textarea reflection-content-input" rows="2" style="min-height: 60px;" 
+                <textarea id="${contentId}" class="wr-textarea reflection-content-input" rows="2" style="min-height: 60px;"
                     placeholder="内容に関する指摘内容" oninput="updateCharCount('${contentId}', '${contentCountId}')">${content}</textarea>
                 <div class="wr-char-counter"><span id="${contentCountId}">0</span> 文字</div>
             </div>
@@ -4380,7 +4708,7 @@ window.addReflectionFeedbackEntry = (content = '', presentation = '', index = -1
         <div class="form-group">
             <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display:block;">〔発表の仕方〕</label>
             <div class="wr-textarea-wrap">
-                <textarea id="${presentationId}" class="wr-textarea reflection-presentation-input" rows="2" style="min-height: 60px;" 
+                <textarea id="${presentationId}" class="wr-textarea reflection-presentation-input" rows="2" style="min-height: 60px;"
                     placeholder="発表の仕方に関する指摘内容" oninput="updateCharCount('${presentationId}', '${presentationCountId}')">${presentation}</textarea>
                 <div class="wr-char-counter"><span id="${presentationCountId}">0</span> 文字</div>
             </div>
@@ -4639,7 +4967,7 @@ function importData(e) {
                 }
 
                 // D. Artifact Settings (Safe Merge)
-                // If local has no slides for a type, allow import to fill it. 
+                // If local has no slides for a type, allow import to fill it.
                 // If local has slides, keep local (User is working on it).
                 if (imported.artifactSettings) {
                     if (!state.artifactSettings) state.artifactSettings = {};
@@ -4918,10 +5246,10 @@ function renderRecentActivity() {
 
     // Artifacts
     const artifactNames = {
-        poster: '事業企画ポスター',
-        leaflet: '事業企画リーフレット',
-        pamphlet_25: '製品パンフレット',
-        slides_25: '最終プレゼンスライド'
+        poster: '事業企画ポスター（中間発表）',
+        leaflet: '事業企画リーフレット（中間発表）',
+        pamphlet_25: '製品・サービスパンフレット（最終発表）',
+        slides_25: '最終プレゼンスライド（最終発表）'
     };
 
     Object.keys(state.artifactSettings || {}).forEach(key => {
@@ -4929,7 +5257,7 @@ function renderRecentActivity() {
         if (setting && setting.updatedAt) {
             activities.push({
                 date: new Date(setting.updatedAt),
-                text: `成果物 [${artifactNames[key] || key}] を更新しました`,
+                text: `提出物 [${artifactNames[key] || key}] を更新しました`,
                 icon: 'file-up'
             });
         }
@@ -4947,7 +5275,7 @@ function renderRecentActivity() {
         `).join('');
         if (window.lucide) lucide.createIcons();
     } else {
-        list.innerHTML = '<li class="empty-msg">活動�Eまだありません</li>';
+        list.innerHTML = '<li class="empty-msg">活動Eまだありません</li>';
     }
 }
 
@@ -5118,9 +5446,9 @@ function markMessagesAsRead() {
 
     let updated = false;
     // Mark only visible messages in current topic as read? Or all?
-    // Let's mark ALL unread messages as read when opening board, regardless of topic, 
+    // Let's mark ALL unread messages as read when opening board, regardless of topic,
     // OR just messages in the current topic when viewing it.
-    // LINE style: Opening a chat room marks messages in THAT room as read. 
+    // LINE style: Opening a chat room marks messages in THAT room as read.
     // Here we have "Topics" which act like rooms. So mark only current topic messages.
 
     const currentTopicId = state.currentTopicId || 'general';
@@ -5128,11 +5456,11 @@ function markMessagesAsRead() {
     state.messages.forEach(msg => {
         if ((msg.topicId || 'general') !== currentTopicId) return;
 
-        // If I am the sender, I don't "read" it ensuring I don't increment my own count? 
-        // Usually chat apps count sender as "read" implicitly or just ignore. 
-        // Let's ignore sender reading their own message for the count display purposes, 
-        // OR add to readBy safely. 
-        // To behave like LINE: Sender sees "Read X" for OTHERS. 
+        // If I am the sender, I don't "read" it ensuring I don't increment my own count?
+        // Usually chat apps count sender as "read" implicitly or just ignore.
+        // Let's ignore sender reading their own message for the count display purposes,
+        // OR add to readBy safely.
+        // To behave like LINE: Sender sees "Read X" for OTHERS.
         // Receiver sees nothing special effectively.
 
         if (msg.senderKey === selfKey) return; // Don't mark my own messages as read by me (redundant)
@@ -5422,7 +5750,7 @@ function selectMention(member) {
     const before = val.substring(0, mentionState.cursorPos);
     // Find end of current word/query
     // actually, handleMentionInput logic assumes we are at the end of query cursor
-    // But if user moved cursor back, we might need adjustments. 
+    // But if user moved cursor back, we might need adjustments.
     // For simplicity: replace from @ to cursor.
 
     // We used handleMentionInput which tracks query from lastAtPos to SelectionStart.
@@ -5777,38 +6105,66 @@ function renderAttachmentPreview() { renderAttachmentPreviews(); }
 function renderDeliverables(folderId = 'root') {
     const container = document.getElementById('deliverables-content');
     const breadcrumb = document.getElementById('deliverables-breadcrumb');
-    if (!container || !breadcrumb) return;
+    const board = document.getElementById('deliverables-board');
+    const editor = document.getElementById('deliverables-editor');
 
+    if (!container) return;
+
+    // Reset visibility and clear content
     container.innerHTML = '';
+    container.style.display = 'grid'; // Ensure grid layout for root and reports
 
-    // Breadcrumb setup
+    if (board) board.style.display = 'none';
+    if (editor) editor.style.display = 'none';
+
+    const breadcrumbElement = document.getElementById('deliverables-breadcrumb');
+    if (breadcrumbElement) {
+        breadcrumbElement.innerHTML = '';
+        breadcrumbElement.style.display = 'flex'; // Ensure breadcrumb is visible
+    }
     if (folderId === 'root') {
-        breadcrumb.innerHTML = '<span class="breadcrumb-item active"><i data-lucide="package" style="width:14px;height:14px;"></i> 成果物ルート</span>';
+        if (breadcrumbElement) breadcrumbElement.innerHTML = '<span class="breadcrumb-item active"><i data-lucide="package" style="width:14px;height:14px;"></i> 提出物ルート</span>';
     } else {
-        const icon = folderId === 'reports' ? 'clipboard-list' : 'presentation';
-        const label = folderId === 'reports' ? '活動報告書' : '提出用成果物';
-        breadcrumb.innerHTML = `
+        const folderLabels = {
+            reports: { label: '活動報告書', icon: 'file-text' },
+            assignment: { label: '課題設定レポート', icon: 'clipboard-list' },
+            presentation: { label: '発表用資料', icon: 'presentation' },
+            contribution: { label: '貢献度調査', icon: 'users-2' },
+            group_eval: { label: '相互評価シート', icon: 'vibrate' },
+            feedback: { label: '振り返りシート', icon: 'refresh-ccw' }
+        };
+        const folderCtx = folderLabels[folderId] || { label: 'フォルダ', icon: 'folder' };
+
+        if (breadcrumbElement) breadcrumbElement.innerHTML = `
             <span class="breadcrumb-item" onclick="renderDeliverables('root')" style="cursor:pointer">
-                <i data-lucide="package" style="width:14px;height:14px;"></i> 成果物ルート
+                <i data-lucide="package" style="width:14px;height:14px;"></i> 提出物ルート
             </span>
             <span class="breadcrumb-item active">
-                <i data-lucide="${icon}" style="width:14px;height:14px;"></i> ${label}
+                <i data-lucide="${folderCtx.icon}" style="width:14px;height:14px;"></i> ${folderCtx.label}
             </span>
         `;
     }
 
     if (folderId === 'root') {
-        const startIter = state.deliverableTargets?.workReportStart || 3;
-        const folders = [
-            { id: 'reports', name: '活動報告書', icon: 'clipboard-list', desc: `各回の実施報告書 (第${startIter}回〜)`, color: '#6366f1' },
-            { id: 'presentation', name: '提出用成果物', icon: 'presentation', desc: 'ポスター・スライド・レポート', color: '#f59e0b' }
-        ];
+        const rootFolders = DELIVERABLE_MASTER_LIST;
 
-        folders.forEach(f => {
+        rootFolders.forEach(f => {
             const item = createDeliverableItem(f.name, f.icon, f.desc, f.color);
-            item.onclick = () => renderDeliverables(f.id);
+            item.onclick = () => {
+                const multiFolders = ['reports', 'contribution', 'group_eval', 'feedback'];
+                if (multiFolders.includes(f.id)) {
+                    renderDeliverables(f.id);
+                } else {
+                    gotoDeliverable(f.id);
+                }
+            };
             container.appendChild(item);
         });
+    } else if (folderId === 'presentation') {
+        // Show the Board View instead of the grid items
+        container.style.display = 'none';
+        document.getElementById('deliverables-board').style.display = 'flex';
+        renderArtifactBoard();
     } else if (folderId === 'reports') {
         const startIter = state.deliverableTargets?.workReportStart || 3;
         const currentSchedule = (state.schedule && state.schedule.length > 0) ? state.schedule : DEFAULT_SCHEDULE;
@@ -5827,6 +6183,8 @@ function renderDeliverables(folderId = 'root') {
                 isSubmitted
             );
             item.onclick = () => {
+                switchView('reports');
+                switchTab('work-report');
                 if (isSubmitted) {
                     openWorkReport(s.id);
                     setTimeout(() => previewWorkReport(), 100);
@@ -5836,54 +6194,62 @@ function renderDeliverables(folderId = 'root') {
             };
             container.appendChild(item);
         });
-    } else if (folderId === 'presentation') {
-        const ARTIFACT_DEFS = [
-            { key: 'poster', name: '事業企画ポスター', icon: 'image', color: '#4f46e5' },
-            { key: 'leaflet', name: '事業企画リーフレット', icon: 'file-text', color: '#0ea5e9' },
-            { key: 'pamphlet_25', name: '製品・サービスパンフレット', icon: 'book-open', color: '#10b981' },
-            { key: 'slides_25', name: '最終プレゼンスライド', icon: 'presentation', color: '#f59e0b' },
-            { key: 'analysis', name: '課題設定レポート (分析)', icon: 'file-bar-chart', color: '#6366f1' }
-        ];
+    } else if (['contribution', 'group_eval', 'feedback'].includes(folderId)) {
+        const mapping = {
+            contribution: { key: 'contribution', label: '貢献度調査', icon: 'users-2', color: '#ec4899', onceSuffix: 'まで' },
+            group_eval: { key: 'mutual', label: '相互評価シート', icon: 'vibrate', color: '#8b5cf6', onceSuffix: '' },
+            feedback: { key: 'reflection', label: '振り返りシート', icon: 'refresh-ccw', color: '#0ea5e9', onceSuffix: '' }
+        };
+        const ctx = mapping[folderId];
+        const targets = (state.deliverableTargets || DEFAULT_DELIVERABLE_TARGETS)[ctx.key] || [];
 
-        ARTIFACT_DEFS.forEach(def => {
-            let isFinal = false;
-            let hasDraft = false;
-            let statusLabel = '未登録';
-            let statusColor = 'var(--text-dim)';
+        targets.forEach(iter => {
+            const storageKey = `${folderId}_${iter}`;
+            const r = state.reports[storageKey];
+            let isSub = false;
+            let hasD = false;
 
-            if (def.key === 'analysis') {
-                const r = state.reports && state.reports['analysis'];
-                isFinal = r && r.updatedAt;
-                statusLabel = isFinal ? '作成済み' : '未作成';
-                statusColor = isFinal ? 'var(--success)' : 'var(--text-dim)';
-            } else {
-                const settings = state.artifactSettings && state.artifactSettings[def.key];
-                isFinal = settings && settings.submitted;
-                hasDraft = settings && settings.slides && settings.slides.length > 0 && !isFinal;
-
-                if (isFinal) {
-                    statusLabel = '最終提出済み';
-                    statusColor = 'var(--success)';
-                } else if (hasDraft) {
-                    statusLabel = '下書き保存中';
-                    statusColor = 'var(--warning)';
+            if (['contribution', 'group_eval'].includes(folderId)) {
+                const members = state.members || [];
+                if (r && members.length > 0) {
+                    let subCount = 0; let startCount = 0;
+                    members.forEach(m => {
+                        const ur = r[m.id];
+                        if (ur) {
+                            if (ur.submitted) subCount++;
+                            if (ur.updatedAt || ur.evaluations) startCount++;
+                        }
+                    });
+                    isSub = subCount >= members.length;
+                    hasD = !isSub && startCount > 0;
                 }
+            } else {
+                isSub = !!r?.submitted;
+                hasD = !isSub && !!r?.content;
             }
 
-            const item = createDeliverableItem(def.name, def.icon, statusLabel, statusColor, isFinal);
-            item.onclick = () => {
-                if (isFinal && def.key !== 'analysis') {
-                    openArtifactModal(def.key, def.name);
-                    setTimeout(() => { exportArtifactScript(); closeArtifactModal(); }, 100);
-                } else if (def.key === 'analysis') {
-                    switchView('reports');
-                    switchTab('analysis-report');
-                } else {
-                    openArtifactModal(def.key, def.name);
-                }
-            };
+            const statusLabel = isSub ? '提出済み' : (hasD ? '下書き' : '未作成');
+            const statusColor = isSub ? 'var(--success)' : (hasD ? 'var(--warning)' : 'var(--text-dim)');
+            const iterLabel = iter === 13 ? `中間発表${ctx.onceSuffix}` : `最終発表${ctx.onceSuffix}`;
+
+            const item = createDeliverableItem(
+                `${ctx.label}（${iterLabel}）`,
+                ctx.icon,
+                statusLabel,
+                statusColor,
+                isSub
+            );
+            item.onclick = () => gotoDeliverable(folderId, iter);
             container.appendChild(item);
         });
+    } else if (folderId === 'assignment') {
+        const ctx = { tab: 'analysis-report', label: '課題設定レポート', icon: 'clipboard-list', color: '#10b981' };
+        const isSub = !!state.reports[ctx.tab]?.submitted;
+        const statusLabel = isSub ? '提出済み' : (state.reports[ctx.tab]?.content ? '作成中' : '未作成');
+
+        const item = createDeliverableItem(ctx.label, ctx.icon, statusLabel, ctx.color, isSub);
+        item.onclick = () => { switchView('reports'); switchTab(ctx.tab); };
+        container.appendChild(item);
     }
 
     if (window.lucide) lucide.createIcons();
@@ -8114,7 +8480,7 @@ window.loadTutorial = (brandId) => {
             '5W_WHAT': [{ id: Date.now() + 720, content: "データの永続性とレポート出力を保証する技術基盤（保存・読込・PDF）", color: "#dcfce7" }],
             '5W_WHEN': [{ id: Date.now() + 721, content: "アプリケーションのMVP開発から商用展開フェーズ", color: "#e0e7ff" }],
             '5W_WHERE': [{ id: Date.now() + 722, content: "ウェブブラウザ基盤およびローカルストレージ層", color: "#ffedd5" }],
-            '5W_WHY': [{ id: Date.now() + 723, content: "ユーザーの思考を止めず、成果物を確実にアウトプットするため", color: "#fce7f3" }],
+            '5W_WHY': [{ id: Date.now() + 723, content: "ユーザーの思考を止めず、提出物を確実にアウトプットするため", color: "#fce7f3" }],
             '5W_HOW': [{ id: Date.now() + 724, content: "JavaScriptによる状態管理と、CSSによるPrint Medien最適化", color: "#ecfdf5" }],
             '3C_CUSTOMER': [{ id: Date.now() + 725, content: "安定稼働と「一発で綺麗なPDF」を求めるユーザー", color: "#fef3c7" }],
             '3C_COMPETITOR': [{ id: Date.now() + 726, content: "ブラウザ標準の不明瞭な印刷機能、外部の有料PDF生成API", color: "#dcfce7" }],
