@@ -69,7 +69,9 @@ let state = {
     ],
     bookmarks: [],
     deliverableTargets: DEFAULT_DELIVERABLE_TARGETS,
-    bmc: {} // { sectionId: [ { id, text, color, image, order } ] }
+    bmc: {}, // { sectionId: [ { id, text, color, image, order } ] }
+    polls: [], // { id, title, options: [{id, text, votes: [memberIdx]}], status: 'active/closed', type: 'single/multiple' }
+    currentPollId: null
 };
 
 // --- Mention State ---
@@ -91,6 +93,12 @@ let currentArtifactKey = null;
 let currentSlideIndex = -1;
 let isDrawingHotspot = false;
 let hotspotStartPos = { x: 0, y: 0 };
+
+// --- Poll Creation Modal State ---
+let pollCreationMode = 'text'; // 'text' or 'calendar'
+let miniCalendarYear = new Date().getFullYear();
+let miniCalendarMonth = new Date().getMonth();
+let selectedDates = []; // Array of ISO date strings
 
 const MEMBER_ROLES = [
     { title: 'プロジェクトリーダー', desc: 'プロジェクトの取りまとめ' },
@@ -624,6 +632,12 @@ function initEventListeners() {
     document.getElementById('btn-clear-hotspots').addEventListener('click', clearSlideHotspots);
     document.getElementById('btn-clear-all-hotspots').addEventListener('click', clearAllSlidesAssignments);
 
+    // Polls
+    document.getElementById('btn-create-poll-mode')?.addEventListener('click', () => showPollCreateForm());
+    document.getElementById('btn-add-poll-option')?.addEventListener('click', addPollOptionInput);
+    document.getElementById('btn-save-poll')?.addEventListener('click', saveNewPoll);
+    document.getElementById('btn-cancel-poll')?.addEventListener('click', hidePollCreateForm);
+
     // Report Tabs switching
     document.querySelectorAll('.report-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -692,6 +706,7 @@ function switchView(viewId) {
         mindmap: 'マインドマップ',
         messages: 'メンバー伝言板',
         bookmarks: 'ブックマーク・参考ソース',
+        polls: '投票・日程調整',
         deliverables: '成果物フォルダ',
         teamwork: 'チームワーク形成',
         'tech-core': '技術コア開発',
@@ -699,6 +714,10 @@ function switchView(viewId) {
     };
     document.getElementById('view-title').textContent = titles[viewId] || 'PBL2 Manager';
 
+    if (viewId === 'polls') {
+        renderPollList();
+        renderActivePoll();
+    }
     if (viewId === 'mindmap' && typeof MindMapModule !== 'undefined') {
         const savedGlobal = localStorage.getItem('mindmap_data_v1');
         MindMapModule.resetToGlobal();
@@ -1630,6 +1649,8 @@ function migrateData(data) {
     if (data.isConfigLocked === undefined) data.isConfigLocked = false;
     if (data.companyName === undefined) data.companyName = '';
     if (data.deliverableTargets === undefined) data.deliverableTargets = DEFAULT_DELIVERABLE_TARGETS;
+    if (data.polls === undefined) data.polls = [];
+    if (data.currentPollId === undefined) data.currentPollId = null;
 
     // Tasks
     if (Array.isArray(data.tasks)) {
@@ -4537,6 +4558,7 @@ function renderAll() {
     renderUpcomingSchedule();
     renderRoleGuide();
     updateMessageNotification(); // Ensure sidebar badge is updated on load
+    if (typeof updatePollNotification === 'function') updatePollNotification();
 }
 
 function renderRecentActivity() {
@@ -7964,3 +7986,488 @@ window.loadTechTutorial = (id) => {
     switchView('tech-core');
     alert(`${names[id]}の設計図例を読み込みました。`);
 };
+
+// --- Polls & Schedule Adjustment ---
+function renderPollList() {
+    const listEl = document.getElementById("polls-list");
+    if (!listEl) return;
+
+    if (!state.polls || state.polls.length === 0) {
+        listEl.innerHTML = "<div class=\"empty-msg\">投票はまだありません</div>";
+        return;
+    }
+
+    // Auto-check deadlines before rendering
+    checkPollDeadlines();
+
+    listEl.innerHTML = state.polls.map(poll => {
+        const isActive = poll.id === state.currentPollId;
+        const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
+        const statusLabel = isClosed ? "終了" : "進行中";
+        const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
+        const isUnvoted = !isClosed && totalVotes === 0;
+
+        return `
+            <div class="poll-item ${isActive ? "active-poll" : ""} ${isUnvoted ? "unvoted-poll" : ""}" onclick="selectPoll('${poll.id}')">
+                <div class="poll-item-title">
+                    ${poll.title}
+                    ${isUnvoted ? '<span class="unvoted-dot"></span>' : ''}
+                </div>
+                <div class="poll-item-meta">
+                    <span class="poll-status-badge ${!isClosed ? "poll-status-active" : "poll-status-closed"}">${statusLabel}</span>
+                    <span>${totalVotes} 票</span>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    if (typeof updatePollNotification === "function") updatePollNotification();
+}
+
+window.selectPoll = (pollId) => {
+    state.currentPollId = pollId;
+    hidePollCreateForm();
+    renderPollList();
+    renderActivePoll();
+};
+
+function renderActivePoll() {
+    const detailEl = document.getElementById("poll-detail-content");
+    if (!detailEl) return;
+
+    const poll = state.polls.find(p => p.id === state.currentPollId);
+    if (!poll) {
+        detailEl.innerHTML = `
+            <div class="empty-poll-detail">
+                <i data-lucide="vote" style="width: 48px; height: 48px; opacity: 0.2; margin-bottom: 1rem;"></i>
+                <p>左のリストから投票を選択するか、新規作成してください</p>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons({ root: detailEl });
+        return;
+    }
+
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+    const isCreator = poll.createdBy === userId;
+
+    const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
+    const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
+    const statusLabel = isClosed ? "終了" : "進行中";
+
+    let deadlineHtml = "";
+    if (poll.deadline) {
+        const d = new Date(poll.deadline);
+        deadlineHtml = `
+            <div class="poll-deadline-display">
+                <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                期限: ${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}
+                ${isClosed ? " (期限終了)" : ""}
+            </div>
+        `;
+    }
+
+    const anonymityLabel = poll.isAnonymous ? "匿名投票" : "記名投票（アバター公開）";
+
+    let optionsHtml = poll.options.map(opt => {
+        const votesCount = opt.votes ? opt.votes.length : 0;
+        const percent = totalVotes === 0 ? 0 : Math.round((votesCount / totalVotes) * 100);
+        const hasVoted = opt.votes && opt.votes.includes(userId);
+
+        let avatarsHtml = "";
+        if (!poll.isAnonymous && opt.votes && opt.votes.length > 0) {
+            avatarsHtml = `
+                <div class="poll-voters">
+                    ${opt.votes.map(vId => {
+                const m = state.members.find(member => member.id === vId);
+                if (!m && vId !== 'guest') return "";
+                const name = m ? `${m.lastName || ''}${m.firstName || ''}` : "ゲスト";
+                const color = m ? (m.avatarColor || AVATAR_COLORS[state.members.indexOf(m) % AVATAR_COLORS.length]) : "#94a3b8";
+                const initials = m ? (m.lastName ? m.lastName.slice(0, 1) : (m.firstName ? m.firstName.slice(0, 1) : '?')) : "G";
+                const avatarContent = m && m.avatarImage
+                    ? `<img src="${m.avatarImage}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+                    : `<span style="font-size: 8px; font-weight: 700;">${initials}</span>`;
+                return `<div class="poll-mini-avatar" title="${name}" style="background: ${m && m.avatarImage ? 'transparent' : color}; border: 1px solid var(--border); width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">${avatarContent}</div>`;
+            }).join("")}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="poll-option-row">
+                <div class="poll-option-main">
+                    <button class="poll-vote-btn ${hasVoted ? 'voted' : ''}" onclick="votePoll('${poll.id}', '${opt.id}')" ${isClosed ? "disabled" : ""}>
+                        ${hasVoted ? '<i data-lucide="check" style="width:12px;height:12px;color:white;"></i>' : ''}
+                    </button>
+                    <span class="poll-option-text-label">${opt.text}</span>
+                    <span class="poll-option-count">${votesCount} 票</span>
+                </div>
+                <div class="poll-bar-container">
+                    <div class="poll-bar-fill" style="width: ${percent}%"></div>
+                </div>
+                ${avatarsHtml}
+            </div>
+        `;
+    }).join("");
+
+    const adminControls = isCreator ? `
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="togglePollStatus('${poll.id}')">
+                <i data-lucide="${poll.status === "active" ? 'lock' : 'unlock'}"></i> ${poll.status === "active" ? "終了する" : "再開する"}
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deletePoll('${poll.id}')">
+                <i data-lucide="trash-2"></i> 削除
+            </button>
+        </div>
+    ` : "";
+
+    detailEl.innerHTML = `
+        <div class="poll-detail-header">
+            <div>
+                <h2 style="margin: 0 0 0.5rem 0;">${poll.title}</h2>
+                ${deadlineHtml}
+                <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                    <span class="poll-status-badge ${!isClosed ? "poll-status-active" : "poll-status-closed"}">${statusLabel}</span>
+                    <span style="color: var(--text-dim); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">${poll.type === "multiple" ? "複数選択可" : "単一選択"}</span>
+                    <span style="color: var(--text-dim); font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">${anonymityLabel}</span>
+                </div>
+            </div>
+            ${adminControls}
+        </div>
+        <div class="poll-options-list">
+            ${optionsHtml}
+        </div>
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem;">
+            全 ${totalVotes} 票
+        </div>
+    `;
+
+    if (window.lucide) lucide.createIcons({ root: detailEl });
+}
+
+function showPollCreateForm() {
+    state.currentPollId = null;
+    document.getElementById("poll-detail-content").style.display = "none";
+    document.getElementById("poll-create-form").style.display = "block";
+
+    // Reset state
+    pollCreationMode = 'text';
+    selectedDates = [];
+    document.getElementById("btn-mode-text").classList.add("active");
+    document.getElementById("btn-mode-calendar").classList.remove("active");
+    document.getElementById("poll-text-options-container").style.display = "block";
+    document.getElementById("poll-calendar-options-container").style.display = "none";
+
+    // Set default deadline to 1 week from now
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(23, 59, 0, 0);
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(nextWeek - tzoffset)).toISOString().slice(0, 16);
+    document.getElementById("poll-deadline-input").value = localISOTime;
+
+    renderPollList();
+    renderMiniCalendar();
+}
+
+function hidePollCreateForm() {
+    document.getElementById("poll-detail-content").style.display = "block";
+    document.getElementById("poll-create-form").style.display = "none";
+}
+
+window.setPollMode = (mode) => {
+    pollCreationMode = mode;
+    document.getElementById("btn-mode-text").classList.toggle("active", mode === 'text');
+    document.getElementById("btn-mode-calendar").classList.toggle("active", mode === 'calendar');
+    document.getElementById("poll-text-options-container").style.display = mode === 'text' ? "block" : "none";
+    document.getElementById("poll-calendar-options-container").style.display = mode === 'calendar' ? "block" : "none";
+
+    if (mode === 'calendar') renderMiniCalendar();
+};
+
+function renderMiniCalendar() {
+    const container = document.getElementById("mini-calendar-picker");
+    if (!container) return;
+
+    const daysInMonth = new Date(miniCalendarYear, miniCalendarMonth + 1, 0).getDate();
+    const firstDay = new Date(miniCalendarYear, miniCalendarMonth, 1).getDay();
+
+    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+    const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+
+    let html = `
+        <div class="mc-header">
+            <button class="btn-icon" onclick="changeMiniCalendar(-1)"><i data-lucide="chevron-left"></i></button>
+            <span>${miniCalendarYear}年 ${monthNames[miniCalendarMonth]}</span>
+            <button class="btn-icon" onclick="changeMiniCalendar(1)"><i data-lucide="chevron-right"></i></button>
+        </div>
+        <div class="mc-grid">
+            ${dayNames.map(d => `<div class="mc-day-head">${d}</div>`).join("")}
+    `;
+
+    // Empty spaces for first week
+    for (let i = 0; i < firstDay; i++) {
+        html += `<div class="mc-day other-month"></div>`;
+    }
+
+    const today = new Date();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${miniCalendarYear}-${String(miniCalendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isSelected = selectedDates.includes(dateStr);
+        const isToday = today.getFullYear() === miniCalendarYear && today.getMonth() === miniCalendarMonth && today.getDate() === d;
+
+        html += `<div class="mc-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}" onclick="toggleDateSelection('${dateStr}')">${d}</div>`;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+    if (window.lucide) lucide.createIcons({ root: container });
+
+    renderSelectedDates();
+}
+
+window.changeMiniCalendar = (delta) => {
+    miniCalendarMonth += delta;
+    if (miniCalendarMonth > 11) {
+        miniCalendarMonth = 0;
+        miniCalendarYear++;
+    } else if (miniCalendarMonth < 0) {
+        miniCalendarMonth = 11;
+        miniCalendarYear--;
+    }
+    renderMiniCalendar();
+};
+
+window.toggleDateSelection = (dateStr) => {
+    const index = selectedDates.indexOf(dateStr);
+    if (index === -1) {
+        selectedDates.push(dateStr);
+    } else {
+        selectedDates.splice(index, 1);
+    }
+    selectedDates.sort();
+    renderMiniCalendar();
+};
+
+function renderSelectedDates() {
+    const container = document.getElementById("selected-dates-items");
+    if (!container) return;
+
+    if (selectedDates.length === 0) {
+        container.innerHTML = `<div class="empty-msg">日付を選択してください</div>`;
+        return;
+    }
+
+    container.innerHTML = selectedDates.map(dateStr => {
+        const [y, m, d] = dateStr.split("-");
+        const dateObj = new Date(y, m - 1, d);
+        const dayName = ["日", "月", "火", "水", "木", "金", "土"][dateObj.getDay()];
+        return `
+            <div class="selected-date-chip">
+                <span>${y}/${m}/${d} (${dayName})</span>
+                <button onclick="toggleDateSelection('${dateStr}')">×</button>
+            </div>
+        `;
+    }).join("");
+}
+
+function addPollOptionInput() {
+    const container = document.getElementById("poll-options-inputs");
+    const rowCount = container.querySelectorAll(".poll-option-input-row").length;
+    const div = document.createElement("div");
+    div.className = "poll-option-input-row";
+    div.innerHTML = `
+        <input type="text" class="poll-option-text" placeholder="選択肢${rowCount + 1}">
+        <button class="btn-remove-option" onclick="this.parentElement.remove()">×</button>
+    `;
+    container.appendChild(div);
+}
+
+function saveNewPoll() {
+    const title = document.getElementById("poll-title-input").value.trim();
+    if (!title) { alert("タイトルを入力してください"); return; }
+
+    let options = [];
+    if (pollCreationMode === 'text') {
+        const optionInputs = document.querySelectorAll(".poll-option-text");
+        optionInputs.forEach((input, idx) => {
+            const text = input.value.trim();
+            if (text) {
+                options.push({
+                    id: "opt-" + Date.now() + "-" + idx,
+                    text: text,
+                    votes: []
+                });
+            }
+        });
+    } else {
+        options = selectedDates.map((dateStr, idx) => {
+            const [y, m, d] = dateStr.split("-");
+            const dateObj = new Date(y, m - 1, d);
+            const dayName = ["日", "月", "火", "水", "木", "金", "土"][dateObj.getDay()];
+            return {
+                id: "opt-" + Date.now() + "-" + idx,
+                text: `${y}/${m}/${d} (${dayName})`,
+                votes: []
+            };
+        });
+    }
+
+    if (options.length < 2) {
+        alert(pollCreationMode === 'text' ? "選択肢を2つ以上入力してください" : "日付を2つ以上選択してください");
+        return;
+    }
+
+    const anonymity = document.getElementById("poll-anonymity-select").value;
+    const self = state.members.find(m => m.isSelf);
+    const creatorId = self ? self.id : 'guest';
+
+    const newPoll = {
+        id: "poll-" + Date.now(),
+        title: title,
+        options: options,
+        status: "active",
+        type: document.getElementById("poll-type-select").value,
+        isAnonymous: anonymity === "anonymous",
+        createdBy: creatorId,
+        deadline: deadline || null,
+        createdAt: Date.now(),
+        mode: pollCreationMode
+    };
+
+    if (!state.polls) state.polls = [];
+    state.polls.unshift(newPoll);
+    state.currentPollId = newPoll.id;
+
+    // Reset form
+    document.getElementById("poll-title-input").value = "";
+    document.getElementById("poll-options-inputs").innerHTML = `
+        <div class="poll-option-input-row">
+            <input type="text" class="poll-option-text" placeholder="選択肢1">
+        </div>
+        <div class="poll-option-input-row">
+            <input type="text" class="poll-option-text" placeholder="選択肢2">
+        </div>
+    `;
+    document.getElementById("poll-anonymity-select").value = "non-anonymous";
+    selectedDates = [];
+
+    saveState();
+    hidePollCreateForm();
+    renderPollList();
+    renderActivePoll();
+    if (typeof updatePollNotification === 'function') updatePollNotification();
+}
+
+window.votePoll = (pollId, optionId) => {
+    const poll = state.polls.find(p => p.id === pollId);
+    if (!poll) return;
+
+    // Check if closed
+    const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
+    if (isClosed) {
+        alert("この投票は終了しています");
+        return;
+    }
+
+    const self = state.members.find(m => m.isSelf);
+    const userId = self ? self.id : 'guest';
+
+    // If single choice, remove previous votes by this user
+    if (poll.type === 'single') {
+        poll.options.forEach(opt => {
+            if (opt.votes) opt.votes = opt.votes.filter(v => v !== userId);
+        });
+    }
+
+    const option = poll.options.find(o => o.id === optionId);
+    if (option) {
+        if (!option.votes) option.votes = [];
+        // Prevent duplicate votes on the same option (for multiple choice too, maybe?)
+        if (!option.votes.includes(userId)) {
+            option.votes.push(userId);
+        } else if (poll.type === 'multiple') {
+            // Toggle vote if multiple choice?
+            option.votes = option.votes.filter(v => v !== userId);
+        }
+    }
+
+    saveState();
+    renderActivePoll();
+    if (typeof updatePollNotification === 'function') updatePollNotification();
+};
+
+window.togglePollStatus = (pollId) => {
+    const poll = state.polls.find(p => p.id === pollId);
+    if (poll) {
+        poll.status = poll.status === "active" ? "closed" : "active";
+        // If re-opening, maybe push deadline? For now just toggle status
+        saveState();
+        renderActivePoll();
+        renderPollList();
+        if (typeof updatePollNotification === 'function') updatePollNotification();
+    }
+};
+
+window.deletePoll = (pollId) => {
+    if (!confirm("この投票を削除しますか？")) return;
+    state.polls = state.polls.filter(p => p.id !== pollId);
+    if (state.currentPollId === pollId) state.currentPollId = null;
+    saveState();
+    renderPollList();
+    renderActivePoll();
+    if (typeof updatePollNotification === 'function') updatePollNotification();
+};
+
+function checkPollDeadlines() {
+    if (!state.polls) return;
+    const now = new Date();
+    let changed = false;
+    state.polls.forEach(poll => {
+        if (poll.status === "active" && poll.deadline) {
+            if (new Date(poll.deadline) < now) {
+                poll.status = "closed";
+                changed = true;
+            }
+        }
+    });
+    if (changed) {
+        saveState();
+        if (typeof updatePollNotification === 'function') updatePollNotification();
+    }
+}
+
+// Check deadlines every minute
+setInterval(checkPollDeadlines, 60000);
+
+function updatePollNotification() {
+    const badge = document.getElementById("polls-badge");
+    if (!badge) return;
+
+    if (!state.polls || state.polls.length === 0) {
+        badge.style.display = "none";
+        return;
+    }
+
+    const unvotedActivePolls = state.polls.filter(poll => {
+        const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
+        if (isClosed) return false;
+
+        // Check if user has voted in any of the options
+        // Since we simulate "anonymous" votes, we check if there are no votes at all in any option
+        // In a real session-based app, we would check if the current user ID is in any opt.votes
+        // For this student app context, we will treat a poll as "unvoted" if total votes is 0.
+        const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
+        return totalVotes === 0;
+    });
+
+    const count = unvotedActivePolls.length;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = "block";
+    } else {
+        badge.style.display = "none";
+    }
+}
+
+

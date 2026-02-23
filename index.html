@@ -41,6 +41,10 @@
                     <i data-lucide="message-circle"></i> <span>伝言板</span>
                     <span id="msg-badge" class="notification-badge" style="display:none;">0</span>
                 </button>
+                <button class="nav-item" data-view="polls" id="nav-btn-polls">
+                    <i data-lucide="vote"></i> <span>投票・日程調整</span>
+                    <span id="polls-badge" class="notification-badge" style="display:none;">0</span>
+                </button>
                 <button class="nav-item" data-view="bookmarks">
                     <i data-lucide="bookmark"></i> <span>ブックマーク</span>
                 </button>
@@ -1499,6 +1503,115 @@
                                     style="background: #10b981;" title="緑"></div>
                             </div>
                         </div>
+            </section>
+
+            <section id="view-polls" class="view">
+                <div class="polls-layout">
+                    <!-- Left: Poll List -->
+                    <div class="polls-sidebar card">
+                        <div class="polls-sidebar-header">
+                            <h2>投票リスト</h2>
+                            <button class="btn btn-primary btn-sm" id="btn-create-poll-mode">
+                                <i data-lucide="plus"></i> 新規作成
+                            </button>
+                        </div>
+                        <div id="polls-list" class="polls-list">
+                            <!-- Poll items rendered by JS -->
+                            <div class="empty-msg">投票はまだありません</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Poll Detail / Creation -->
+                    <div class="poll-detail-container card">
+                        <div id="poll-detail-content">
+                            <div class="empty-poll-detail">
+                                <i data-lucide="vote"
+                                    style="width: 48px; height: 48px; opacity: 0.2; margin-bottom: 1rem;"></i>
+                                <p>左のリストから投票を選択するか、新規作成してください</p>
+                            </div>
+                        </div>
+
+                        <!-- Creation Form (hidden by default) -->
+                        <div id="poll-create-form" style="display: none;">
+                            <div class="card-header">
+                                <h2>新規投票の作成</h2>
+                            </div>
+                            <div class="form-group">
+                                <label for="poll-title-input">投票タイトル</label>
+                                <input type="text" id="poll-title-input" placeholder="例：次回のミーティング日程について">
+                            </div>
+                            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                                <div class="form-group">
+                                    <label>入力モード</label>
+                                    <div class="poll-mode-toggle">
+                                        <button class="btn btn-secondary btn-sm active" id="btn-mode-text"
+                                            onclick="setPollMode('text')">テキスト</button>
+                                        <button class="btn btn-secondary btn-sm" id="btn-mode-calendar"
+                                            onclick="setPollMode('calendar')">カレンダー</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="poll-type-select">投票形式</label>
+                                    <select id="poll-type-select">
+                                        <option value="single">単一選択</option>
+                                        <option value="multiple">複数選択可</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="poll-anonymity-select">記名・匿名</label>
+                                    <select id="poll-anonymity-select">
+                                        <option value="non-anonymous">非匿名（アバター表示）</option>
+                                        <option value="anonymous">匿名</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Text Options Container -->
+                            <div class="form-group" id="poll-text-options-container">
+                                <label>選択肢の設定</label>
+                                <div id="poll-options-inputs" class="poll-options-inputs">
+                                    <div class="poll-option-input-row">
+                                        <input type="text" class="poll-option-text" placeholder="選択肢1">
+                                    </div>
+                                    <div class="poll-option-input-row">
+                                        <input type="text" class="poll-option-text" placeholder="選択肢2">
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary btn-sm mt-1" id="btn-add-poll-option">
+                                    <i data-lucide="plus"></i> 選択肢を追加
+                                </button>
+                            </div>
+
+                            <!-- Calendar Options Container (Hidden by default) -->
+                            <div class="form-group" id="poll-calendar-options-container" style="display: none;">
+                                <label>日程候補の選択</label>
+                                <div class="mini-calendar-layout">
+                                    <div id="mini-calendar-picker" class="mini-calendar-picker">
+                                        <!-- Mini calendar rendered by JS -->
+                                    </div>
+                                    <div class="selected-dates-list">
+                                        <div class="label-text">選択された日程:</div>
+                                        <div id="selected-dates-items" class="selected-dates-items">
+                                            <div class="empty-msg">日付を選択してください</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="poll-deadline-input">投票期限</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="datetime-local" id="poll-deadline-input">
+                                    <span style="font-size: 0.8rem; color: var(--text-dim);">※期限を過ぎると自動的に終了します</span>
+                                </div>
+                            </div>
+                            <div class="modal-btns">
+                                <button class="btn btn-secondary" id="btn-cancel-poll">キャンセル</button>
+                                <button class="btn btn-primary" id="btn-save-poll">作成する</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="view-bookmarks" class="view">
