@@ -4860,6 +4860,18 @@ function importData(e) {
             // Ensure imported data has IDs/timestamps
             imported = migrateData(imported);
 
+            // Special dev logic for mock data overwriting
+            if (imported.isMockData) {
+                const force = confirm('【開発用・モックデータ検出】\nこのファイルは特別なテストデータです。通常の安全設計（マージ処理）をバイパスして、現在のデータをすべて破棄し、100%モックデータで強制上書きしますか？');
+                if (force) {
+                    state = imported;
+                    saveState();
+                    alert('モックデータを強制上書きしました。');
+                    location.reload();
+                    return;
+                }
+            }
+
             const doMerge = confirm(
                 'インポート方式を選択してください:\n' +
                 '[OK] = マージ（統合）\n' +

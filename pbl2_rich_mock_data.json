@@ -1,0 +1,1672 @@
+{
+  "themeName": "地域資源を活用したスマートツーリズムの提案",
+  "companyName": "株式会社ムーン・ラボラトリー",
+  "groupSymbol": "A",
+  "groupName": "ムーン・ツアーズ",
+  "groupLogo": "",
+  "teamsUrl": "",
+  "members": [
+    {
+      "lastName": "堺",
+      "firstName": "一郎",
+      "course": "知能情報",
+      "id": "nhke3p845",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": true,
+      "role": "プロジェクトリーダー",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM0ZjQ2ZTUiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWgujwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student367"
+    },
+    {
+      "lastName": "中百舌鳥",
+      "firstName": "次郎",
+      "course": "エレクトロニクス",
+      "id": "hv7narim4",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "マーケティング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMxMGI5ODEiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS4rTwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student40"
+    },
+    {
+      "lastName": "阿倍野",
+      "firstName": "三郎",
+      "course": "プロダクトデザイン",
+      "id": "9zvqkn8i4",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNmNTllMGIiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPumYvzwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student810"
+    },
+    {
+      "lastName": "羽曳野",
+      "firstName": "四郎",
+      "course": "プロダクトデザイン",
+      "id": "d0ba84g8z",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZjQ0NDQiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+vTwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student803"
+    },
+    {
+      "lastName": "住吉",
+      "firstName": "五郎",
+      "course": "知能情報",
+      "id": "k5iufn4lh",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM4YjVjZjYiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS9jzwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student246"
+    },
+    {
+      "lastName": "枚方",
+      "firstName": "六郎",
+      "course": "エネルギー機械",
+      "id": "jzq94e9l0",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "プロモーション",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMwZWE1ZTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuaemjwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student193"
+    },
+    {
+      "lastName": "吹田",
+      "firstName": "七郎",
+      "course": "エレクトロニクス",
+      "id": "x6agwu1w3",
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "isSelf": false,
+      "role": "プロモーション",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlYzQ4OTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWQuTwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "emailLocal": "student967"
+    }
+  ],
+  "isConfigLocked": true,
+  "membersLocked": true,
+  "tasks": [
+    {
+      "uuid": "dfue3ebcd",
+      "text": "市場調査と課題ヒアリング",
+      "startIter": 3,
+      "endIter": 5,
+      "completed": true,
+      "color": "#f59e0b",
+      "assignees": [
+        "中百舌鳥 次郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "市場調査と課題ヒアリング",
+      "start": 3,
+      "end": 5,
+      "category": "effort"
+    },
+    {
+      "uuid": "bcmqabryv",
+      "text": "要件定義とペルソナ作成",
+      "startIter": 5,
+      "endIter": 7,
+      "completed": true,
+      "color": "#6366f1",
+      "assignees": [
+        "中百舌鳥 次郎",
+        "阿倍野 三郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "要件定義とペルソナ作成",
+      "start": 5,
+      "end": 7,
+      "category": "effort"
+    },
+    {
+      "uuid": "pydu5qz4d",
+      "text": "技術検証 (PoC) とモックアップ作成",
+      "startIter": 7,
+      "endIter": 11,
+      "completed": true,
+      "color": "#10b981",
+      "assignees": [
+        "阿倍野 三郎",
+        "羽曳野 四郎",
+        "住吉 五郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "技術検証 (PoC) とモックアップ作成",
+      "start": 7,
+      "end": 11,
+      "category": "effort"
+    },
+    {
+      "uuid": "vs65h3ls8",
+      "text": "中間ポスター・リーフレット制作",
+      "startIter": 10,
+      "endIter": 12,
+      "completed": true,
+      "color": "#ec4899",
+      "assignees": [
+        "枚方 六郎",
+        "吹田 七郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "中間ポスター・リーフレット制作",
+      "start": 10,
+      "end": 12,
+      "category": "presentation"
+    },
+    {
+      "uuid": "v3r0vl47g",
+      "text": "プロトタイプ開発(UI/フロント)",
+      "startIter": 15,
+      "endIter": 21,
+      "completed": true,
+      "color": "#0ea5e9",
+      "assignees": [
+        "阿倍野 三郎",
+        "羽曳野 四郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "プロトタイプ開発(UI/フロント)",
+      "start": 15,
+      "end": 21,
+      "category": "effort"
+    },
+    {
+      "uuid": "x3yy3q10s",
+      "text": "バックエンドAPI・データベース構築",
+      "startIter": 15,
+      "endIter": 22,
+      "completed": true,
+      "color": "#8b5cf6",
+      "assignees": [
+        "住吉 五郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "バックエンドAPI・データベース構築",
+      "start": 15,
+      "end": 22,
+      "category": "effort"
+    },
+    {
+      "uuid": "uyqlmmr4l",
+      "text": "最終パンフレット作成",
+      "startIter": 22,
+      "endIter": 25,
+      "completed": true,
+      "color": "#ec4899",
+      "assignees": [
+        "枚方 六郎",
+        "吹田 七郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "最終パンフレット作成",
+      "start": 22,
+      "end": 25,
+      "category": "presentation"
+    },
+    {
+      "uuid": "49ilfjb90",
+      "text": "最終プレゼン資料ブラッシュアップ",
+      "startIter": 24,
+      "endIter": 26,
+      "completed": true,
+      "color": "#4f46e5",
+      "assignees": [
+        "堺 一郎",
+        "中百舌鳥 次郎",
+        "阿倍野 三郎",
+        "羽曳野 四郎",
+        "住吉 五郎",
+        "枚方 六郎",
+        "吹田 七郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "最終プレゼン資料ブラッシュアップ",
+      "start": 24,
+      "end": 26,
+      "category": "presentation"
+    }
+  ],
+  "polls": [
+    {
+      "id": "f26g91hct",
+      "title": "来週の作業臨時ミーティング日程調整",
+      "status": "active",
+      "type": "multiple",
+      "options": [
+        {
+          "id": "ojt1uvdqp",
+          "text": "10/14(土) 10:00〜12:00",
+          "votes": [
+            "nhke3p845",
+            "9zvqkn8i4"
+          ]
+        },
+        {
+          "id": "479qoojgh",
+          "text": "10/14(土) 14:00〜16:00",
+          "votes": [
+            "nhke3p845",
+            "hv7narim4",
+            "9zvqkn8i4",
+            "d0ba84g8z",
+            "k5iufn4lh",
+            "jzq94e9l0"
+          ]
+        },
+        {
+          "id": "3nl32q8m2",
+          "text": "10/15(日) 20:00〜22:00（オンライン）",
+          "votes": [
+            "nhke3p845",
+            "hv7narim4",
+            "9zvqkn8i4",
+            "d0ba84g8z",
+            "k5iufn4lh",
+            "jzq94e9l0",
+            "x6agwu1w3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f7633dlha",
+      "title": "想定ペルソナ（ターゲット層）の最終決定",
+      "status": "closed",
+      "type": "single",
+      "options": [
+        {
+          "id": "tw2cn34w3",
+          "text": "20〜30代の若年層カップル・友人",
+          "votes": [
+            "hv7narim4",
+            "jzq94e9l0"
+          ]
+        },
+        {
+          "id": "vfm8sqy8o",
+          "text": "アクティブシニア層（60代〜）",
+          "votes": [
+            "nhke3p845",
+            "9zvqkn8i4",
+            "d0ba84g8z",
+            "k5iufn4lh",
+            "x6agwu1w3"
+          ]
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "r9ziyfriz",
+      "topicId": "from_teacher",
+      "senderName": "システム",
+      "senderRole": "案内",
+      "content": "初期設定ファイルが読み込まれました。",
+      "timestamp": 1771826962283,
+      "color": "#4f46e5",
+      "readBy": [
+        "nhke3p845",
+        "hv7narim4",
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh",
+        "jzq94e9l0",
+        "x6agwu1w3"
+      ]
+    },
+    {
+      "id": "u7b2az1jb",
+      "topicId": "general",
+      "senderName": "堺",
+      "senderRole": "プロジェクトリーダー",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM0ZjQ2ZTUiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWgujwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "お疲れ様です！PBL2活動が始まりました。まずは「チームワーク形成」タブから、各自のプロフィール（強み、興味、やりたいこと）を記入してください。",
+      "timestamp": 1771909762283,
+      "color": "#4f46e5",
+      "readBy": [
+        "nhke3p845",
+        "hv7narim4",
+        "9zvqkn8i4"
+      ]
+    },
+    {
+      "id": "pt27k71de",
+      "topicId": "general",
+      "senderName": "中百舌鳥",
+      "senderRole": "マーケティング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMxMGI5ODEiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS4rTwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "了解しました！記入しておきますね。あと、ペルソナ決定の投票も作成したので回答お願いします。",
+      "timestamp": 1771909862283,
+      "color": "#10b981",
+      "readBy": [
+        "nhke3p845",
+        "hv7narim4"
+      ]
+    },
+    {
+      "id": "poqmoqch8",
+      "topicId": "general",
+      "senderName": "枚方",
+      "senderRole": "プロモーション",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMwZWE1ZTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuaemjwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "記入しましたー。日程調整のアンケートも作ってくれたんですね。入力しておきます。",
+      "timestamp": 1771909962283,
+      "color": "#0ea5e9",
+      "readBy": [
+        "nhke3p845"
+      ]
+    },
+    {
+      "id": "go8xajot4",
+      "topicId": "engineering_group",
+      "senderName": "阿倍野",
+      "senderRole": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNmNTllMGIiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPumYvzwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "バックエンドのAPI実装について相談です。今回フロントとはRESTで通信する形で進めてよいでしょうか？",
+      "timestamp": 1771906162283,
+      "color": "#f59e0b",
+      "readBy": [
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh"
+      ]
+    },
+    {
+      "id": "qeqr0we3r",
+      "topicId": "engineering_group",
+      "senderName": "羽曳野",
+      "senderRole": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZjQ0NDQiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+vTwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "はい、RESTが無難だと思います。データベース周りはとりあえずFirebaseを使う想定でどうでしょう？",
+      "timestamp": 1771906362283,
+      "color": "#ef4444",
+      "readBy": [
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh"
+      ]
+    },
+    {
+      "id": "a1c7orgt9",
+      "topicId": "engineering_group",
+      "senderName": "住吉",
+      "senderRole": "エンジニアリング",
+      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM4YjVjZjYiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS9jzwvdGV4dD4KICAgIDwvc3ZnPg==",
+      "content": "賛成です！モックアップで検証して、問題があればまた検討しましょう。私はフロントのコンポーネント設計を進めます。",
+      "timestamp": 1771906462283,
+      "color": "#8b5cf6",
+      "readBy": [
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh"
+      ]
+    }
+  ],
+  "topics": [
+    {
+      "id": "general",
+      "name": "全般",
+      "createdBy": "system",
+      "timestamp": 0
+    },
+    {
+      "id": "from_teacher",
+      "name": "教員より",
+      "createdBy": "system",
+      "timestamp": 0
+    },
+    {
+      "id": "engineering_group",
+      "name": "技術班内部連絡",
+      "createdBy": "nhke3p845",
+      "timestamp": 1771912362283
+    }
+  ],
+  "currentTopicId": "general",
+  "lastMessagesCheckTime": 1771913362285,
+  "teamwork": {
+    "intro": "私たちは「地域資源を活用した持続可能なスマートツーリズム」をテーマに、AIなどのIT技術を使って地域の活性化に貢献することを目指します。互いの得意分野を活かしてプロジェクトを成功させましょう！",
+    "members": {
+      "nhke3p845": {
+        "strengths": "ファシリテーション、全体俯瞰",
+        "interests": "地域創生とIT",
+        "goals": "PMスキルを磨きたい",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM0ZjQ2ZTUiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWgujwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "hv7narim4": {
+        "strengths": "アンケート設計、データ分析",
+        "interests": "ユーザー心理分析",
+        "goals": "マーケティングリサーチの基本を学ぶ",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMxMGI5ODEiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS4rTwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "9zvqkn8i4": {
+        "strengths": "API設計、Python",
+        "interests": "サーバーレスアーキテクチャ",
+        "goals": "バックエンドの知見を深める",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNmNTllMGIiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPumYvzwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "d0ba84g8z": {
+        "strengths": "React/Vueなどフロントエンド",
+        "interests": "モダンなUI開発",
+        "goals": "フルスタックな技術を習得",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZjQ0NDQiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+vTwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "k5iufn4lh": {
+        "strengths": "データベース設計、インフラ",
+        "interests": "ビッグデータ解析",
+        "goals": "チーム開発の立ち回りを学ぶ",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM4YjVjZjYiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS9jzwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "jzq94e9l0": {
+        "strengths": "Illustrator/Figma",
+        "interests": "グラフィックデザイン",
+        "goals": "人を惹きつけるポスターを作りたい",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMwZWE1ZTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuaemjwvdGV4dD4KICAgIDwvc3ZnPg=="
+      },
+      "x6agwu1w3": {
+        "strengths": "PowerPoint、スケジュール管理",
+        "interests": "SNSマーケティング",
+        "goals": "実践的なプレゼン能力の向上",
+        "photo": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlYzQ4OTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWQuTwvdGV4dD4KICAgIDwvc3ZnPg=="
+      }
+    }
+  },
+  "reports": {
+    "3": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "4": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "5": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "6": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "7": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "8": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "9": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "10": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "11": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "12": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "13": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "14": {
+      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
+      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "communications": [
+        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
+        "進捗共有：マーケティングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。",
+        "進捗共有：プロモーションとしての実装・調査を進めています。"
+      ],
+      "selectedTasks": [
+        0,
+        1,
+        2
+      ],
+      "content": "今週のタスクを順調に進行しました...",
+      "submitted": true,
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "15": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.522Z"
+    },
+    "16": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "17": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "18": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "19": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "20": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "21": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "22": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "23": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "24": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "25": {
+      "achievement": "今週のタスクを完了しました。",
+      "challenge": "新しい課題を見つけました。",
+      "communications": [
+        "進捗報告"
+      ],
+      "content": "今週のタスク完了。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:29:32.523Z"
+    },
+    "analysis": {
+      "bg": "地域資源を活用できていない課題があります。",
+      "problem": "若年層の訪問減少",
+      "solution": "IT観光アプリの提供",
+      "content": "...",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "contribution_13": {
+      "nhke3p845": {
+        "ratings": {
+          "hv7narim4": 5,
+          "9zvqkn8i4": 5,
+          "d0ba84g8z": 5,
+          "k5iufn4lh": 5,
+          "jzq94e9l0": 4,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "hv7narim4": {
+        "ratings": {
+          "nhke3p845": 5,
+          "9zvqkn8i4": 4,
+          "d0ba84g8z": 4,
+          "k5iufn4lh": 5,
+          "jzq94e9l0": 5,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "9zvqkn8i4": {
+        "ratings": {
+          "nhke3p845": 5,
+          "hv7narim4": 5,
+          "d0ba84g8z": 5,
+          "k5iufn4lh": 5,
+          "jzq94e9l0": 5,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "d0ba84g8z": {
+        "ratings": {
+          "nhke3p845": 4,
+          "hv7narim4": 5,
+          "9zvqkn8i4": 5,
+          "k5iufn4lh": 5,
+          "jzq94e9l0": 4,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "k5iufn4lh": {
+        "ratings": {
+          "nhke3p845": 5,
+          "hv7narim4": 5,
+          "9zvqkn8i4": 5,
+          "d0ba84g8z": 5,
+          "jzq94e9l0": 5,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "jzq94e9l0": {
+        "ratings": {
+          "nhke3p845": 5,
+          "hv7narim4": 5,
+          "9zvqkn8i4": 5,
+          "d0ba84g8z": 5,
+          "k5iufn4lh": 4,
+          "x6agwu1w3": 5
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      },
+      "x6agwu1w3": {
+        "ratings": {
+          "nhke3p845": 4,
+          "hv7narim4": 5,
+          "9zvqkn8i4": 5,
+          "d0ba84g8z": 5,
+          "k5iufn4lh": 5,
+          "jzq94e9l0": 4
+        },
+        "roles": {
+          "nhke3p845": [
+            "プロジェクトリーダー"
+          ],
+          "hv7narim4": [
+            "マーケティング"
+          ],
+          "9zvqkn8i4": [
+            "エンジニアリング"
+          ],
+          "d0ba84g8z": [
+            "エンジニアリング"
+          ],
+          "k5iufn4lh": [
+            "エンジニアリング"
+          ],
+          "jzq94e9l0": [
+            "プロモーション"
+          ],
+          "x6agwu1w3": [
+            "プロモーション"
+          ]
+        },
+        "submitted": true,
+        "updatedAt": "2026-02-24T06:09:22.277Z"
+      }
+    },
+    "group_eval_13": {
+      "users": {
+        "nhke3p845": {
+          "submitted": true,
+          "evaluations": {
+            "B": {
+              "investment": 1500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            },
+            "C": {
+              "investment": 3500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            }
+          }
+        },
+        "hv7narim4": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        },
+        "9zvqkn8i4": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        },
+        "d0ba84g8z": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        },
+        "k5iufn4lh": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        },
+        "jzq94e9l0": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        },
+        "x6agwu1w3": {
+          "submitted": true,
+          "evaluations": {
+            "A": {
+              "investment": 2500000,
+              "commentContent": "課題分析が深く、技術的アプローチが非常に具体的でした。",
+              "commentPresentation": "スライドの構成が美しく、時間配分も完璧でした。"
+            },
+            "B": {
+              "investment": 2500000,
+              "commentContent": "ユーザーペルソナが詳細で、提供価値の説得力がありました。",
+              "commentPresentation": "デモ動画を交えた説明が分かりやすかったです。"
+            }
+          }
+        }
+      }
+    },
+    "feedback_13": {
+      "author": [
+        "nhke3p845"
+      ],
+      "feedbackEntries": [
+        {
+          "content": "UIのモックアップが非常に見やすい。",
+          "presentation": "全体的に好印象だが、機能の詳細が分からない"
+        },
+        {
+          "content": "技術リソースの確保に懸念がある。",
+          "presentation": "開発スケジュールについて工夫が必要"
+        }
+      ],
+      "futurePlans": "UIの良さを活かしつつ、詳細設計を詰めます。技術面のリスクに対しては、早めにプロトタイプを作成して検証期間を設けることで対策します。",
+      "submitted": true,
+      "updatedAt": "2026-02-24T06:09:22.277Z"
+    },
+    "group_eval_27": {
+      "users": {
+        "nhke3p845": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "hv7narim4": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "9zvqkn8i4": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "d0ba84g8z": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "k5iufn4lh": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "jzq94e9l0": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        },
+        "x6agwu1w3": {
+          "submitted": true,
+          "evaluations": {
+            "C": {
+              "investment": 3000000,
+              "commentContent": "システム構成が実用的かつスケーラブルでした。",
+              "commentPresentation": "グラフや図解を効果的に使った説明でした。"
+            },
+            "D": {
+              "investment": 2000000,
+              "commentContent": "斬新な切り口でビジネスの可能性を感じました。",
+              "commentPresentation": "話し方が落ち着いていて、質疑応答も的確でした。"
+            }
+          }
+        }
+      }
+    }
+  },
+  "artifactSettings": {
+    "slides": {
+      "submitted": false,
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "slides": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+CiAgICAgICAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzNiODJmNiIvPgogICAgICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7jgr/jgqTjg4jjg6vjgrnjg6njgqTjg4k8L3RleHQ+CiAgICA8L3N2Zz4=",
+          "hotspots": [
+            {
+              "rect": {
+                "x": 10,
+                "y": 10,
+                "w": 80,
+                "h": 20
+              },
+              "authorIdx": 0
+            }
+          ]
+        },
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+CiAgICAgICAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzEwYjk4MSIvPgogICAgICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7luILloLToqrLpoYzjgajjg5rjg6vjgr3jg4o8L3RleHQ+CiAgICA8L3N2Zz4=",
+          "hotspots": [
+            {
+              "rect": {
+                "x": 10,
+                "y": 30,
+                "w": 40,
+                "h": 60
+              },
+              "authorIdx": 1
+            },
+            {
+              "rect": {
+                "x": 55,
+                "y": 30,
+                "w": 35,
+                "h": 60
+              },
+              "authorIdx": 1
+            }
+          ]
+        },
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+CiAgICAgICAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzYzNjZmMSIvPgogICAgICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7jgrfjgrnjg4bjg6DjgqLjg7zjgq3jg4bjgq/jg4Hjg6M8L3RleHQ+CiAgICA8L3N2Zz4=",
+          "hotspots": [
+            {
+              "rect": {
+                "x": 20,
+                "y": 20,
+                "w": 60,
+                "h": 70
+              },
+              "authorIdx": 2
+            }
+          ]
+        }
+      ]
+    },
+    "poster": {
+      "submitted": false,
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "slides": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+CiAgICAgICAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2VjNDg5OSIvPgogICAgICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7kuK3plpPjg53jgrnjgr/jg7w8L3RleHQ+CiAgICA8L3N2Zz4=",
+          "hotspots": [
+            {
+              "rect": {
+                "x": 5,
+                "y": 5,
+                "w": 90,
+                "h": 10
+              },
+              "authorIdx": 5
+            },
+            {
+              "rect": {
+                "x": 5,
+                "y": 20,
+                "w": 40,
+                "h": 60
+              },
+              "authorIdx": 6
+            }
+          ]
+        }
+      ]
+    },
+    "leaflet": {
+      "submitted": false,
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "slides": [
+        {
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNjAwIiB2aWV3Qm94PSIwIDAgODAwIDYwMCI+CiAgICAgICAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzhiNWNmNiIvPgogICAgICAgIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7jg6rjg7zjg5Xjg6zjg4Pjg4g8L3RleHQ+CiAgICA8L3N2Zz4=",
+          "hotspots": [
+            {
+              "rect": {
+                "x": 10,
+                "y": 10,
+                "w": 30,
+                "h": 80
+              },
+              "authorIdx": 5
+            },
+            {
+              "rect": {
+                "x": 60,
+                "y": 10,
+                "w": 30,
+                "h": 80
+              },
+              "authorIdx": 6
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "artifacts": {
+    "poster": false,
+    "leaflet": false,
+    "pamphlet_25": false,
+    "slides_25": false
+  },
+  "schedule": [
+    {
+      "id": 1,
+      "date": "2026-04-15",
+      "label": "ガイダンス（1回目・水1）"
+    },
+    {
+      "id": 2,
+      "date": "2026-04-22",
+      "label": "企業テーマ説明（2回目・水2）"
+    },
+    {
+      "id": 3,
+      "date": "2026-04-29",
+      "label": "グループ活動（3回目・水3）"
+    },
+    {
+      "id": 4,
+      "date": "2026-05-13",
+      "label": "グループ活動（4回目・水4）"
+    },
+    {
+      "id": 5,
+      "date": "2026-05-20",
+      "label": "グループ活動（5回目・水5）"
+    },
+    {
+      "id": 6,
+      "date": "2026-05-27",
+      "label": "グループ活動（6回目・水6）"
+    },
+    {
+      "id": 7,
+      "date": "2026-06-03",
+      "label": "グループ活動・中間発表（7回目・水7）"
+    },
+    {
+      "id": 8,
+      "date": "2026-06-17",
+      "label": "グループ活動（8回目・水8）"
+    },
+    {
+      "id": 9,
+      "date": "2026-06-24",
+      "label": "グループ活動（9回目・水9）"
+    },
+    {
+      "id": 10,
+      "date": "2026-07-01",
+      "label": "グループ活動（10回目・水10）"
+    },
+    {
+      "id": 11,
+      "date": "2026-07-08",
+      "label": "グループ活動（11回目・水11）"
+    },
+    {
+      "id": 12,
+      "date": "2026-07-15",
+      "label": "グループ活動（12回目・水12）"
+    },
+    {
+      "id": 13,
+      "date": "2026-07-22",
+      "label": "中間発表（夏休み前の14回目・水14）"
+    },
+    {
+      "id": 14,
+      "date": "2026-09-16",
+      "label": "後期活動開始（15回目・水15）"
+    },
+    {
+      "id": 15,
+      "date": "2026-09-30",
+      "label": "グループ活動（1回目・水1）"
+    },
+    {
+      "id": 16,
+      "date": "2026-10-07",
+      "label": "グループ活動（2回目・水2）"
+    },
+    {
+      "id": 17,
+      "date": "2026-10-14",
+      "label": "グループ活動（3回目・水3）"
+    },
+    {
+      "id": 18,
+      "date": "2026-10-21",
+      "label": "グループ活動（4回目・水4）"
+    },
+    {
+      "id": 19,
+      "date": "2026-10-28",
+      "label": "グループ活動（5回目・水5）"
+    },
+    {
+      "id": 20,
+      "date": "2026-11-04",
+      "label": "グループ活動（6回目・水6）"
+    },
+    {
+      "id": 21,
+      "date": "2026-11-18",
+      "label": "グループ活動（7回目・水7）"
+    },
+    {
+      "id": 22,
+      "date": "2026-12-02",
+      "label": "グループ活動（8回目・水8）"
+    },
+    {
+      "id": 23,
+      "date": "2026-12-09",
+      "label": "グループ活動（10回目・水10）"
+    },
+    {
+      "id": 24,
+      "date": "2026-12-16",
+      "label": "グループ活動（11回目・水11）"
+    },
+    {
+      "id": 25,
+      "date": "2026-12-23",
+      "label": "グループ活動（12回目・水12）"
+    },
+    {
+      "id": 26,
+      "date": "2027-01-06",
+      "label": "最終発表（13回目・水13）"
+    },
+    {
+      "id": 27,
+      "date": "2027-01-13",
+      "label": "最終発表（14回目・水14）"
+    },
+    {
+      "id": 28,
+      "date": "2027-02-03",
+      "label": "予備日（15回目・水15）"
+    }
+  ],
+  "sidebarCollapsed": false,
+  "supervisingInstructors": [
+    {
+      "lastName": "大教",
+      "firstName": "太郎",
+      "emailLocal": "t-kyoin"
+    },
+    {
+      "lastName": "大教",
+      "firstName": "花子",
+      "emailLocal": "h-kyoin"
+    }
+  ],
+  "deliverableTargets": {
+    "workReportStart": 3,
+    "analysis": 13,
+    "contribution": [
+      13,
+      27
+    ],
+    "poster": 12,
+    "leaflet": 12,
+    "mutual": [
+      13,
+      27
+    ],
+    "reflection": [
+      13,
+      27
+    ],
+    "pamphlet": 25,
+    "slides": 25
+  },
+  "bmc": {},
+  "currentPollId": null,
+  "type": "pbl2_initial_setup",
+  "isMockData": true,
+  "presentationSchedules": {
+    "13": [
+      {
+        "symbol": "C",
+        "teamName": "株式会社C (ダミー評価先)",
+        "theme": "スマート農業IoT"
+      },
+      {
+        "symbol": "B",
+        "teamName": "株式会社B",
+        "theme": "自律配送ドローン"
+      }
+    ],
+    "27": [
+      {
+        "symbol": "C",
+        "teamName": "株式会社C",
+        "theme": "EV高速充電スタンド"
+      },
+      {
+        "symbol": "D",
+        "teamName": "株式会社D",
+        "theme": "AI自動検品ライン"
+      }
+    ]
+  }
+}
