@@ -1230,7 +1230,13 @@ function setAvatarImage(index, input) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (e) => {
-        state.members[index].avatarImage = await compressImage(e.target.result, 300, 300, 0.4);
+        const compressed = await compressImage(e.target.result, 300, 300, 0.4);
+        state.members[index].avatarImage = compressed;
+        // Sync to teamwork profile photo
+        const memberId = state.members[index].id;
+        if (state.teamwork && state.teamwork.members && state.teamwork.members[memberId]) {
+            state.teamwork.members[memberId].photo = compressed;
+        }
         saveState();
         renderMemberList();
     };
@@ -1240,6 +1246,11 @@ function setAvatarImage(index, input) {
 /** Remove avatar image on right-click */
 function clearAvatarImage(index) {
     state.members[index].avatarImage = null;
+    // Sync to teamwork profile photo
+    const memberId = state.members[index].id;
+    if (state.teamwork && state.teamwork.members && state.teamwork.members[memberId]) {
+        state.teamwork.members[memberId].photo = null;
+    }
     saveState();
     renderMemberList();
 }
@@ -6687,6 +6698,10 @@ window.saveMemberProfile = (memberId, field, val) => {
 };
 
 window.triggerMemberPhotoUpload = (memberId) => {
+    // If locked, only allow self to change photo
+    const member = state.members.find(m => m.id === memberId);
+    if (state.membersLocked && member && !member.isSelf) return;
+
     const input = document.getElementById('member-photo-input');
     input.onchange = async (e) => {
         const file = e.target.files[0];
@@ -6696,6 +6711,11 @@ window.triggerMemberPhotoUpload = (memberId) => {
                 const compressed = await compressImage(re.target.result, 200, 200, 0.5);
                 if (!state.teamwork.members[memberId]) state.teamwork.members[memberId] = {};
                 state.teamwork.members[memberId].photo = compressed;
+                // Also sync to member avatarImage for consistency across all views
+                const memberIdx = state.members.findIndex(m => m.id === memberId);
+                if (memberIdx !== -1) {
+                    state.members[memberIdx].avatarImage = compressed;
+                }
                 saveState();
                 renderTeamwork();
             };
