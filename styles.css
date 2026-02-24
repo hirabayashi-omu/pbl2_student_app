@@ -4822,13 +4822,27 @@ th {
 .unvoted-dot {
     width: 8px;
     height: 8px;
-    background-color: var(--primary);
+    background-color: #ef4444;
     border-radius: 50%;
     display: inline-block;
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .unvoted-poll {
-    border-left: 3px solid var(--primary) !important;
+    border-left: 3px solid #ef4444 !important;
 }
 
 .poll-item-meta {
@@ -4981,6 +4995,44 @@ th {
     gap: 0.5rem;
 }
 
+/* Poll edit mode option rows */
+.poll-edit-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.poll-edit-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.poll-edit-option-row:hover {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.poll-edit-option-text {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.poll-edit-option-votes {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
 .btn-remove-option {
     background: rgba(239, 68, 68, 0.1);
     color: var(--danger);
@@ -5065,6 +5117,135 @@ th {
     box-shadow: inset 0 0 0 1px var(--primary);
 }
 
+/* Weekend & Holiday coloring */
+.mc-day-head.mc-sunday,
+.mc-day.mc-sunday,
+.mc-day.mc-holiday {
+    color: #ef4444;
+}
+
+.mc-day-head.mc-saturday,
+.mc-day.mc-saturday {
+    color: #3b82f6;
+}
+
+/* Keep white text for selected dates regardless of day type */
+.mc-day.selected.mc-sunday,
+.mc-day.selected.mc-saturday,
+.mc-day.selected.mc-holiday {
+    color: white;
+}
+
+/* Poll detail calendar layout */
+.poll-detail-calendar-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.poll-context-calendar {
+    flex-shrink: 0;
+    width: 240px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.poll-ctx-cal-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-main);
+}
+
+.poll-ctx-month-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin: 0.5rem 0 0.25rem 0;
+    text-align: center;
+}
+
+.poll-ctx-grid {
+    gap: 1px;
+}
+
+.poll-ctx-grid .mc-day {
+    font-size: 0.7rem;
+    cursor: default;
+}
+
+.poll-ctx-grid .mc-day-head {
+    font-size: 0.65rem;
+}
+
+.mc-day.poll-date-highlight {
+    background: var(--primary);
+    color: white !important;
+    font-weight: 700;
+    border-radius: 4px;
+    box-shadow: 0 0 6px var(--primary-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    position: relative;
+}
+
+.mc-day.poll-date-highlight.mc-sunday,
+.mc-day.poll-date-highlight.mc-saturday,
+.mc-day.poll-date-highlight.mc-holiday {
+    color: white !important;
+}
+
+/* Voted dates: green highlight */
+.mc-day.poll-date-voted {
+    background: #10b981;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    position: relative;
+}
+
+.mc-day.poll-date-voted.mc-sunday,
+.mc-day.poll-date-voted.mc-saturday,
+.mc-day.poll-date-voted.mc-holiday {
+    color: white !important;
+}
+
+.poll-ctx-legend {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.poll-ctx-legend-item {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.poll-ctx-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+@media (max-width: 800px) {
+    .poll-detail-calendar-layout {
+        flex-direction: column;
+    }
+
+    .poll-context-calendar {
+        width: 100%;
+    }
+}
+
 .selected-dates-items {
     display: flex;
     flex-direction: column;
@@ -5090,6 +5271,141 @@ th {
     cursor: pointer;
     padding: 0 0.25rem;
     font-size: 1.1rem;
+}
+
+/* Time-slot tags within each selected date chip */
+.date-chip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.date-chip-label {
+    font-weight: 500;
+}
+
+.date-timeslot-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.timeslot-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+    white-space: nowrap;
+}
+
+.timeslot-tag:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+
+.timeslot-tag.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
+/* Poll voter member selection grid */
+.poll-voter-selection {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.poll-voter-member-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.poll-voter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.poll-voter-item:hover {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.poll-voter-item.selected {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.15);
+}
+
+.poll-voter-item .voter-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.poll-voter-item.selected .voter-check {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.poll-voter-item .voter-check i {
+    width: 12px;
+    height: 12px;
+    color: white;
+    display: none;
+}
+
+.poll-voter-item.selected .voter-check i {
+    display: block;
+}
+
+.poll-voter-item .voter-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.poll-voter-item .voter-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.poll-voter-item .voter-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .poll-deadline-display {

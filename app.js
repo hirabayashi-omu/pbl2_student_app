@@ -193,6 +193,39 @@ let pollCreationMode = 'text'; // 'text' or 'calendar'
 let miniCalendarYear = new Date().getFullYear();
 let miniCalendarMonth = new Date().getMonth();
 let selectedDates = []; // Array of ISO date strings
+let selectedDateSlots = {}; // { 'YYYY-MM-DD': ['lunch', 'afterschool', 'online'] }
+let selectedPollVoters = []; // Array of member IDs to participate
+const POLL_TIMESLOTS = [
+    { id: 'lunch', label: '昼休み', icon: '☀️' },
+    { id: 'afterschool', label: '放課後', icon: '🌙' },
+    { id: 'online', label: 'オンライン', icon: '💻' }
+];
+
+// Japanese National Holidays (2025-2027)
+const JP_HOLIDAYS = {
+    '2025-01-01': '元日', '2025-01-13': '成人の日', '2025-02-11': '建国記念の日', '2025-02-23': '天皇誕生日', '2025-02-24': '振替休日',
+    '2025-03-20': '春分の日', '2025-04-29': '昭和の日', '2025-05-03': '憲法記念日', '2025-05-04': 'みどりの日', '2025-05-05': 'こどもの日', '2025-05-06': '振替休日',
+    '2025-07-21': '海の日', '2025-08-11': '山の日', '2025-09-15': '敬老の日', '2025-09-23': '秋分の日',
+    '2025-10-13': 'スポーツの日', '2025-11-03': '文化の日', '2025-11-23': '勤労感謝の日', '2025-11-24': '振替休日',
+    '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日',
+    '2026-03-20': '春分の日', '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
+    '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-23': '秋分の日',
+    '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+    '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日',
+    '2027-03-21': '春分の日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
+    '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日',
+    '2027-10-11': 'スポーツの日', '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
+};
+
+function isJpHoliday(dateStr) { return JP_HOLIDAYS[dateStr] || null; }
+function getDateDayClass(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    if (JP_HOLIDAYS[dateStr]) return 'holiday';
+    if (dow === 0) return 'sunday';
+    if (dow === 6) return 'saturday';
+    return '';
+}
 
 const MEMBER_ROLES = [
     { title: 'プロジェクトリーダー', desc: 'プロジェクトの取りまとめ' },
@@ -398,6 +431,44 @@ function updateDisplayInfo() {
         unreadEl.textContent = getUnreadMessageCount();
     }
 
+    // --- Dashboard Pending Polls Count ---
+    const pendingPollsEl = document.getElementById('dashboard-pending-polls');
+    if (pendingPollsEl) {
+        const selfMember = (state.members || []).find(m => m.isSelf);
+        const myId = selfMember ? selfMember.id : 'guest';
+        let pendingCount = 0;
+        let firstPendingTitle = '';
+
+        (state.polls || []).forEach(poll => {
+            if (poll.status !== 'active') return;
+            // Check deadline
+            if (poll.deadline && new Date(poll.deadline) < new Date()) return;
+            // Check if user is eligible voter
+            if (poll.voters && poll.voters.length > 0 && !poll.voters.includes(myId)) return;
+            // Check if user has voted on any option
+            const hasVoted = poll.options.some(opt => opt.votes && opt.votes.includes(myId));
+            if (!hasVoted) {
+                pendingCount++;
+                if (!firstPendingTitle) firstPendingTitle = poll.title;
+            }
+        });
+
+        pendingPollsEl.textContent = pendingCount;
+        const hintEl = document.getElementById('dashboard-pending-polls-hint');
+        if (hintEl) {
+            if (pendingCount === 0) {
+                hintEl.textContent = 'すべて対応済みです';
+            } else {
+                hintEl.textContent = `「${firstPendingTitle}」他`;
+            }
+        }
+        // Highlight if there are pending polls
+        const card = pendingPollsEl.closest('.stat-card');
+        if (card) {
+            card.style.borderColor = pendingCount > 0 ? 'var(--warning)' : '';
+        }
+    }
+
     // Update sidebar badges too
     updateMessageNotification();
 
@@ -542,9 +613,14 @@ function updateDisplayInfo() {
     document.getElementById('tasks-progress').style.width = `${taskRate}%`;
 
     // Artifacts progress (only final submitted)
+    // Check both legacy _25 keys and new keys without suffix
     const artifactKeys = ['poster', 'leaflet', 'pamphlet_25', 'slides_25'];
     const completedArtifacts = artifactKeys.filter(k => {
-        return state.artifactSettings && state.artifactSettings[k] && state.artifactSettings[k].submitted;
+        const alt = k.replace('_25', ''); // also check without suffix
+        return state.artifactSettings && (
+            (state.artifactSettings[k] && state.artifactSettings[k].submitted) ||
+            (k !== alt && state.artifactSettings[alt] && state.artifactSettings[alt].submitted)
+        );
     }).length;
     const artifactDisplay = document.getElementById('completed-artifacts-count');
     if (artifactDisplay) {
@@ -962,7 +1038,7 @@ function switchTab(tabId) {
             currentReflectionKey = 'feedback_13'; // Default fallback
         }
         loadReflectionSheet();
-        updateHeaderAvatars('individual');
+        updateHeaderAvatars('group');
     } else if (tabId === 'mutual') {
         if (viewTitle) viewTitle.textContent = '相互評価シート';
         if (!currentMutualKey) {
@@ -1463,11 +1539,12 @@ function renderGantt() {
                         let hasD = false;
 
                         if (item.artifactKey) {
-                            const sets = state.artifactSettings?.[item.artifactKey];
+                            const altArtKey = item.artifactKey.replace('_25', '');
+                            const sets = state.artifactSettings?.[item.artifactKey] || state.artifactSettings?.[altArtKey];
                             isSub = !!sets?.submitted;
                             hasD = !isSub && !!sets?.slides?.length;
                         } else if (item.tabId) {
-                            if (['contribution', 'mutual'].includes(item.tabId)) {
+                            if (['contribution'].includes(item.tabId)) {
                                 const rg = state.reports[storageKey];
                                 const mc = (state.members || []).length;
                                 if (rg && mc > 0) {
@@ -1482,8 +1559,24 @@ function renderGantt() {
                                     isSub = subCount >= mc;
                                     hasD = !isSub && startCount > 0;
                                 }
+                            } else if (item.tabId === 'mutual') {
+                                const rg = state.reports[storageKey];
+                                if (rg?.users && !rg?.evaluations) {
+                                    // Legacy users-based structure
+                                    const allUsers = Object.values(rg.users);
+                                    isSub = allUsers.length > 0 && allUsers.every(u => u.submitted);
+                                    hasD = !isSub && allUsers.some(u => u.evaluations && Object.keys(u.evaluations).length > 0);
+                                } else {
+                                    isSub = !!rg?.submitted;
+                                    hasD = !isSub && rg?.evaluations && Object.keys(rg.evaluations).length > 0;
+                                }
+                            } else if (item.tabId === 'reflection') {
+                                const rg = state.reports[storageKey];
+                                isSub = !!rg?.submitted;
+                                hasD = !isSub && (rg?.futurePlans || (rg?.feedbackEntries && rg.feedbackEntries.length > 0 && (rg.feedbackEntries[0].content || rg.feedbackEntries[0].presentation)));
                             } else {
-                                const r = state.reports[item.tabId];
+                                const finalKey = item.tabId === 'analysis-report' ? 'analysis' : storageKey;
+                                const r = state.reports[finalKey];
                                 isSub = !!r?.submitted;
                                 hasD = !isSub && !!r?.content;
                             }
@@ -1943,6 +2036,12 @@ function openArtifactEditor(key, name) {
     }
 
     if (!state.artifactSettings) state.artifactSettings = {};
+    // Fallback: check alternate key (with/without _25 suffix)
+    const altEditorKey = key.includes('_25') ? key.replace('_25', '') : key + '_25';
+    if (!state.artifactSettings[key] && state.artifactSettings[altEditorKey]) {
+        // Copy data to expected key
+        state.artifactSettings[key] = state.artifactSettings[altEditorKey];
+    }
     if (!state.artifactSettings[key]) {
         state.artifactSettings[key] = { slides: [], submitted: false };
     }
@@ -1999,7 +2098,8 @@ function renderArtifactBoard() {
     ];
 
     ARTIFACT_DEFS.forEach(def => {
-        const data = state.artifactSettings?.[def.key] || { slides: [], submitted: false };
+        const altKey = def.key.replace('_25', '');
+        const data = state.artifactSettings?.[def.key] || state.artifactSettings?.[altKey] || { slides: [], submitted: false };
         const slides = Array.isArray(data.slides) ? data.slides : [];
         const hasDraft = slides.length > 0;
         const isSubmitted = !!data.submitted;
@@ -4955,7 +5055,7 @@ function importData(e) {
                     if (!state.reports) state.reports = {};
                     Object.keys(imported.reports).forEach(key => {
                         // Skip contribution-related reports during merge to prevent overwriting/seeing others' data
-                        if (key.startsWith('contribution_') || key.includes('mutual') || key.includes('reflection')) return;
+                        if (key.startsWith('contribution_')) return;
 
                         const remoteRep = imported.reports[key];
                         const localRep = state.reports[key];
@@ -5241,16 +5341,31 @@ function renderRecentActivity() {
     // Reports
     Object.keys(state.reports).forEach(iter => {
         const r = state.reports[iter];
-        if (r.submittedAt) {
-            activities.push({
-                date: new Date(r.submittedAt),
-                text: `第${iter}回作業報告書を提出しました`,
-                icon: 'check-circle'
-            });
+        let reportName = `第${iter}回作業報告書`;
+        if (iter === 'analysis') reportName = '課題設定レポート';
+        else if (iter.startsWith('contribution_')) reportName = `第${iter.split('_')[1]}回 貢献度調査`;
+        else if (iter.startsWith('mutual_') || iter.startsWith('group_eval_')) {
+            const iterNum = iter.match(/\d+/)?.[0] || '';
+            reportName = `第${iterNum}回 相互評価シート`;
+        }
+        else if (iter.startsWith('reflection_') || iter.startsWith('feedback_')) {
+            const iterNum = iter.match(/\d+/)?.[0] || '';
+            reportName = `第${iterNum}回 振り返りシート`;
+        }
+
+        if (r.submittedAt || r.submitted) {
+            const dateStr = r.submittedAt || r.updatedAt;
+            if (dateStr) {
+                activities.push({
+                    date: new Date(dateStr),
+                    text: `${reportName}を提出しました`,
+                    icon: 'check-circle'
+                });
+            }
         } else if (r.updatedAt) {
             activities.push({
                 date: new Date(r.updatedAt),
-                text: `第${iter}回の報告書の下書きを保存しました`,
+                text: `${reportName}の下書きを保存しました`,
                 icon: 'edit'
             });
         }
@@ -5261,7 +5376,9 @@ function renderRecentActivity() {
         poster: '事業企画ポスター（中間発表）',
         leaflet: '事業企画リーフレット（中間発表）',
         pamphlet_25: '製品・サービスパンフレット（最終発表）',
-        slides_25: '最終プレゼンスライド（最終発表）'
+        slides_25: '最終プレゼンスライド（最終発表）',
+        pamphlet: '製品・サービスパンフレット（最終発表）',
+        slides: '最終プレゼンスライド（最終発表）'
     };
 
     Object.keys(state.artifactSettings || {}).forEach(key => {
@@ -5287,7 +5404,7 @@ function renderRecentActivity() {
         `).join('');
         if (window.lucide) lucide.createIcons();
     } else {
-        list.innerHTML = '<li class="empty-msg">活動Eまだありません</li>';
+        list.innerHTML = '<li class="empty-msg">活動はまだありません</li>';
     }
 }
 
@@ -5373,7 +5490,7 @@ function renderMessages() {
             lastSenderKey = null; // Reset grouping on new date
         }
 
-        const isMe = selfKey && (msg.senderKey === selfKey);
+        const isMe = selfKey && (msg.senderKey === selfKey || (selfMember && msg.senderKey === ((selfMember.lastName || '') + (selfMember.firstName || ''))));
         // LINE-style grouping: same sender within 1 minute
         const isGrouped = (msg.senderKey === lastSenderKey) && (Math.abs(msg.timestamp - lastTimestamp) < 60000);
 
@@ -5475,7 +5592,7 @@ function markMessagesAsRead() {
         // To behave like LINE: Sender sees "Read X" for OTHERS.
         // Receiver sees nothing special effectively.
 
-        if (msg.senderKey === selfKey) return; // Don't mark my own messages as read by me (redundant)
+        if (msg.senderKey === selfKey || (selfMember && msg.senderKey === ((selfMember.lastName || '') + (selfMember.firstName || '')))) return; // Don't mark my own messages as read by me (redundant)
 
         if (!msg.readBy) msg.readBy = [];
         if (!msg.readBy.includes(selfKey)) {
@@ -5582,7 +5699,7 @@ function getUnreadMessageCount() {
         const tId = m.topicId || 'general';
         if (!activeTopicIds.has(tId)) return false;
 
-        const isMe = (m.senderKey === selfKey);
+        const isMe = (m.senderKey === selfKey || (selfMember && m.senderKey === ((selfMember.lastName || '') + (selfMember.firstName || ''))));
         const hasRead = m.readBy && m.readBy.includes(selfKey);
         return !isMe && !hasRead;
     }).length;
@@ -6221,7 +6338,7 @@ function renderDeliverables(folderId = 'root') {
             let isSub = false;
             let hasD = false;
 
-            if (['contribution', 'group_eval'].includes(folderId)) {
+            if (folderId === 'contribution') {
                 const members = state.members || [];
                 if (r && members.length > 0) {
                     let subCount = 0; let startCount = 0;
@@ -6235,6 +6352,18 @@ function renderDeliverables(folderId = 'root') {
                     isSub = subCount >= members.length;
                     hasD = !isSub && startCount > 0;
                 }
+            } else if (folderId === 'group_eval') {
+                if (r?.users && !r?.evaluations) {
+                    const allUsers = Object.values(r.users);
+                    isSub = allUsers.length > 0 && allUsers.every(u => u.submitted);
+                    hasD = !isSub && allUsers.some(u => u.evaluations && Object.keys(u.evaluations).length > 0);
+                } else {
+                    isSub = !!r?.submitted;
+                    hasD = !isSub && r?.evaluations && Object.keys(r.evaluations).length > 0;
+                }
+            } else if (folderId === 'feedback') {
+                isSub = !!r?.submitted;
+                hasD = !isSub && (r?.futurePlans || (r?.feedbackEntries && r.feedbackEntries.length > 0));
             } else {
                 isSub = !!r?.submitted;
                 hasD = !isSub && !!r?.content;
@@ -6256,8 +6385,9 @@ function renderDeliverables(folderId = 'root') {
         });
     } else if (folderId === 'assignment') {
         const ctx = { tab: 'analysis-report', label: '課題設定レポート', icon: 'clipboard-list', color: '#10b981' };
-        const isSub = !!state.reports[ctx.tab]?.submitted;
-        const statusLabel = isSub ? '提出済み' : (state.reports[ctx.tab]?.content ? '作成中' : '未作成');
+        const analysisData = state.reports['analysis'] || state.reports[ctx.tab];
+        const isSub = !!analysisData?.submitted;
+        const statusLabel = isSub ? '提出済み' : (analysisData?.content ? '作成中' : '未作成');
 
         const item = createDeliverableItem(ctx.label, ctx.icon, statusLabel, ctx.color, isSub);
         item.onclick = () => { switchView('reports'); switchTab(ctx.tab); };
@@ -8717,7 +8847,13 @@ function renderPollList() {
         const isClosed = poll.status === "closed" || (poll.deadline && new Date(poll.deadline) < new Date());
         const statusLabel = isClosed ? "終了" : "進行中";
         const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.votes ? opt.votes.length : 0), 0);
-        const isUnvoted = !isClosed && totalVotes === 0;
+
+        // Check if current user has NOT voted on this active poll
+        const selfMember = (state.members || []).find(m => m.isSelf);
+        const myId = selfMember ? selfMember.id : 'guest';
+        const isEligible = !poll.voters || poll.voters.length === 0 || poll.voters.includes(myId);
+        const myVoted = poll.options.some(opt => opt.votes && opt.votes.includes(myId));
+        const isUnvoted = !isClosed && isEligible && !myVoted;
 
         const creator = (state.members || []).find(m => m.id === poll.createdBy);
         const creatorName = creator ? (creator.lastName || '') : 'ゲスト';
@@ -8765,7 +8901,7 @@ function renderActivePoll() {
 
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
-    const isCreator = poll.createdBy === userId;
+    const isCreator = poll.createdBy === userId || poll.createdBy === 'guest';
 
     const creator = (state.members || []).find(m => m.id === poll.createdBy);
     const creatorName = creator ? `${creator.lastName || ''}${creator.firstName || ''}` : 'ゲスト';
@@ -8831,6 +8967,9 @@ function renderActivePoll() {
 
     const adminControls = isCreator ? `
         <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="showPollEditMode('${poll.id}')">
+                <i data-lucide="pencil"></i> 編集
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="togglePollStatus('${poll.id}')">
                 <i data-lucide="${poll.status === "active" ? 'lock' : 'unlock'}"></i> ${poll.status === "active" ? "終了する" : "再開する"}
             </button>
@@ -8844,6 +8983,7 @@ function renderActivePoll() {
         <div class="poll-detail-header">
             <div>
                 <h2 style="margin: 0 0 0.5rem 0;">${poll.title}</h2>
+                ${poll.description ? `<p style="color: var(--text-dim); font-size: 0.85rem; margin: 0 0 0.75rem 0; line-height: 1.5; white-space: pre-wrap;">${escapeHtml(poll.description)}</p>` : ''}
                 ${deadlineHtml}
                 <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
                     <span class="poll-status-badge ${!isClosed ? "poll-status-active" : "poll-status-closed"}">${statusLabel}</span>
@@ -8854,15 +8994,98 @@ function renderActivePoll() {
             </div>
             ${adminControls}
         </div>
-        <div class="poll-options-list">
-            ${optionsHtml}
-        </div>
+        ${poll.mode === 'calendar' ? `<div class="poll-detail-calendar-layout"><div class="poll-options-list" style="flex: 1;">${optionsHtml}</div><div class="poll-context-calendar">${renderPollContextCalendar(poll, userId)}</div></div>` : `<div class="poll-options-list">${optionsHtml}</div>`}
         <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.8rem;">
             全 ${totalVotes} 票
         </div>
     `;
 
     if (window.lucide) lucide.createIcons({ root: detailEl });
+}
+
+/** Render a contextual mini calendar for calendar-mode polls */
+function renderPollContextCalendar(poll, userId) {
+    // Extract dates from option texts and track which the user voted for
+    const pollDates = new Set();   // All candidate dates
+    const votedDates = new Set();  // Dates the user has voted on
+    poll.options.forEach(opt => {
+        let extractedDate = null;
+        const m = opt.text.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+        if (m) {
+            extractedDate = `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+        } else {
+            const m2 = opt.text.match(/(\d{1,2})\/(\d{1,2})/);
+            if (m2) {
+                const year = new Date().getFullYear();
+                extractedDate = `${year}-${m2[1].padStart(2, '0')}-${m2[2].padStart(2, '0')}`;
+            }
+        }
+        if (extractedDate) {
+            pollDates.add(extractedDate);
+            // Check if user voted for this option
+            if (userId && opt.votes && opt.votes.includes(userId)) {
+                votedDates.add(extractedDate);
+            }
+        }
+    });
+
+    if (pollDates.size === 0) return '';
+
+    // Determine month range from dates
+    const sortedDates = Array.from(pollDates).sort();
+    const months = new Set();
+    sortedDates.forEach(ds => {
+        const [y, m] = ds.split('-');
+        months.add(`${y}-${m}`);
+    });
+
+    const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+    const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+    let html = '<div class="poll-ctx-cal-title"><i data-lucide="calendar" style="width:14px;height:14px;"></i> 候補日カレンダー</div>';
+
+    Array.from(months).sort().forEach(ym => {
+        const [year, month] = ym.split('-').map(Number);
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const firstDay = new Date(year, month - 1, 1).getDay();
+
+        html += `<div class="poll-ctx-month-label">${year}年 ${monthNames[month - 1]}</div>`;
+        html += `<div class="mc-grid poll-ctx-grid">`;
+        html += dayNames.map((d, i) => `<div class="mc-day-head ${i === 0 ? 'mc-sunday' : ''} ${i === 6 ? 'mc-saturday' : ''}">${d}</div>`).join('');
+
+        for (let i = 0; i < firstDay; i++) {
+            html += `<div class="mc-day other-month" style="aspect-ratio:1;"></div>`;
+        }
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const isPollDate = pollDates.has(dateStr);
+            const isVoted = votedDates.has(dateStr);
+            const dayClass = getDateDayClass(dateStr);
+            const holidayName = isJpHoliday(dateStr);
+            const titleAttr = holidayName ? ` title="${holidayName}"` : '';
+            const today = new Date();
+            const isToday = today.getFullYear() === year && today.getMonth() === month - 1 && today.getDate() === d;
+
+            let highlightClass = '';
+            if (isVoted) highlightClass = 'poll-date-voted';
+            else if (isPollDate) highlightClass = 'poll-date-highlight';
+
+            html += `<div class="mc-day ${highlightClass} ${isToday ? 'today' : ''} ${dayClass ? 'mc-' + dayClass : ''}"${titleAttr}>${d}</div>`;
+        }
+
+        html += `</div>`;
+    });
+
+    // Legend
+    html += `<div class="poll-ctx-legend">
+        <span class="poll-ctx-legend-item"><span class="poll-ctx-dot" style="background:var(--primary);"></span> 候補日</span>
+        <span class="poll-ctx-legend-item"><span class="poll-ctx-dot" style="background:#10b981;"></span> 投票済</span>
+        <span class="poll-ctx-legend-item"><span class="poll-ctx-dot" style="background:#ef4444;"></span> 日祝</span>
+        <span class="poll-ctx-legend-item"><span class="poll-ctx-dot" style="background:#3b82f6;"></span> 土曜</span>
+    </div>`;
+
+    return html;
 }
 
 function showPollCreateForm() {
@@ -8873,6 +9096,8 @@ function showPollCreateForm() {
     // Reset state
     pollCreationMode = 'text';
     selectedDates = [];
+    selectedDateSlots = {};
+    selectedPollVoters = (state.members || []).filter(m => m.lastName || m.firstName).map(m => m.id); // Default: all members selected
     document.getElementById("btn-mode-text").classList.add("active");
     document.getElementById("btn-mode-calendar").classList.remove("active");
     document.getElementById("poll-text-options-container").style.display = "block";
@@ -8888,6 +9113,7 @@ function showPollCreateForm() {
 
     renderPollList();
     renderMiniCalendar();
+    renderPollVoterSelection();
 }
 
 function hidePollCreateForm() {
@@ -8922,7 +9148,7 @@ function renderMiniCalendar() {
             <button class="btn-icon" onclick="changeMiniCalendar(1)"><i data-lucide="chevron-right"></i></button>
         </div>
         <div class="mc-grid">
-            ${dayNames.map(d => `<div class="mc-day-head">${d}</div>`).join("")}
+            ${dayNames.map((d, i) => `<div class="mc-day-head ${i === 0 ? 'mc-sunday' : ''} ${i === 6 ? 'mc-saturday' : ''}">${d}</div>`).join("")}
     `;
 
     // Empty spaces for first week
@@ -8935,8 +9161,11 @@ function renderMiniCalendar() {
         const dateStr = `${miniCalendarYear}-${String(miniCalendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const isSelected = selectedDates.includes(dateStr);
         const isToday = today.getFullYear() === miniCalendarYear && today.getMonth() === miniCalendarMonth && today.getDate() === d;
+        const dayClass = getDateDayClass(dateStr);
+        const holidayName = isJpHoliday(dateStr);
+        const titleAttr = holidayName ? ` title="${holidayName}"` : '';
 
-        html += `<div class="mc-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}" onclick="toggleDateSelection('${dateStr}')">${d}</div>`;
+        html += `<div class="mc-day ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''} ${dayClass ? 'mc-' + dayClass : ''}"${titleAttr} onclick="toggleDateSelection('${dateStr}')">${d}</div>`;
     }
 
     html += `</div>`;
@@ -8962,11 +9191,28 @@ window.toggleDateSelection = (dateStr) => {
     const index = selectedDates.indexOf(dateStr);
     if (index === -1) {
         selectedDates.push(dateStr);
+        // Initialize with no time slots selected (user must pick)
+        if (!selectedDateSlots[dateStr]) {
+            selectedDateSlots[dateStr] = [];
+        }
     } else {
         selectedDates.splice(index, 1);
+        delete selectedDateSlots[dateStr];
     }
     selectedDates.sort();
     renderMiniCalendar();
+};
+
+window.toggleDateSlot = (dateStr, slotId) => {
+    if (!selectedDateSlots[dateStr]) selectedDateSlots[dateStr] = [];
+    const arr = selectedDateSlots[dateStr];
+    const idx = arr.indexOf(slotId);
+    if (idx === -1) {
+        arr.push(slotId);
+    } else {
+        arr.splice(idx, 1);
+    }
+    renderSelectedDates();
 };
 
 function renderSelectedDates() {
@@ -8982,9 +9228,19 @@ function renderSelectedDates() {
         const [y, m, d] = dateStr.split("-");
         const dateObj = new Date(y, m - 1, d);
         const dayName = ["日", "月", "火", "水", "木", "金", "土"][dateObj.getDay()];
+        const slots = selectedDateSlots[dateStr] || [];
+
+        const timeslotTags = POLL_TIMESLOTS.map(slot => {
+            const isActive = slots.includes(slot.id);
+            return `<span class="timeslot-tag ${isActive ? 'active' : ''}" onclick="toggleDateSlot('${dateStr}', '${slot.id}')">${slot.icon} ${slot.label}</span>`;
+        }).join('');
+
         return `
             <div class="selected-date-chip">
-                <span>${y}/${m}/${d} (${dayName})</span>
+                <div class="date-chip-content">
+                    <div class="date-chip-label">${y}/${m}/${d} (${dayName})</div>
+                    <div class="date-timeslot-tags">${timeslotTags}</div>
+                </div>
                 <button onclick="toggleDateSelection('${dateStr}')">×</button>
             </div>
         `;
@@ -9003,9 +9259,64 @@ function addPollOptionInput() {
     container.appendChild(div);
 }
 
+/** Render the voter member selection grid */
+function renderPollVoterSelection() {
+    const grid = document.getElementById("poll-voter-member-grid");
+    if (!grid) return;
+
+    const members = (state.members || []).filter(m => m.lastName || m.firstName);
+    if (members.length === 0) {
+        grid.innerHTML = '<div class="empty-msg">メンバーが登録されていません</div>';
+        return;
+    }
+
+    grid.innerHTML = members.map(m => {
+        const fullName = `${m.lastName || ''} ${m.firstName || ''}`.trim();
+        const isSelected = selectedPollVoters.includes(m.id);
+        const initial = (m.lastName || '?')[0];
+        const colorIdx = Math.abs((m.id || '').charCodeAt(0) || 0) % (typeof AVATAR_COLORS !== 'undefined' ? AVATAR_COLORS.length : 8);
+        const bgColor = typeof AVATAR_COLORS !== 'undefined' ? AVATAR_COLORS[colorIdx] : '#6366f1';
+
+        const avatarContent = m.avatarImage
+            ? `<img src="${m.avatarImage}" alt="${initial}">`
+            : initial;
+
+        return `
+            <div class="poll-voter-item ${isSelected ? 'selected' : ''}" onclick="togglePollVoter('${m.id}')">
+                <div class="voter-check"><i data-lucide="check"></i></div>
+                <div class="voter-avatar" style="background: ${m.avatarImage ? 'transparent' : bgColor}; color: white;">${avatarContent}</div>
+                <div class="voter-name">${escapeHtml(fullName)}</div>
+            </div>
+        `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons({ root: grid });
+}
+
+window.togglePollVoter = (memberId) => {
+    const idx = selectedPollVoters.indexOf(memberId);
+    if (idx === -1) {
+        selectedPollVoters.push(memberId);
+    } else {
+        selectedPollVoters.splice(idx, 1);
+    }
+    renderPollVoterSelection();
+};
+
+window.toggleAllPollVoters = (selectAll) => {
+    if (selectAll) {
+        selectedPollVoters = (state.members || []).filter(m => m.lastName || m.firstName).map(m => m.id);
+    } else {
+        selectedPollVoters = [];
+    }
+    renderPollVoterSelection();
+};
+
 function saveNewPoll() {
     const title = document.getElementById("poll-title-input").value.trim();
     if (!title) { alert("タイトルを入力してください"); return; }
+
+    const description = (document.getElementById("poll-desc-input")?.value || '').trim();
 
     const deadlineStr = document.getElementById("poll-deadline-input").value;
     const deadline = deadlineStr ? new Date(deadlineStr).getTime() : null;
@@ -9024,20 +9335,44 @@ function saveNewPoll() {
             }
         });
     } else {
-        options = selectedDates.map((dateStr, idx) => {
+        // Calendar mode: generate options per date × time-slot combination
+        let optIdx = 0;
+        selectedDates.forEach(dateStr => {
             const [y, m, d] = dateStr.split("-");
             const dateObj = new Date(y, m - 1, d);
             const dayName = ["日", "月", "火", "水", "木", "金", "土"][dateObj.getDay()];
-            return {
-                id: "opt-" + Date.now() + "-" + idx,
-                text: `${y}/${m}/${d} (${dayName})`,
-                votes: []
-            };
+            const dateLabel = `${m}/${d} (${dayName})`;
+            const slots = selectedDateSlots[dateStr] || [];
+
+            if (slots.length === 0) {
+                // No time slots selected: just the date as a single option
+                options.push({
+                    id: "opt-" + Date.now() + "-" + optIdx++,
+                    text: `${y}/${m}/${d} (${dayName})`,
+                    votes: []
+                });
+            } else {
+                // Create one option per time slot
+                slots.forEach(slotId => {
+                    const slot = POLL_TIMESLOTS.find(s => s.id === slotId);
+                    const slotLabel = slot ? `${slot.icon} ${slot.label}` : slotId;
+                    options.push({
+                        id: "opt-" + Date.now() + "-" + optIdx++,
+                        text: `${dateLabel} ${slotLabel}`,
+                        votes: []
+                    });
+                });
+            }
         });
     }
 
     if (options.length < 2) {
-        alert(pollCreationMode === 'text' ? "選択肢を2つ以上入力してください" : "日付を2つ以上選択してください");
+        alert(pollCreationMode === 'text' ? "選択肢を2つ以上入力してください" : "日程（時間帯含む）の選択肢が2つ以上になるよう設定してください");
+        return;
+    }
+
+    if (selectedPollVoters.length === 0) {
+        alert("投票対象メンバーを1人以上選択してください");
         return;
     }
 
@@ -9048,6 +9383,7 @@ function saveNewPoll() {
     const newPoll = {
         id: "poll-" + Date.now(),
         title: title,
+        description: description || null,
         options: options,
         status: "active",
         type: document.getElementById("poll-type-select").value,
@@ -9055,7 +9391,8 @@ function saveNewPoll() {
         createdBy: creatorId,
         deadline: deadline || null,
         createdAt: Date.now(),
-        mode: pollCreationMode
+        mode: pollCreationMode,
+        voters: [...selectedPollVoters] // Store the list of eligible voters
     };
 
     if (!state.polls) state.polls = [];
@@ -9064,6 +9401,7 @@ function saveNewPoll() {
 
     // Reset form
     document.getElementById("poll-title-input").value = "";
+    if (document.getElementById("poll-desc-input")) document.getElementById("poll-desc-input").value = "";
     document.getElementById("poll-options-inputs").innerHTML = `
         <div class="poll-option-input-row">
             <input type="text" class="poll-option-text" placeholder="選択肢1">
@@ -9074,6 +9412,7 @@ function saveNewPoll() {
     `;
     document.getElementById("poll-anonymity-select").value = "non-anonymous";
     selectedDates = [];
+    selectedDateSlots = {};
 
     saveState();
     hidePollCreateForm();
@@ -9095,6 +9434,12 @@ window.votePoll = (pollId, optionId) => {
 
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
+
+    // Check voter eligibility
+    if (poll.voters && poll.voters.length > 0 && !poll.voters.includes(userId)) {
+        alert("あなたはこの投票の対象メンバーではありません");
+        return;
+    }
 
     // If single choice, remove previous votes by this user
     if (poll.type === 'single') {
@@ -9140,6 +9485,250 @@ window.deletePoll = (pollId) => {
     renderPollList();
     renderActivePoll();
     if (typeof updatePollNotification === 'function') updatePollNotification();
+};
+
+// ---- Poll Edit Mode ----
+let pollEditState = null; // Temporary edit state
+
+window.showPollEditMode = (pollId) => {
+    const poll = state.polls.find(p => p.id === pollId);
+    if (!poll) return;
+
+    // Deep copy for editing
+    pollEditState = {
+        pollId: pollId,
+        options: poll.options.map(o => ({ ...o, votes: [...(o.votes || [])] })),
+        voters: poll.voters ? [...poll.voters] : (state.members || []).map(m => m.id),
+        description: poll.description || ''
+    };
+
+    renderPollEditForm();
+};
+
+function renderPollEditForm() {
+    if (!pollEditState) return;
+    const poll = state.polls.find(p => p.id === pollEditState.pollId);
+    if (!poll) return;
+
+    const detailEl = document.getElementById("poll-detail-content");
+    if (!detailEl) return;
+
+    // Options list with delete buttons
+    const optionsHtml = pollEditState.options.map((opt, idx) => {
+        const voteCount = opt.votes ? opt.votes.length : 0;
+        return `
+            <div class="poll-edit-option-row">
+                <span class="poll-edit-option-text">${escapeHtml(opt.text)}</span>
+                <span class="poll-edit-option-votes">${voteCount}票</span>
+                <button class="btn-remove-option" onclick="removePollEditOption(${idx})" title="この選択肢を削除">×</button>
+            </div>
+        `;
+    }).join('');
+
+    // Voter selection
+    const members = (state.members || []).filter(m => m.lastName || m.firstName);
+    const votersHtml = members.map(m => {
+        const fullName = `${m.lastName || ''} ${m.firstName || ''}`.trim();
+        const isSelected = pollEditState.voters.includes(m.id);
+        const initial = (m.lastName || '?')[0];
+        const colorIdx = Math.abs((m.id || '').charCodeAt(0) || 0) % (typeof AVATAR_COLORS !== 'undefined' ? AVATAR_COLORS.length : 8);
+        const bgColor = typeof AVATAR_COLORS !== 'undefined' ? AVATAR_COLORS[colorIdx] : '#6366f1';
+        const avatarContent = m.avatarImage
+            ? `<img src="${m.avatarImage}" alt="${initial}">`
+            : initial;
+
+        return `
+            <div class="poll-voter-item ${isSelected ? 'selected' : ''}" onclick="togglePollEditVoter('${m.id}')">
+                <div class="voter-check"><i data-lucide="check"></i></div>
+                <div class="voter-avatar" style="background: ${m.avatarImage ? 'transparent' : bgColor}; color: white;">${avatarContent}</div>
+                <div class="voter-name">${escapeHtml(fullName)}</div>
+            </div>
+        `;
+    }).join('');
+
+    detailEl.innerHTML = `
+        <div class="card-header" style="margin-bottom: 1.5rem;">
+            <h2 style="margin:0; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="pencil" style="width:20px; height:20px;"></i>
+                「${escapeHtml(poll.title)}」の編集
+            </h2>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>説明</label>
+            <textarea id="poll-edit-desc" rows="2" style="resize: vertical;">${escapeHtml(pollEditState.description)}</textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>選択肢の管理</label>
+            <div class="poll-edit-options-list">
+                ${optionsHtml}
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                <input type="text" id="poll-edit-new-option" placeholder="新しい選択肢を追加…" style="flex: 1;">
+                <button class="btn btn-secondary btn-sm" onclick="addPollEditOption()">
+                    <i data-lucide="plus"></i> 追加
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>投票対象メンバー</label>
+            <div class="poll-voter-selection">
+                <div class="poll-voter-select-actions" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllPollEditVoters(true)">全選択</button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAllPollEditVoters(false)">全解除</button>
+                </div>
+                <div class="poll-voter-member-grid">
+                    ${votersHtml}
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-btns">
+            <button class="btn btn-secondary" onclick="cancelPollEdit()">キャンセル</button>
+            <button class="btn btn-primary" onclick="savePollEdits()">
+                <i data-lucide="save"></i> 変更を保存
+            </button>
+        </div>
+    `;
+
+    if (window.lucide) lucide.createIcons({ root: detailEl });
+}
+
+window.removePollEditOption = (idx) => {
+    if (!pollEditState) return;
+    if (pollEditState.options.length <= 2) {
+        alert("選択肢は最低2つ必要です");
+        return;
+    }
+    const opt = pollEditState.options[idx];
+    const voteCount = opt.votes ? opt.votes.length : 0;
+    if (voteCount > 0) {
+        if (!confirm(`この選択肢「${opt.text}」には ${voteCount} 票の投票があります。削除しますか？`)) return;
+    }
+    pollEditState.options.splice(idx, 1);
+    renderPollEditForm();
+};
+
+window.addPollEditOption = () => {
+    if (!pollEditState) return;
+    const input = document.getElementById("poll-edit-new-option");
+    const text = input?.value.trim();
+    if (!text) { alert("選択肢のテキストを入力してください"); return; }
+
+    pollEditState.options.push({
+        id: "opt-" + Date.now() + "-" + pollEditState.options.length,
+        text: text,
+        votes: []
+    });
+    renderPollEditForm();
+};
+
+window.togglePollEditVoter = (memberId) => {
+    if (!pollEditState) return;
+    const idx = pollEditState.voters.indexOf(memberId);
+    if (idx === -1) {
+        pollEditState.voters.push(memberId);
+    } else {
+        pollEditState.voters.splice(idx, 1);
+    }
+    renderPollEditForm();
+};
+
+window.toggleAllPollEditVoters = (selectAll) => {
+    if (!pollEditState) return;
+    if (selectAll) {
+        pollEditState.voters = (state.members || []).filter(m => m.lastName || m.firstName).map(m => m.id);
+    } else {
+        pollEditState.voters = [];
+    }
+    renderPollEditForm();
+};
+
+window.cancelPollEdit = () => {
+    pollEditState = null;
+    renderActivePoll();
+};
+
+window.savePollEdits = () => {
+    if (!pollEditState) return;
+    const poll = state.polls.find(p => p.id === pollEditState.pollId);
+    if (!poll) return;
+
+    if (pollEditState.options.length < 2) {
+        alert("選択肢は最低2つ必要です");
+        return;
+    }
+    if (pollEditState.voters.length === 0) {
+        alert("投票対象メンバーを1人以上選択してください");
+        return;
+    }
+
+    // Detect affected voters (voted options that were removed)
+    const oldOptionIds = new Set(poll.options.map(o => o.id));
+    const newOptionIds = new Set(pollEditState.options.map(o => o.id));
+    const removedOptionIds = [...oldOptionIds].filter(id => !newOptionIds.has(id));
+
+    // Find voters whose voted options were removed
+    const affectedVoters = new Map(); // userId -> [removed option texts]
+    if (removedOptionIds.length > 0) {
+        poll.options.forEach(opt => {
+            if (removedOptionIds.includes(opt.id) && opt.votes) {
+                opt.votes.forEach(voterId => {
+                    if (!affectedVoters.has(voterId)) affectedVoters.set(voterId, []);
+                    affectedVoters.get(voterId).push(opt.text);
+                });
+            }
+        });
+    }
+
+    // Also check removed voters who had votes
+    const removedVoterIds = (poll.voters || []).filter(vid => !pollEditState.voters.includes(vid));
+
+    // Apply changes
+    const descInput = document.getElementById("poll-edit-desc");
+    poll.description = descInput ? descInput.value.trim() : poll.description;
+    poll.options = pollEditState.options;
+    poll.voters = [...pollEditState.voters];
+
+    // Post notification message for affected voters
+    if (affectedVoters.size > 0) {
+        const selfMember = state.members?.find(m => m.isSelf);
+        const senderName = selfMember ? `${selfMember.lastName || ''}${selfMember.firstName || ''}` : 'システム';
+
+        let notifyText = `📢 投票「${poll.title}」が編集されました。\n`;
+        affectedVoters.forEach((removedTexts, voterId) => {
+            const member = state.members?.find(m => m.id === voterId);
+            const memberName = member ? `${member.lastName || ''}${member.firstName || ''}` : 'ゲスト';
+            notifyText += `・${memberName}さん：投票先「${removedTexts.join('、')}」が削除されました。再投票をお願いします。\n`;
+        });
+
+        // Add system notification to message board
+        if (!state.messages) state.messages = [];
+        state.messages.push({
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+            senderKey: 'system_poll',
+            senderName: '投票システム',
+            senderRole: '',
+            avatarColor: '#f59e0b',
+            avatarData: null,
+            content: notifyText.trim(),
+            timestamp: new Date().toISOString(),
+            attachments: [],
+            isSystem: true
+        });
+
+        // Update unread
+        if (!state.lastSeenMessage) state.lastSeenMessage = {};
+    }
+
+    saveState();
+    pollEditState = null;
+    renderActivePoll();
+    renderPollList();
+    if (typeof updatePollNotification === 'function') updatePollNotification();
+    if (typeof updateMessageNotification === 'function') updateMessageNotification();
 };
 
 function checkPollDeadlines() {
@@ -9247,8 +9836,37 @@ window.loadMutualEvaluation = () => {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
 
-    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
-    const userReport = state.reports[currentMutualKey].users[userId] || { evaluations: {}, submitted: false };
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { evaluations: {}, submitted: false };
+
+    // --- Migration: Convert old users-based structure to flat evaluations ---
+    const reportData = state.reports[currentMutualKey];
+    if (reportData.users && !reportData.evaluations) {
+        // Old format: { users: { userId: { evaluations: {...}, submitted: bool } } }
+        // New format: { evaluations: {...}, submitted: bool }
+        const mergedEvaluations = {};
+        let allSubmitted = true;
+        Object.values(reportData.users).forEach(userEntry => {
+            if (userEntry.evaluations) {
+                Object.entries(userEntry.evaluations).forEach(([teamKey, evalData]) => {
+                    if (!mergedEvaluations[teamKey]) {
+                        mergedEvaluations[teamKey] = { ...evalData };
+                    }
+                });
+            }
+            if (!userEntry.submitted) allSubmitted = false;
+        });
+        reportData.evaluations = mergedEvaluations;
+        reportData.submitted = allSubmitted;
+        reportData.updatedAt = reportData.updatedAt || new Date().toISOString();
+        delete reportData.users;
+        saveState();
+    } else if (reportData.users && reportData.evaluations) {
+        // Already has both, just clean up old users key
+        delete reportData.users;
+        saveState();
+    }
+
+    const groupReport = state.reports[currentMutualKey];
 
     const container = document.getElementById('mutual-presentation-list');
     if (!container) return;
@@ -9266,7 +9884,7 @@ window.loadMutualEvaluation = () => {
 
     otherTeams.forEach((team, idx) => {
         const teamKey = team.symbol || team.teamName;
-        const evalData = userReport.evaluations[teamKey] || { commentContent: '', commentPresentation: '', investment: 0 };
+        const evalData = groupReport.evaluations[teamKey] || { commentContent: '', commentPresentation: '', investment: 0 };
 
         const div = document.createElement('div');
         div.className = 'mutual-entry';
@@ -9310,7 +9928,7 @@ window.loadMutualEvaluation = () => {
 
 
     // Lock if submitted
-    const isSubmitted = userReport.submitted || (state.reports[currentMutualKey] && state.reports[currentMutualKey].submitted);
+    const isSubmitted = groupReport.submitted;
     const editor = document.querySelector('.mutual-editor');
     if (editor) {
         editor.querySelectorAll('input, textarea, button:not([onclick*="switchView"])').forEach(el => {
@@ -9342,13 +9960,12 @@ window.updateMutualComment = (teamKey, field, val) => {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
 
-    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
-    if (!state.reports[currentMutualKey].users[userId]) state.reports[currentMutualKey].users[userId] = { evaluations: {}, submitted: false };
-    if (!state.reports[currentMutualKey].users[userId].evaluations[teamKey]) {
-        state.reports[currentMutualKey].users[userId].evaluations[teamKey] = { commentContent: '', commentPresentation: '', investment: 0 };
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { evaluations: {}, submitted: false };
+    if (!state.reports[currentMutualKey].evaluations[teamKey]) {
+        state.reports[currentMutualKey].evaluations[teamKey] = { commentContent: '', commentPresentation: '', investment: 0 };
     }
 
-    state.reports[currentMutualKey].users[userId].evaluations[teamKey][field] = val;
+    state.reports[currentMutualKey].evaluations[teamKey][field] = val;
 
     // Update char count UI for this specific textarea
     const entries = document.querySelectorAll('.mutual-entry');
@@ -9372,11 +9989,10 @@ window.updateMutualInvestment = (teamKey, val) => {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
 
-    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
-    if (!state.reports[currentMutualKey].users[userId]) state.reports[currentMutualKey].users[userId] = { evaluations: {}, submitted: false };
-    if (!state.reports[currentMutualKey].users[userId].evaluations[teamKey]) state.reports[currentMutualKey].users[userId].evaluations[teamKey] = { comment: '', investment: 0 };
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { evaluations: {}, submitted: false };
+    if (!state.reports[currentMutualKey].evaluations[teamKey]) state.reports[currentMutualKey].evaluations[teamKey] = { comment: '', investment: 0 };
 
-    state.reports[currentMutualKey].users[userId].evaluations[teamKey].investment = amount;
+    state.reports[currentMutualKey].evaluations[teamKey].investment = amount;
     updateMutualRemainingBudget();
 };
 
@@ -9385,11 +10001,11 @@ window.updateMutualRemainingBudget = () => {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
 
-    if (!state.reports[currentMutualKey] || !state.reports[currentMutualKey].users[userId]) return;
+    if (!state.reports[currentMutualKey]) return;
 
     const TOTAL_CAPITAL = 5000000;
     let spent = 0;
-    Object.values(state.reports[currentMutualKey].users[userId].evaluations).forEach(e => {
+    Object.values(state.reports[currentMutualKey].evaluations || {}).forEach(e => {
         spent += (e.investment || 0);
     });
     const remaining = TOTAL_CAPITAL - spent;
@@ -9406,13 +10022,13 @@ window.saveMutualEvaluation = (isSubmit = false) => {
     const self = state.members.find(m => m.isSelf);
     const userId = self ? self.id : 'guest';
 
-    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { users: {}, submitted: false };
-    const userReport = state.reports[currentMutualKey].users[userId];
-    if (!userReport) return;
+    if (!state.reports[currentMutualKey]) state.reports[currentMutualKey] = { evaluations: {}, submitted: false };
+    const groupReport = state.reports[currentMutualKey];
+    if (!groupReport) return;
 
     if (isSubmit) {
         let spent = 0;
-        Object.values(userReport.evaluations).forEach(e => spent += e.investment);
+        Object.values(groupReport.evaluations || {}).forEach(e => spent += e.investment);
         if (spent > 5000000) {
             alert('投資額の合計が500万円を超えています。');
             return;
@@ -9420,8 +10036,8 @@ window.saveMutualEvaluation = (isSubmit = false) => {
         if (!confirm('提出すると修正できなくなります。よろしいですか？')) return;
     }
 
-    userReport.submitted = isSubmit;
-    userReport.updatedAt = new Date().toISOString();
+    groupReport.submitted = isSubmit;
+    groupReport.updatedAt = new Date().toISOString();
     saveState();
 
     if (isSubmit) {

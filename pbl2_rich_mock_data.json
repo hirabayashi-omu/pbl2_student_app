@@ -89,23 +89,161 @@
   "tasks": [
     {
       "uuid": "dfue3ebcd",
-      "text": "市場調査と課題ヒアリング",
+      "text": "企業ヒアリング・課題抽出",
       "startIter": 3,
-      "endIter": 5,
+      "endIter": 4,
       "completed": true,
       "color": "#f59e0b",
       "assignees": [
+        "堺 一郎",
         "中百舌鳥 次郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "市場調査と課題ヒアリング",
+      "name": "企業ヒアリング・課題抽出",
       "start": 3,
-      "end": 5,
-      "category": "effort"
+      "end": 4,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r1",
+          "text": "企業ヒアリング課題抽出",
+          "children": [
+            {
+              "id": "r1c1",
+              "text": "企業担当者との打ち合わせ日程調整",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r1c2",
+              "text": "ヒアリングシート作成質問項目整理",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r1c3",
+              "text": "ヒアリング実施議事録作成",
+              "assignees": [
+                0,
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r1c4",
+              "text": "課題の分類優先順位付け",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          0,
+          1
+        ]
+      }
     },
     {
       "uuid": "bcmqabryv",
-      "text": "要件定義とペルソナ作成",
+      "text": "市場調査・競合分析",
+      "startIter": 4,
+      "endIter": 6,
+      "completed": true,
+      "color": "#f59e0b",
+      "assignees": [
+        "中百舌鳥 次郎",
+        "枚方 六郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "市場調査・競合分析",
+      "start": 4,
+      "end": 6,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r2",
+          "text": "市場調査競合分析",
+          "children": [
+            {
+              "id": "r2c1",
+              "text": "観光アプリ市場の規模トレンド調査",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r2c2",
+              "text": "競合サービス5社の機能比較表作成",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r2c3",
+              "text": "堺市南大阪エリアの観光統計データ収集",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r2c4",
+              "text": "SWOT分析差別化ポイント整理",
+              "assignees": [
+                1,
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          1,
+          5
+        ]
+      }
+    },
+    {
+      "uuid": "t3persona",
+      "text": "ペルソナ策定・ユーザージャーニー作成",
       "startIter": 5,
       "endIter": 7,
       "completed": true,
@@ -115,28 +253,338 @@
         "阿倍野 三郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "要件定義とペルソナ作成",
+      "name": "ペルソナ策定・ユーザージャーニー作成",
       "start": 5,
       "end": 7,
-      "category": "effort"
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r3",
+          "text": "ペルソナ策定ユーザージャーニー",
+          "children": [
+            {
+              "id": "r3c1",
+              "text": "ターゲットユーザー候補のリストアップ",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r3c2",
+              "text": "ペルソナシート3パターン作成",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r3c3",
+              "text": "チーム投票によるペルソナ最終決定",
+              "assignees": [
+                0,
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r3c4",
+              "text": "ユーザージャーニーマップの作成",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r3c5",
+              "text": "タッチポイント課題解決策の整理",
+              "assignees": [
+                1,
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "uuid": "t4reqdef",
+      "text": "要件定義・画面設計",
+      "startIter": 6,
+      "endIter": 8,
+      "completed": true,
+      "color": "#6366f1",
+      "assignees": [
+        "堺 一郎",
+        "阿倍野 三郎",
+        "羽曳野 四郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "要件定義・画面設計",
+      "start": 6,
+      "end": 8,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r4",
+          "text": "要件定義画面設計",
+          "children": [
+            {
+              "id": "r4c1",
+              "text": "機能要件の洗い出し（MoSCoW分析）",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r4c2",
+              "text": "非機能要件の定義（性能セキュリティ）",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r4c3",
+              "text": "画面遷移図の作成",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r4c4",
+              "text": "主要画面のラフスケッチ",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r4c5",
+              "text": "要件定義書のレビュー承認",
+              "assignees": [
+                0,
+                2,
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          0,
+          2,
+          3
+        ]
+      }
     },
     {
       "uuid": "pydu5qz4d",
-      "text": "技術検証 (PoC) とモックアップ作成",
+      "text": "技術選定・PoC検証",
       "startIter": 7,
-      "endIter": 11,
+      "endIter": 9,
       "completed": true,
       "color": "#10b981",
       "assignees": [
         "阿倍野 三郎",
-        "羽曳野 四郎",
         "住吉 五郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "技術検証 (PoC) とモックアップ作成",
+      "name": "技術選定・PoC検証",
       "start": 7,
-      "end": 11,
-      "category": "effort"
+      "end": 9,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r5",
+          "text": "技術選定PoC検証",
+          "children": [
+            {
+              "id": "r5c1",
+              "text": "フロントエンド技術候補の比較評価",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r5c2",
+              "text": "バックエンドDB構成の検討",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r5c3",
+              "text": "地図API（Mapbox/Google Maps）の検証",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r5c4",
+              "text": "PoCプロトタイプの実装動作確認",
+              "assignees": [
+                2,
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r5c5",
+              "text": "技術選定報告書の作成",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          2,
+          4
+        ]
+      }
+    },
+    {
+      "uuid": "t6wireframe",
+      "text": "ワイヤーフレーム・UIモックアップ作成",
+      "startIter": 8,
+      "endIter": 10,
+      "completed": true,
+      "color": "#0ea5e9",
+      "assignees": [
+        "羽曳野 四郎",
+        "枚方 六郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "ワイヤーフレーム・UIモックアップ作成",
+      "start": 8,
+      "end": 10,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r6",
+          "text": "ワイヤーフレームUIモック",
+          "children": [
+            {
+              "id": "r6c1",
+              "text": "Figmaでワイヤーフレーム作成",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r6c2",
+              "text": "カラースキームタイポグラフィ決定",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r6c3",
+              "text": "ハイフィデリティモックアップ作成",
+              "assignees": [
+                3,
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r6c4",
+              "text": "チーム内レビュー修正対応",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          3,
+          5
+        ]
+      }
     },
     {
       "uuid": "vs65h3ls8",
@@ -153,13 +601,175 @@
       "name": "中間ポスター・リーフレット制作",
       "start": 10,
       "end": 12,
-      "category": "presentation"
+      "category": "presentation",
+      "processFlow": {
+        "root": {
+          "id": "r7",
+          "text": "中間ポスターリーフレット制作",
+          "children": [
+            {
+              "id": "r7c1",
+              "text": "ポスターのレイアウト設計",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r7c2",
+              "text": "図表グラフのデザイン作成",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r7c3",
+              "text": "リーフレットの原稿構成作成",
+              "assignees": [
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r7c4",
+              "text": "写真素材の撮影選定",
+              "assignees": [
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r7c5",
+              "text": "印刷用データの最終チェック",
+              "assignees": [
+                5,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "uuid": "t8midpres",
+      "text": "中間プレゼン資料作成・リハーサル",
+      "startIter": 11,
+      "endIter": 13,
+      "completed": true,
+      "color": "#4f46e5",
+      "assignees": [
+        "堺 一郎",
+        "中百舌鳥 次郎",
+        "吹田 七郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "中間プレゼン資料作成・リハーサル",
+      "start": 11,
+      "end": 13,
+      "category": "presentation",
+      "processFlow": {
+        "root": {
+          "id": "r8",
+          "text": "中間プレゼン資料リハーサル",
+          "children": [
+            {
+              "id": "r8c1",
+              "text": "発表ストーリー構成の検討",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r8c2",
+              "text": "スライドデザイン図解作成",
+              "assignees": [
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r8c3",
+              "text": "デモ画面のキャプチャ準備",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r8c4",
+              "text": "発表原稿の作成",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r8c5",
+              "text": "リハーサル実施フィードバック修正",
+              "assignees": [
+                0,
+                1,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          0,
+          1,
+          6
+        ]
+      }
     },
     {
       "uuid": "v3r0vl47g",
-      "text": "プロトタイプ開発(UI/フロント)",
+      "text": "フロントエンド実装（観光ルート表示・地図UI）",
       "startIter": 15,
-      "endIter": 21,
+      "endIter": 20,
       "completed": true,
       "color": "#0ea5e9",
       "assignees": [
@@ -167,50 +777,530 @@
         "羽曳野 四郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "プロトタイプ開発(UI/フロント)",
+      "name": "フロントエンド実装（観光ルート表示・地図UI）",
       "start": 15,
-      "end": 21,
-      "category": "effort"
+      "end": 20,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r9",
+          "text": "フロントエンド実装",
+          "children": [
+            {
+              "id": "r9c1",
+              "text": "プロジェクト構成ルーティング設計",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r9c2",
+              "text": "地図表示コンポーネントの実装",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r9c3",
+              "text": "観光ルート表示ナビゲーション機能",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r9c4",
+              "text": "施設詳細レビュー表示画面",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r9c5",
+              "text": "検索フィルタリング機能の実装",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r9c6",
+              "text": "レスポンシブ対応UI調整",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          2,
+          3
+        ]
+      }
     },
     {
       "uuid": "x3yy3q10s",
-      "text": "バックエンドAPI・データベース構築",
+      "text": "バックエンドAPI・DB構築（施設・レビューデータ）",
       "startIter": 15,
-      "endIter": 22,
+      "endIter": 19,
       "completed": true,
       "color": "#8b5cf6",
       "assignees": [
         "住吉 五郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "バックエンドAPI・データベース構築",
+      "name": "バックエンドAPI・DB構築（施設・レビューデータ）",
       "start": 15,
+      "end": 19,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r10",
+          "text": "バックエンドAPIDB構築",
+          "children": [
+            {
+              "id": "r10c1",
+              "text": "データベーススキーマ設計（ER図作成）",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r10c2",
+              "text": "Firebase/Supabaseプロジェクト初期設定",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r10c3",
+              "text": "施設CRUD APIの実装",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r10c4",
+              "text": "レビュー投稿取得APIの実装",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r10c5",
+              "text": "認証セキュリティ設定",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          4
+        ]
+      }
+    },
+    {
+      "uuid": "t11datcol",
+      "text": "フィールド調査・観光データ収集",
+      "startIter": 16,
+      "endIter": 18,
+      "completed": true,
+      "color": "#f59e0b",
+      "assignees": [
+        "中百舌鳥 次郎",
+        "枚方 六郎",
+        "吹田 七郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "フィールド調査・観光データ収集",
+      "start": 16,
+      "end": 18,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r11",
+          "text": "フィールド調査データ収集",
+          "children": [
+            {
+              "id": "r11c1",
+              "text": "調査対象エリア施設のリスト作成",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r11c2",
+              "text": "現地取材写真撮影（堺エリア）",
+              "assignees": [
+                5,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r11c3",
+              "text": "施設情報のデータ入力整理",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r11c4",
+              "text": "観光客アンケート実施（30名）",
+              "assignees": [
+                1,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r11c5",
+              "text": "収集データのDB登録",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          1,
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "uuid": "t12integ",
+      "text": "フロント・バック結合テスト・デバッグ",
+      "startIter": 20,
+      "endIter": 22,
+      "completed": false,
+      "color": "#10b981",
+      "assignees": [
+        "阿倍野 三郎",
+        "住吉 五郎",
+        "羽曳野 四郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "フロント・バック結合テスト・デバッグ",
+      "start": 20,
       "end": 22,
-      "category": "effort"
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r12",
+          "text": "結合テストデバッグ",
+          "children": [
+            {
+              "id": "r12c1",
+              "text": "API接続テストエラーハンドリング",
+              "assignees": [
+                2
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r12c2",
+              "text": "地図機能の負荷テスト",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r12c3",
+              "text": "クロスブラウザテスト（Chrome/Safari/Edge）",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r12c4",
+              "text": "バグ修正パフォーマンス改善",
+              "assignees": [
+                2,
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r12c5",
+              "text": "テスト結果レポート作成",
+              "assignees": [
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          2,
+          3,
+          4
+        ]
+      }
     },
     {
       "uuid": "uyqlmmr4l",
-      "text": "最終パンフレット作成",
+      "text": "最終パンフレット・リーフレット制作",
       "startIter": 22,
       "endIter": 25,
-      "completed": true,
+      "completed": false,
       "color": "#ec4899",
       "assignees": [
         "枚方 六郎",
         "吹田 七郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "最終パンフレット作成",
+      "name": "最終パンフレット・リーフレット制作",
       "start": 22,
       "end": 25,
-      "category": "presentation"
+      "category": "presentation",
+      "processFlow": {
+        "root": {
+          "id": "r13",
+          "text": "最終パンフレットリーフレット",
+          "children": [
+            {
+              "id": "r13c1",
+              "text": "中間版フィードバックの反映",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r13c2",
+              "text": "最終デザイン案3パターン作成",
+              "assignees": [
+                5
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r13c3",
+              "text": "キャッチコピー文章のブラッシュアップ",
+              "assignees": [
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r13c4",
+              "text": "入稿データの校正最終調整",
+              "assignees": [
+                5,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "uuid": "t14usrtest",
+      "text": "ユーザーテスト・フィードバック反映",
+      "startIter": 22,
+      "endIter": 24,
+      "completed": false,
+      "color": "#f59e0b",
+      "assignees": [
+        "中百舌鳥 次郎",
+        "堺 一郎"
+      ],
+      "updatedAt": "2026-02-24T06:09:22.277Z",
+      "name": "ユーザーテスト・フィードバック反映",
+      "start": 22,
+      "end": 24,
+      "category": "effort",
+      "processFlow": {
+        "root": {
+          "id": "r14",
+          "text": "ユーザーテストフィードバック",
+          "children": [
+            {
+              "id": "r14c1",
+              "text": "テストシナリオの作成（5タスク）",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r14c2",
+              "text": "被験者5名へのユーザビリティテスト実施",
+              "assignees": [
+                0,
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r14c3",
+              "text": "テスト結果の集計分析",
+              "assignees": [
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r14c4",
+              "text": "改善点リストの作成優先順位付け",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r14c5",
+              "text": "修正対応開発チームへのフィードバック",
+              "assignees": [
+                0,
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          0,
+          1
+        ]
+      }
     },
     {
       "uuid": "49ilfjb90",
-      "text": "最終プレゼン資料ブラッシュアップ",
+      "text": "最終プレゼン資料作成・発表練習",
       "startIter": 24,
       "endIter": 26,
-      "completed": true,
+      "completed": false,
       "color": "#4f46e5",
       "assignees": [
         "堺 一郎",
@@ -222,42 +1312,152 @@
         "吹田 七郎"
       ],
       "updatedAt": "2026-02-24T06:09:22.277Z",
-      "name": "最終プレゼン資料ブラッシュアップ",
+      "name": "最終プレゼン資料作成・発表練習",
       "start": 24,
       "end": 26,
-      "category": "presentation"
+      "category": "presentation",
+      "processFlow": {
+        "root": {
+          "id": "r15",
+          "text": "最終プレゼン資料発表練習",
+          "children": [
+            {
+              "id": "r15c1",
+              "text": "発表ストーリー全体構成の再設計",
+              "assignees": [
+                0
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c2",
+              "text": "システムデモ動画の録画編集",
+              "assignees": [
+                2,
+                3
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c3",
+              "text": "スライドデザインアニメーション作成",
+              "assignees": [
+                5,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c4",
+              "text": "技術説明パート資料作成",
+              "assignees": [
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c5",
+              "text": "発表原稿の作成推敲",
+              "assignees": [
+                0,
+                1
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c6",
+              "text": "リハーサル3回実施タイム計測",
+              "assignees": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "r15c7",
+              "text": "質疑応答の想定問答集作成",
+              "assignees": [
+                1,
+                4
+              ],
+              "children": [],
+              "column": 1,
+              "x": 0,
+              "y": 0
+            }
+          ],
+          "column": 0,
+          "x": 0,
+          "y": 0
+        },
+        "authors": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      }
     }
   ],
   "polls": [
     {
-      "id": "f26g91hct",
-      "title": "来週の作業臨時ミーティング日程調整",
-      "status": "active",
+      "id": "poll-meeting",
+      "title": "後期キックオフミーティング日程調整",
+      "description": "後期の活動開始にあたり、全員で方針を共有するミーティングを開催します。都合の良い日時を全て選んでください。",
+      "status": "closed",
       "type": "multiple",
+      "mode": "calendar",
+      "isAnonymous": false,
+      "createdBy": "nhke3p845",
+      "deadline": "2026-09-25T23:59:00",
+      "voters": [
+        "nhke3p845",
+        "hv7narim4",
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh",
+        "jzq94e9l0",
+        "x6agwu1w3"
+      ],
       "options": [
         {
-          "id": "ojt1uvdqp",
-          "text": "10/14(土) 10:00〜12:00",
-          "votes": [
-            "nhke3p845",
-            "9zvqkn8i4"
-          ]
-        },
-        {
-          "id": "479qoojgh",
-          "text": "10/14(土) 14:00〜16:00",
+          "id": "mtg1",
+          "text": "2026/9/20 (日) 13:00〜15:00",
           "votes": [
             "nhke3p845",
             "hv7narim4",
-            "9zvqkn8i4",
-            "d0ba84g8z",
-            "k5iufn4lh",
-            "jzq94e9l0"
+            "d0ba84g8z"
           ]
         },
         {
-          "id": "3nl32q8m2",
-          "text": "10/15(日) 20:00〜22:00（オンライン）",
+          "id": "mtg2",
+          "text": "2026/9/21 (月) 18:00〜20:00",
           "votes": [
             "nhke3p845",
             "hv7narim4",
@@ -267,25 +1467,57 @@
             "jzq94e9l0",
             "x6agwu1w3"
           ]
+        },
+        {
+          "id": "mtg3",
+          "text": "2026/9/22 (火) 10:00〜12:00",
+          "votes": [
+            "9zvqkn8i4",
+            "k5iufn4lh",
+            "jzq94e9l0"
+          ]
+        },
+        {
+          "id": "mtg4",
+          "text": "2026/9/23 (水) 15:00〜17:00",
+          "votes": [
+            "nhke3p845",
+            "hv7narim4",
+            "x6agwu1w3"
+          ]
         }
       ]
     },
     {
-      "id": "f7633dlha",
+      "id": "poll-persona",
       "title": "想定ペルソナ（ターゲット層）の最終決定",
+      "description": "プロジェクトのターゲット層を最終決定します。マーケティング班の調査結果を踏まえて投票してください。",
       "status": "closed",
       "type": "single",
+      "mode": "text",
+      "isAnonymous": false,
+      "createdBy": "hv7narim4",
+      "deadline": "2026-06-05T23:59:00",
+      "voters": [
+        "nhke3p845",
+        "hv7narim4",
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh",
+        "jzq94e9l0",
+        "x6agwu1w3"
+      ],
       "options": [
         {
-          "id": "tw2cn34w3",
-          "text": "20〜30代の若年層カップル・友人",
+          "id": "p1",
+          "text": "20〜30代の若年層カップル・友人グループ",
           "votes": [
             "hv7narim4",
             "jzq94e9l0"
           ]
         },
         {
-          "id": "vfm8sqy8o",
+          "id": "p2",
           "text": "アクティブシニア層（60代〜）",
           "votes": [
             "nhke3p845",
@@ -296,18 +1528,58 @@
           ]
         }
       ]
-    }
-  ],
-  "messages": [
+    },
     {
-      "id": "r9ziyfriz",
-      "topicId": "from_teacher",
-      "senderName": "システム",
-      "senderRole": "案内",
-      "content": "初期設定ファイルが読み込まれました。",
-      "timestamp": 1771826962283,
-      "color": "#4f46e5",
-      "readBy": [
+      "id": "poll-tech",
+      "title": "技術スタック最終選定",
+      "description": "バックエンドとフロントエンドの技術選定を行います。PoC検証結果も踏まえて投票してください。",
+      "status": "closed",
+      "type": "single",
+      "mode": "text",
+      "isAnonymous": true,
+      "createdBy": "9zvqkn8i4",
+      "deadline": "2026-06-20T23:59:00",
+      "voters": [
+        "nhke3p845",
+        "9zvqkn8i4",
+        "d0ba84g8z",
+        "k5iufn4lh"
+      ],
+      "options": [
+        {
+          "id": "tech1",
+          "text": "React + Firebase（フルサーバーレス）",
+          "votes": [
+            "nhke3p845",
+            "9zvqkn8i4",
+            "d0ba84g8z"
+          ]
+        },
+        {
+          "id": "tech2",
+          "text": "Vue.js + Express + PostgreSQL",
+          "votes": [
+            "k5iufn4lh"
+          ]
+        },
+        {
+          "id": "tech3",
+          "text": "Next.js + Supabase",
+          "votes": []
+        }
+      ]
+    },
+    {
+      "id": "poll-pamphlet",
+      "title": "パンフレット表紙デザイン投票",
+      "description": "枚方さんと吹田さんが作成した3案から、最終パンフレットの表紙を選んでください。",
+      "status": "active",
+      "type": "single",
+      "mode": "text",
+      "isAnonymous": false,
+      "createdBy": "jzq94e9l0",
+      "deadline": "2026-12-20T23:59:00",
+      "voters": [
         "nhke3p845",
         "hv7narim4",
         "9zvqkn8i4",
@@ -315,93 +1587,742 @@
         "k5iufn4lh",
         "jzq94e9l0",
         "x6agwu1w3"
+      ],
+      "options": [
+        {
+          "id": "dA",
+          "text": "A案：写真メインのシンプルデザイン",
+          "votes": [
+            "hv7narim4",
+            "k5iufn4lh"
+          ]
+        },
+        {
+          "id": "dB",
+          "text": "B案：イラスト入りポップデザイン",
+          "votes": [
+            "9zvqkn8i4",
+            "d0ba84g8z",
+            "x6agwu1w3"
+          ]
+        },
+        {
+          "id": "dC",
+          "text": "C案：和風モダンデザイン",
+          "votes": [
+            "jzq94e9l0"
+          ]
+        }
       ]
     },
     {
-      "id": "u7b2az1jb",
-      "topicId": "general",
-      "senderName": "堺",
-      "senderRole": "プロジェクトリーダー",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM0ZjQ2ZTUiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuWgujwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "お疲れ様です！PBL2活動が始まりました。まずは「チームワーク形成」タブから、各自のプロフィール（強み、興味、やりたいこと）を記入してください。",
-      "timestamp": 1771909762283,
-      "color": "#4f46e5",
-      "readBy": [
+      "id": "poll-rehearsal",
+      "title": "最終発表リハーサル日程",
+      "description": "最終発表に向けてリハーサルを3回実施します。第1回の日程を決めましょう。",
+      "status": "active",
+      "type": "multiple",
+      "mode": "calendar",
+      "isAnonymous": false,
+      "createdBy": "nhke3p845",
+      "deadline": "2026-12-18T23:59:00",
+      "voters": [
         "nhke3p845",
         "hv7narim4",
-        "9zvqkn8i4"
-      ]
-    },
-    {
-      "id": "pt27k71de",
-      "topicId": "general",
-      "senderName": "中百舌鳥",
-      "senderRole": "マーケティング",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMxMGI5ODEiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS4rTwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "了解しました！記入しておきますね。あと、ペルソナ決定の投票も作成したので回答お願いします。",
-      "timestamp": 1771909862283,
-      "color": "#10b981",
-      "readBy": [
-        "nhke3p845",
-        "hv7narim4"
-      ]
-    },
-    {
-      "id": "poqmoqch8",
-      "topicId": "general",
-      "senderName": "枚方",
-      "senderRole": "プロモーション",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiMwZWE1ZTkiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuaemjwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "記入しましたー。日程調整のアンケートも作ってくれたんですね。入力しておきます。",
-      "timestamp": 1771909962283,
-      "color": "#0ea5e9",
-      "readBy": [
-        "nhke3p845"
-      ]
-    },
-    {
-      "id": "go8xajot4",
-      "topicId": "engineering_group",
-      "senderName": "阿倍野",
-      "senderRole": "エンジニアリング",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNmNTllMGIiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPumYvzwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "バックエンドのAPI実装について相談です。今回フロントとはRESTで通信する形で進めてよいでしょうか？",
-      "timestamp": 1771906162283,
-      "color": "#f59e0b",
-      "readBy": [
         "9zvqkn8i4",
         "d0ba84g8z",
-        "k5iufn4lh"
+        "k5iufn4lh",
+        "jzq94e9l0",
+        "x6agwu1w3"
+      ],
+      "options": [
+        {
+          "id": "rh1",
+          "text": "2026/12/19 (土) 10:00〜12:00",
+          "votes": [
+            "nhke3p845",
+            "9zvqkn8i4",
+            "d0ba84g8z",
+            "k5iufn4lh"
+          ]
+        },
+        {
+          "id": "rh2",
+          "text": "2026/12/19 (土) 14:00〜16:00",
+          "votes": [
+            "nhke3p845",
+            "hv7narim4",
+            "9zvqkn8i4",
+            "jzq94e9l0",
+            "x6agwu1w3"
+          ]
+        },
+        {
+          "id": "rh3",
+          "text": "2026/12/20 (日) 13:00〜15:00",
+          "votes": [
+            "hv7narim4",
+            "d0ba84g8z",
+            "k5iufn4lh",
+            "jzq94e9l0",
+            "x6agwu1w3"
+          ]
+        },
+        {
+          "id": "rh4",
+          "text": "2026/12/21 (月) 18:00〜20:00",
+          "votes": [
+            "nhke3p845",
+            "hv7narim4",
+            "9zvqkn8i4"
+          ]
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "sys-g1",
+      "topicId": "from_teacher",
+      "senderName": "システム",
+      "senderRole": "案内",
+      "senderKey": "system",
+      "content": "【アプリの準備手順①】\n初めに、サイドメニューの「データ管理」から「ステップ1: データの初期化（リセット）」を行ってください。",
+      "timestamp": "2026-04-10T00:00:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
       ]
     },
     {
-      "id": "qeqr0we3r",
-      "topicId": "engineering_group",
-      "senderName": "羽曳野",
-      "senderRole": "エンジニアリング",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZjQ0NDQiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPue+vTwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "はい、RESTが無難だと思います。データベース周りはとりあえずFirebaseを使う想定でどうでしょう？",
-      "timestamp": 1771906362283,
+      "id": "sys-g2",
+      "topicId": "from_teacher",
+      "senderName": "システム",
+      "senderRole": "案内",
+      "senderKey": "system",
+      "content": "【アプリの準備手順②】\n次に、教員より配布された初期設定ファイルを「ステップ2: 初期設定ファイルの読み込み」から取り込んでください。",
+      "timestamp": "2026-04-10T00:01:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ]
+    },
+    {
+      "id": "tch-1",
+      "topicId": "from_teacher",
+      "senderName": "大教 太郎",
+      "senderRole": "担当教員",
+      "senderKey": "teacher1",
+      "content": "中間発表お疲れ様でした。デモの完成度が高く、よくまとまっていました。後期はユーザーテストの結果を踏まえた改善に期待しています。頑張ってください。",
+      "timestamp": "2026-07-23T01:30:00.000Z",
       "color": "#ef4444",
       "readBy": [
-        "9zvqkn8i4",
-        "d0ba84g8z",
-        "k5iufn4lh"
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
       ]
     },
     {
-      "id": "a1c7orgt9",
-      "topicId": "engineering_group",
-      "senderName": "住吉",
-      "senderRole": "エンジニアリング",
-      "avatarImage": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+CiAgICAgICAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM4YjVjZjYiLz4KICAgICAgICA8dGV4dCB4PSI1MCIgeT0iNjUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjQwIiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuS9jzwvdGV4dD4KICAgIDwvc3ZnPg==",
-      "content": "賛成です！モックアップで検証して、問題があればまた検討しましょう。私はフロントのコンポーネント設計を進めます。",
-      "timestamp": 1771906462283,
+      "id": "tch-2",
+      "topicId": "from_teacher",
+      "senderName": "大教 花子",
+      "senderRole": "担当教員",
+      "senderKey": "teacher2",
+      "content": "最終パンフレットの提出期限は12/23です。印刷データ（PDF）をアップロードしてください。また、後期の貢献度評価の入力も忘れずにお願いします。",
+      "timestamp": "2026-12-01T05:00:00.000Z",
+      "color": "#ef4444",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803"
+      ]
+    },
+    {
+      "id": "g01",
+      "topicId": "general",
+      "senderName": "堺 一郎",
+      "senderRole": "プロジェクトリーダー",
+      "senderKey": "student367",
+      "content": "チームの皆さん、PBL2スタートです！まずは「チームワーク形成」タブから、各自のプロフィール（強み・興味・やりたいこと）を記入してください。来週の企業ヒアリングまでに役割分担を決めましょう。",
+      "timestamp": "2026-04-16T01:15:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student40",
+          "student810",
+          "student803",
+          "student246",
+          "student193",
+          "student967"
+        ]
+      }
+    },
+    {
+      "id": "g02",
+      "topicId": "general",
+      "senderName": "中百舌鳥 次郎",
+      "senderRole": "マーケティング",
+      "senderKey": "student40",
+      "content": "企業ヒアリングの質問項目リスト作りました。Googleドキュメントに共有してるので、追加したい質問があれば書き込んでください。",
+      "timestamp": "2026-04-25T10:30:00.000Z",
+      "color": "#0ea5e9",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student367",
+          "student810"
+        ],
+        "✔️": [
+          "student803"
+        ]
+      }
+    },
+    {
+      "id": "g03",
+      "topicId": "general",
+      "senderName": "堺 一郎",
+      "senderRole": "プロジェクトリーダー",
+      "senderKey": "student367",
+      "content": "ペルソナの投票結果、「アクティブシニア層」に決まりました！5対2でした。これを軸に要件定義を進めていきます。中百舌鳥さん、最終版のペルソナシートまとめてもらえますか？",
+      "timestamp": "2026-05-28T06:20:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student40",
+          "student810",
+          "student803",
+          "student246"
+        ],
+        "😆": [
+          "student193"
+        ]
+      }
+    },
+    {
+      "id": "g04",
+      "topicId": "general",
+      "senderName": "中百舌鳥 次郎",
+      "senderRole": "マーケティング",
+      "senderKey": "student40",
+      "content": "了解です！ペルソナシート最終版、今週中に仕上げます。「田中 和夫さん（67歳・堺市在住・定年退職後の趣味として地域散策）」をメインペルソナとして詳細を詰めますね。",
+      "timestamp": "2026-05-28T06:35:00.000Z",
+      "color": "#0ea5e9",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student367"
+        ]
+      }
+    },
+    {
+      "id": "g05",
+      "topicId": "general",
+      "senderName": "枚方 六郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student193",
+      "content": "中間ポスターのデザイン案をFigmaにアップしました。フィードバックお願いします！カラーは堺市のイメージに合わせて緑基調にしてみました",
+      "timestamp": "2026-07-02T12:10:00.000Z",
+      "color": "#ec4899",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student367",
+          "student40",
+          "student967"
+        ],
+        "😆": [
+          "student810"
+        ]
+      }
+    },
+    {
+      "id": "g06",
+      "topicId": "general",
+      "senderName": "吹田 七郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student967",
+      "content": "リーフレットの原稿書きました。QRコードでアプリに飛べるようにしたいんですが、デモ環境のURLって決まってますか？",
+      "timestamp": "2026-07-03T02:45:00.000Z",
       "color": "#8b5cf6",
       "readBy": [
-        "9zvqkn8i4",
-        "d0ba84g8z",
-        "k5iufn4lh"
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ]
+    },
+    {
+      "id": "g07",
+      "topicId": "general",
+      "senderName": "住吉 五郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student246",
+      "content": "デモ用のFirebaseプロジェクトURL共有します。本番とは別環境です。\nhttps://pbl2-tourism-demo.web.app",
+      "timestamp": "2026-07-03T03:10:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student193",
+          "student967"
+        ],
+        "🙏": [
+          "student810"
+        ]
+      }
+    },
+    {
+      "id": "g08",
+      "topicId": "general",
+      "senderName": "堺 一郎",
+      "senderRole": "プロジェクトリーダー",
+      "senderKey": "student367",
+      "content": "中間発表、お疲れ様でした！教員からのフィードバックをまとめました。\n\n良かった点：デモの完成度、ペルソナ分析の深さ\n改善点：収益モデルの検討、オフライン対応\n\n後期に向けて改善計画を立てましょう。",
+      "timestamp": "2026-07-22T08:00:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student40",
+          "student810",
+          "student246",
+          "student193",
+          "student967"
+        ],
+        "🙏": [
+          "student803"
+        ]
+      }
+    },
+    {
+      "id": "g09",
+      "topicId": "general",
+      "senderName": "堺 一郎",
+      "senderRole": "プロジェクトリーダー",
+      "senderKey": "student367",
+      "content": "後期活動スタートです。タスク分担を更新しました。\n\n開発チーム（阿倍野・羽曳野・住吉）フロント+バック並行開発\nマーケ（中百舌鳥）フィールド調査・ユーザーテスト\nプロモ（枚方・吹田）取材・データ収集",
+      "timestamp": "2026-09-17T01:00:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student810",
+          "student803",
+          "student246"
+        ],
+        "✔️": [
+          "student40",
+          "student193",
+          "student967"
+        ]
+      }
+    },
+    {
+      "id": "g10",
+      "topicId": "general",
+      "senderName": "中百舌鳥 次郎",
+      "senderRole": "マーケティング",
+      "senderKey": "student40",
+      "content": "フィールド調査の結果報告です。百舌鳥古墳群周辺を15施設回りました。写真と施設データはGoogleドライブにアップ済みです。観光客へのアンケートも20名分回収できました。",
+      "timestamp": "2026-10-10T09:30:00.000Z",
+      "color": "#0ea5e9",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student367",
+          "student810"
+        ],
+        "✔️": [
+          "student246"
+        ]
+      }
+    },
+    {
+      "id": "g11",
+      "topicId": "general",
+      "senderName": "中百舌鳥 次郎",
+      "senderRole": "マーケティング",
+      "senderKey": "student40",
+      "content": "ユーザビリティテスト1回目の結果をまとめました。5タスク中、「ルート検索」の完了率が最も低かった（3/5人成功）。\n\n主な課題：\n・検索ボタンの位置がわかりにくい\n・フィルタの選択肢が多すぎる\n\n改善案を開発チームに共有します。",
+      "timestamp": "2026-12-10T05:20:00.000Z",
+      "color": "#0ea5e9",
+      "readBy": [
+        "student367",
+        "student810",
+        "student803"
+      ],
+      "reactions": {
+        "😮": [
+          "student367"
+        ],
+        "👍": [
+          "student810"
+        ]
+      }
+    },
+    {
+      "id": "g12",
+      "topicId": "general",
+      "senderName": "枚方 六郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student193",
+      "content": "パンフレットのデザイン3案をアップしました。投票お願いします！\n\nA案：写真メインのシンプルデザイン\nB案：イラスト入りポップデザイン\nC案：和風モダンデザイン\n\n投票は「投票・日程調整」タブからお願いします。",
+      "timestamp": "2026-12-08T11:00:00.000Z",
+      "color": "#ec4899",
+      "readBy": [
+        "student367",
+        "student40",
+        "student810",
+        "student803",
+        "student246",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student367",
+          "student40",
+          "student967"
+        ]
+      }
+    },
+    {
+      "id": "g13",
+      "topicId": "general",
+      "senderName": "堺 一郎",
+      "senderRole": "プロジェクトリーダー",
+      "senderKey": "student367",
+      "content": "リハーサルの日程調整を投票で行います。最終発表前に3回リハを実施したいので、第1回の候補日を入れました。皆さん投票お願いします。",
+      "timestamp": "2026-12-14T00:00:00.000Z",
+      "color": "#4f46e5",
+      "readBy": [
+        "student40",
+        "student810",
+        "student803"
+      ],
+      "reactions": {
+        "✔️": [
+          "student40",
+          "student810"
+        ]
+      }
+    },
+    {
+      "id": "e01",
+      "topicId": "engineering_group",
+      "senderName": "阿倍野 三郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student810",
+      "content": "技術選定の結果、React + Firebase に決定しました。開発環境のセットアップ手順をNotionにまとめたので確認してください。\n\n・Node.js v18以上\n・npm install\n・Firebase CLI のインストール\n\n不明点があればここで聞いてください。",
+      "timestamp": "2026-06-10T11:00:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student810",
+        "student803",
+        "student246"
+      ],
+      "reactions": {
+        "👍": [
+          "student803",
+          "student246"
+        ]
+      }
+    },
+    {
+      "id": "e02",
+      "topicId": "engineering_group",
+      "senderName": "住吉 五郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student246",
+      "content": "Firestoreのスキーマ設計案です。\n\nfacilities（施設）\n  - name, category, lat, lng, description, photos[], rating\nreviews（レビュー）\n  - facilityId, userId, rating, comment, createdAt\nroutes（ルート）\n  - name, facilityIds[], estimatedTime\n\nレビューお願いします。",
+      "timestamp": "2026-09-30T13:15:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student810",
+        "student803",
+        "student246"
+      ],
+      "reactions": {
+        "👍": [
+          "student810"
+        ],
+        "✔️": [
+          "student803"
+        ]
+      }
+    },
+    {
+      "id": "e03",
+      "topicId": "engineering_group",
+      "senderName": "阿倍野 三郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student810",
+      "content": "スキーマ良さそう！一点、facilitiesにopenHours（営業時間）フィールドも追加した方がいいかも。ルート提案時に「今開いてる施設」でフィルタしたい。",
+      "timestamp": "2026-09-30T23:30:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student803",
+        "student246"
+      ],
+      "reactions": {
+        "👍": [
+          "student246"
+        ]
+      }
+    },
+    {
+      "id": "e04",
+      "topicId": "engineering_group",
+      "senderName": "羽曳野 四郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student803",
+      "content": "フロント側の画面実装状況です。\n\n完了：トップページ、地図表示（Mapbox）、施設一覧\n作業中：施設詳細（70%）\n未着手：ルート検索、レビュー投稿\n\n来週中に施設詳細を完了させます。",
+      "timestamp": "2026-10-18T10:45:00.000Z",
+      "color": "#0ea5e9",
+      "readBy": [
+        "student810",
+        "student246"
+      ],
+      "reactions": {
+        "👍": [
+          "student810",
+          "student246"
+        ]
+      }
+    },
+    {
+      "id": "e05",
+      "topicId": "engineering_group",
+      "senderName": "住吉 五郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student246",
+      "content": "注意：Firebase AuthでCORS問題が発生してます。localhost:3000からのリクエストがブロックされる。cloud functionsの設定を修正中。今日中に解決見込み。",
+      "timestamp": "2026-10-20T06:30:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student810",
+        "student803",
+        "student246"
+      ]
+    },
+    {
+      "id": "e06",
+      "topicId": "engineering_group",
+      "senderName": "住吉 五郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student246",
+      "content": "CORS問題解決しました！Firebase Hostingの設定でヘッダーを追加する方法で対処。手順をドキュメントに追記しておきます。",
+      "timestamp": "2026-10-20T12:10:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student810",
+        "student803"
+      ],
+      "reactions": {
+        "👍": [
+          "student810",
+          "student803"
+        ],
+        "😆": [
+          "student810"
+        ]
+      }
+    },
+    {
+      "id": "e07",
+      "topicId": "engineering_group",
+      "senderName": "阿倍野 三郎",
+      "senderRole": "エンジニアリング",
+      "senderKey": "student810",
+      "content": "結合テスト結果まとめ。全32テストケース中、合格28、不合格4。\n\n不合格の内容：\n・ルート検索で5施設以上選択時にタイムアウト\n・Safariでフレックスボックスの表示崩れ\n・レビュー投稿後のリアルタイム反映遅延\n・画像圧縮時のメモリ使用量が高い\n\n優先度高い2件から修正します。",
+      "timestamp": "2026-11-20T07:00:00.000Z",
+      "color": "#10b981",
+      "readBy": [
+        "student803"
+      ],
+      "reactions": {
+        "😮": [
+          "student803"
+        ]
+      }
+    },
+    {
+      "id": "pm1",
+      "topicId": "promo_group",
+      "senderName": "枚方 六郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student193",
+      "content": "中間ポスターのデザインガイドラインです。\n\nメインカラー：#2e7d32（堺市の緑）\nサイズ：A0（841x1189mm）\nフォント：Noto Sans JP\n\n素材の写真は共有ドライブの「ポスター素材」フォルダに入れてください。",
+      "timestamp": "2026-06-28T01:00:00.000Z",
+      "color": "#ec4899",
+      "readBy": [
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student967"
+        ]
+      }
+    },
+    {
+      "id": "pm2",
+      "topicId": "promo_group",
+      "senderName": "吹田 七郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student967",
+      "content": "リーフレットの構成案です。\n\n表面：キャッチコピー＋メインビジュアル＋QRコード\n中面左：サービス概要＋3つの特徴\n中面右：おすすめルート紹介（地図入り）\n裏面：チーム紹介＋企業ロゴ\n\nフィードバックお願いします！",
+      "timestamp": "2026-06-30T05:30:00.000Z",
+      "color": "#8b5cf6",
+      "readBy": [
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student193"
+        ]
+      }
+    },
+    {
+      "id": "pm3",
+      "topicId": "promo_group",
+      "senderName": "枚方 六郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student193",
+      "content": "現地取材レポート（10/8）\n\n百舌鳥古墳群ビジターセンター、堺市博物館、大仙公園日本庭園\n\n写真45枚撮影しました。天気が良くて綺麗に撮れた！ドライブに上げておきます。",
+      "timestamp": "2026-10-08T09:00:00.000Z",
+      "color": "#ec4899",
+      "readBy": [
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student967"
+        ],
+        "😆": [
+          "student967"
+        ]
+      }
+    },
+    {
+      "id": "pm4",
+      "topicId": "promo_group",
+      "senderName": "吹田 七郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student967",
+      "content": "最終パンフレットのキャッチコピー候補です。\n\n1.「歩いて発見、堺の物語」\n2.「千年の歴史を、あなたの手のひらに」\n3.「堺さんぽ - AIが案内する、知らなかった堺」\n\n個人的には3番推しです！",
+      "timestamp": "2026-12-06T11:30:00.000Z",
+      "color": "#8b5cf6",
+      "readBy": [
+        "student193",
+        "student967"
+      ],
+      "reactions": {
+        "👍": [
+          "student193"
+        ]
+      }
+    },
+    {
+      "id": "pm5",
+      "topicId": "promo_group",
+      "senderName": "枚方 六郎",
+      "senderRole": "プロモーション",
+      "senderKey": "student193",
+      "content": "3番いいね！「堺さんぽ」ってサービス名にもなりそう。デザイン3案できました、投票お願いしました。パンフレットは12/23印刷入稿なので、16日までに決めたいです。",
+      "timestamp": "2026-12-08T10:50:00.000Z",
+      "color": "#ec4899",
+      "readBy": [
+        "student967"
       ]
     }
   ],
@@ -420,9 +2341,15 @@
     },
     {
       "id": "engineering_group",
-      "name": "技術班内部連絡",
-      "createdBy": "nhke3p845",
-      "timestamp": 1771912362283
+      "name": "開発チーム",
+      "createdBy": "9zvqkn8i4",
+      "timestamp": 1719360000000
+    },
+    {
+      "id": "promo_group",
+      "name": "プロモーション班",
+      "createdBy": "jzq94e9l0",
+      "timestamp": 1719360000000
     }
   ],
   "currentTopicId": "general",
@@ -476,378 +2403,400 @@
   },
   "reports": {
     "3": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "企業担当者（株式会社ムーンラボラトリー）との初回打ち合わせを実施し、現在の観光事業における課題を共有いただいた。堺市の観光資源は豊富だが、若年層への認知度が低く、デジタル施策が不十分であるという課題が明確化した。",
+      "challenge": "企業側のニーズが多岐にわたり、PBLの期間内で実現可能な範囲の見極めが必要。ヒアリングシートの質問項目をもう少し掘り下げる必要があった。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "堺：企業との日程調整打ち合わせファシリテーション",
+        "中百舌鳥：ヒアリングシート作成、議事録作成"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "0"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "企業担当者（株式会社ムーンラボラトリー）との初回打ち合わせを実施し、現在の観光事業における課題を共有いただいた。堺市の観光資源は豊富だが、若年層への認知度が低く、デジタル施策が不十分であるという課題が明確化した。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "4": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "企業ヒアリングの2回目を実施し、課題の優先順位を確定。同時に国内外の観光アプリ市場の調査を開始し、主要5社（じゃらん、まっぷる、ことりっぷ、NAVITIME Travel、堺市公式）の機能比較表を作成した。",
+      "challenge": "競合サービスが多く、差別化ポイントの特定に時間がかかった。堺市特有の地域資源をどの程度深堀りするか検討中。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "中百舌鳥：競合5社の機能比較調査を実施",
+        "枚方：堺市南大阪エリアの観光統計データ収集開始",
+        "堺：企業との2回目打ち合わせ、課題の最終整理"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "0",
+        "1"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "企業ヒアリングの2回目を実施し、課題の優先順位を確定。同時に国内外の観光アプリ市場の調査を開始し、主要5社（じゃらん、まっぷる、ことりっぷ、NAVITIME Travel、堺市公式）の機能比較表を作成した。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "5": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "SWOT分析を完了し、「AIを活用した個人最適化ルート提案」を差別化ポイントとして設定。ペルソナ策定に着手し、ターゲットユーザー候補3パターン（若年カップル、ファミリー層、アクティブシニア）を作成した。",
+      "challenge": "ペルソナの細分化が進みすぎると開発範囲が広がるため、メイン1+サブ1の構成に絞る判断が必要だった。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "中百舌鳥：SWOT分析の取りまとめ、ペルソナシート3案作成",
+        "枚方：観光統計データの分析結果共有"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "1",
+        "2"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "SWOT分析を完了し、「AIを活用した個人最適化ルート提案」を差別化ポイントとして設定。ペルソナ策定に着手し、ターゲットユーザー候補3パターン（若年カップル、ファミリー層、アクティブシニア）を作成した。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "6": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "チーム投票により「アクティブシニア層」をメインペルソナに決定。ユーザージャーニーマップの作成を開始。並行して機能要件の洗い出し（MoSCoW分析）を実施し、Must要件として地図表示ルート検索施設情報を特定した。",
+      "challenge": "ペルソナ決定に意見が分かれたが、投票で円滑に決定できた。要件の優先順位をつける際にシニア層のITリテラシーを考慮したUI設計が必要と判明。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "堺：MoSCoW分析のファシリテーション",
+        "中百舌鳥：ペルソナ最終版の取りまとめ",
+        "阿倍野：ユーザージャーニーマップ作成開始"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "1",
+        "2",
+        "3"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "チーム投票により「アクティブシニア層」をメインペルソナに決定。ユーザージャーニーマップの作成を開始。並行して機能要件の洗い出し（MoSCoW分析）を実施し、Must要件として地図表示ルート検索施設情報を特定した。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "7": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "ユーザージャーニーマップを完成させ、主要タッチポイントでの課題と解決策を整理。画面遷移図の初版を作成。フロントエンド技術としてReact候補3つの比較を開始し、バックエンドはFirebase/Supabaseの2択に絞り込んだ。",
+      "challenge": "画面遷移が複雑になりがちで、シニア層を意識したシンプルな導線設計が課題。地図APIの無料枠制限も考慮が必要。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "阿倍野：フロントエンド技術比較評価、地図API検証開始",
+        "住吉：バックエンドDB構成の検討開始",
+        "羽曳野：画面遷移図の作成"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "2",
+        "3",
+        "4"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "ユーザージャーニーマップを完成させ、主要タッチポイントでの課題と解決策を整理。画面遷移図の初版を作成。フロントエンド技術としてReact候補3つの比較を開始し、バックエンドはFirebase/Supabaseの2択に絞り込んだ。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "8": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "要件定義書のレビューを全員で実施し承認。技術選定にてReact + Firebase構成を仮決定。Figmaでワイヤーフレーム4画面（トップ、地図、施設詳細、ルート表示）を作成開始。地図APIはMapboxを採用決定。",
+      "challenge": "Mapboxの料金プランと無料枠の制限について調査が必要。Figmaの操作に慣れるまでペアで作業した。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "羽曳野：Figmaワイヤーフレーム作成開始",
+        "枚方：カラースキームタイポグラフィのデザインガイド策定",
+        "阿倍野：PoCプロトタイプの実装着手"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "3",
+        "4",
+        "5"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "要件定義書のレビューを全員で実施し承認。技術選定にてReact + Firebase構成を仮決定。Figmaでワイヤーフレーム4画面（トップ、地図、施設詳細、ルート表示）を作成開始。地図APIはMapboxを採用決定。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "9": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "PoCプロトタイプ（Mapboxでの地図表示+施設ピン表示）の動作確認完了。技術選定報告書を作成しチームに共有。ワイヤーフレーム4画面の完成度を80%まで向上。",
+      "challenge": "PoC段階でルート検索のパフォーマンスが想定より遅く、APIコール最適化が後期の課題として残った。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "阿倍野：PoC検証結果の報告、Mapbox導入手順のドキュメント作成",
+        "住吉：技術選定報告書の共同執筆",
+        "羽曳野：ワイヤーフレームのチーム内レビュー実施"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "4",
+        "5"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "PoCプロトタイプ（Mapboxでの地図表示+施設ピン表示）の動作確認完了。技術選定報告書を作成しチームに共有。ワイヤーフレーム4画面の完成度を80%まで向上。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "10": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "ハイフィデリティモックアップ（トップ画面地図画面）を完成させ、チーム内レビュー実施。中間ポスターのレイアウト設計に着手し、A0サイズのグリッド構成を決定。",
+      "challenge": "ポスターにどこまで技術的内容を盛り込むか議論。結局「課題解決策デモ画面」のストーリーに2/3、技術説明に1/3の構成で合意。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "枚方：ポスターレイアウト設計、図表デザイン作成",
+        "吹田：リーフレットの原稿執筆開始",
+        "羽曳野：モックアップ最終修正対応"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "5",
+        "6"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "ハイフィデリティモックアップ（トップ画面地図画面）を完成させ、チーム内レビュー実施。中間ポスターのレイアウト設計に着手し、A0サイズのグリッド構成を決定。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "11": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "ポスター用の図表グラフを作成し、市場調査データを視覚化。リーフレットの原稿構成が完成。並行して中間発表のスライド構成（8枚）を決定し、ストーリーボードを作成。",
+      "challenge": "ポスターとスライドの情報量のバランスが難しい。発表時間10分に収まるよう情報を精選する必要があった。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "枚方：ポスター図表完成、写真素材のリサイズ",
+        "吹田：スライドデザイン作成開始",
+        "堺：発表ストーリー構成の決定"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "6",
+        "7"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "ポスター用の図表グラフを作成し、市場調査データを視覚化。リーフレットの原稿構成が完成。並行して中間発表のスライド構成（8枚）を決定し、ストーリーボードを作成。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "12": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "ポスターリーフレットの印刷用データを完成させ、最終校正を実施。デモ画面のキャプチャを準備し、スライドに組み込み完了。発表原稿の初稿を作成。",
+      "challenge": "ポスター印刷の色味調整に時間がかかった。カラーマネジメントの知識が不足していたため、次回は早めに下版テストを行いたい。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "枚方吹田：印刷データ最終チェック、色校正",
+        "堺：デモ画面キャプチャ、発表原稿の骨子作成",
+        "中百舌鳥：発表原稿の詳細執筆"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "6",
+        "7"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "ポスターリーフレットの印刷用データを完成させ、最終校正を実施。デモ画面のキャプチャを準備し、スライドに組み込み完了。発表原稿の初稿を作成。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "13": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "中間発表を実施。他グループからの質疑では「シニア層のスマホ操作性」「オフライン対応」について有益なフィードバックを得た。教員からはデモの完成度を評価された。リハーサルを2回実施し、発表時間を9分45秒に調整完了。",
+      "challenge": "質疑応答で想定外の質問（収益モデルについて）があり、回答に詰まった。後期ではビジネス面の検討も進める必要がある。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "堺：発表本番のプレゼンテーション実施",
+        "中百舌鳥：質疑応答対応",
+        "吹田：スライド操作タイムキーパー"
       ],
       "selectedTasks": [
-        0,
-        1,
-        2
+        "7"
       ],
-      "content": "今週のタスクを順調に進行しました...",
+      "content": "中間発表を実施。他グループからの質疑では「シニア層のスマホ操作性」「オフライン対応」について有益なフィードバックを得た。教員からはデモの完成度を評価された。リハーサルを2回実施し、発表時間を9分45秒に調整完了。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "14": {
-      "achievement": "今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。今週のタスクを順調に進行しました。対象の活動が無事に完了しています。",
-      "challenge": "想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。想定外の環境課題がいくつかありましたが、メンバー間で協力して解決策を見出しています。",
+      "achievement": "中間発表のフィードバックを整理し、後期の活動計画を策定。「オフラインマップ対応」「音声ガイド機能」を追加検討項目として設定。開発チームの役割分担を再調整し、フロントエンド(阿倍野羽曳野)とバックエンド(住吉)の並行開発体制を確立。",
+      "challenge": "夏休み期間中の連絡が途切れがちだったため、今後は週1回のオンラインミーティングを設定。後期の開発ボリュームが多いため、スケジュール管理の徹底が必要。",
       "communications": [
-        "進捗共有：プロジェクトリーダーとしての実装・調査を進めています。",
-        "進捗共有：マーケティングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：エンジニアリングとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。",
-        "進捗共有：プロモーションとしての実装・調査を進めています。"
+        "堺：後期計画策定、役割分担の再調整",
+        "阿倍野：フロントエンド開発環境の構築準備"
       ],
-      "selectedTasks": [
-        0,
-        1,
-        2
-      ],
-      "content": "今週のタスクを順調に進行しました...",
+      "selectedTasks": [],
+      "content": "中間発表のフィードバックを整理し、後期の活動計画を策定。「オフラインマップ対応」「音声ガイド機能」を追加検討項目として設定。開発チームの役割分担を再調整し、フロントエンド(阿倍野羽曳野)とバックエンド(住吉)の並行開発体制を確立。",
       "submitted": true,
       "submittedAt": "2026-02-24T06:09:22.277Z",
       "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "15": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "フロントエンドのプロジェクト構成（React + TypeScript）を完了し、ルーティング設計を実装。バックエンド側はFirebaseプロジェクトを作成し、Firestoreのデータベーススキーマ設計（ER図）を完成させた。",
+      "challenge": "TypeScriptの型定義の設計で議論が発生し、1日ロス。今後は設計レビューの時間を予め確保する。",
       "communications": [
-        "進捗報告"
+        "阿倍野：Reactプロジェクト初期設定、ルーティング実装",
+        "住吉：Firebase初期設定、ER図作成",
+        "羽曳野：コンポーネント設計書作成"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "9"
+      ],
+      "content": "フロントエンドのプロジェクト構成（React + TypeScript）を完了し、ルーティング設計を実装。バックエンド側はFirebaseプロジェクトを作成し、Firestoreのデータベーススキーマ設計（ER図）を完成させた。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.522Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "16": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "地図表示コンポーネント（Mapbox GL JS）の実装完了。施設CRUDのAPIエンドポイント4本を実装。フィールド調査の対象施設30箇所のリストを作成し、堺エリア（百舌鳥古墳群周辺）の現地取材を開始。",
+      "challenge": "Mapboxのスタイルカスタマイズに想定以上に時間がかかった。現地取材は天候に左右されるため予備日を確保。",
       "communications": [
-        "進捗報告"
+        "阿倍野：Mapbox地図コンポーネント実装",
+        "住吉：施設CRUD API 4エンドポイント実装",
+        "中百舌鳥：調査対象リスト作成",
+        "枚方吹田：現地取材第1弾（百舌鳥古墳群）"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "9",
+        "10"
+      ],
+      "content": "地図表示コンポーネント（Mapbox GL JS）の実装完了。施設CRUDのAPIエンドポイント4本を実装。フィールド調査の対象施設30箇所のリストを作成し、堺エリア（百舌鳥古墳群周辺）の現地取材を開始。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "17": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "観光ルート表示ナビゲーション機能のプロトタイプ実装。レビュー投稿取得APIの実装完了。現地取材第2弾（大仙公園旧堺燈台エリア）を実施し、写真60枚と施設データ15件を収集。",
+      "challenge": "ルート計算のアルゴリズムが複雑で、最短経路と観光価値のバランスを取る必要がある。アンケート回答率が想定を下回っている。",
       "communications": [
-        "進捗報告"
+        "阿倍野：ルート表示機能実装",
+        "住吉：レビューAPI実装",
+        "枚方吹田：現地取材第2弾、写真60枚収集",
+        "中百舌鳥：観光客アンケート配布"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "9",
+        "10"
+      ],
+      "content": "観光ルート表示ナビゲーション機能のプロトタイプ実装。レビュー投稿取得APIの実装完了。現地取材第2弾（大仙公園旧堺燈台エリア）を実施し、写真60枚と施設データ15件を収集。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "18": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "施設詳細レビュー表示画面の実装完了。認証セキュリティ設定（Firebase Auth）の実装。観光客アンケート30名分を回収し、結果の集計分析を完了。収集した全施設データ（30件）のDB登録完了。",
+      "challenge": "Firebase Authの認証フローでCORS問題が発生し、2日間デバッグに費やした。アンケート結果から「多言語対応」のニーズが予想以上に高いことが判明。",
       "communications": [
-        "進捗報告"
+        "羽曳野：施設詳細画面実装",
+        "住吉：Firebase Auth設定、CORS問題解決",
+        "中百舌鳥：アンケート30名分集計",
+        "枚方：施設データDB登録"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "9",
+        "10"
+      ],
+      "content": "施設詳細レビュー表示画面の実装完了。認証セキュリティ設定（Firebase Auth）の実装。観光客アンケート30名分を回収し、結果の集計分析を完了。収集した全施設データ（30件）のDB登録完了。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "19": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "検索フィルタリング機能（カテゴリ別、エリア別、評価順）を実装。バックエンド全APIのエンドポイントテストを完了し、ドキュメント（Swagger形式）を作成。API応答速度が平均200ms以内であることを確認。",
+      "challenge": "フィルタリングの組み合わせパターンが多く、クエリ最適化が必要。Firestoreの複合インデックスの制限に注意。",
       "communications": [
-        "進捗報告"
+        "羽曳野：検索フィルタ機能実装",
+        "住吉：API全テスト完了、Swaggerドキュメント作成",
+        "阿倍野：フロントバック間のデータ連携テスト開始"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "9"
+      ],
+      "content": "検索フィルタリング機能（カテゴリ別、エリア別、評価順）を実装。バックエンド全APIのエンドポイントテストを完了し、ドキュメント（Swagger形式）を作成。API応答速度が平均200ms以内であることを確認。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "20": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "レスポンシブ対応（スマホタブレット）を完了し、フロントエンド実装の全主要機能が完成。API接続テストに着手し、施設表示ルート検索の結合動作を確認。エラーハンドリングの基本実装完了。",
+      "challenge": "結合テストでフロントとバックの日付フォーマットの不一致が発見され、統一する修正が必要だった。",
       "communications": [
-        "進捗報告"
+        "羽曳野：レスポンシブ対応完了",
+        "阿倍野：API接続テスト、エラーハンドリング実装",
+        "住吉：日付フォーマット修正対応"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "8",
+        "11"
+      ],
+      "content": "レスポンシブ対応（スマホタブレット）を完了し、フロントエンド実装の全主要機能が完成。API接続テストに着手し、施設表示ルート検索の結合動作を確認。エラーハンドリングの基本実装完了。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "21": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "地図機能の負荷テスト（100施設同時表示）を実施し、パフォーマンスを確認。クロスブラウザテスト（Chrome/Safari/Edge）で発見した表示崩れ3件を修正。バグ修正リストを作成し、高優先度5件の修正完了。",
+      "challenge": "Safariでのフレックスボックスレンダリングの違いに苦労。テスト項目の網羅性確保のため、テストケース一覧表を整備する必要があった。",
       "communications": [
-        "進捗報告"
+        "住吉：負荷テスト実施、パフォーマンス計測",
+        "羽曳野：クロスブラウザテスト、CSS修正",
+        "阿倍野：バグ修正（高優先度5件）"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "11"
+      ],
+      "content": "地図機能の負荷テスト（100施設同時表示）を実施し、パフォーマンスを確認。クロスブラウザテスト（Chrome/Safari/Edge）で発見した表示崩れ3件を修正。バグ修正リストを作成し、高優先度5件の修正完了。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "22": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "結合テスト最終確認完了。テスト結果レポートを作成し、残バグ2件（軽微）を記録。中間版フィードバック反映済みの最終パンフレットデザイン着手。ユーザビリティテストのシナリオ5タスクを確定。",
+      "challenge": "テスト期間中に機能追加の要望がいくつか出たが、スコープクリープを防ぐため「Nice to have」リストに追加するに留めた。",
       "communications": [
-        "進捗報告"
+        "羽曳野：テスト結果レポート作成",
+        "枚方：最終パンフレットデザイン着手",
+        "中百舌鳥：テストシナリオ5タスク策定",
+        "堺：スコープ管理の方針決定"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "11",
+        "12",
+        "13"
+      ],
+      "content": "結合テスト最終確認完了。テスト結果レポートを作成し、残バグ2件（軽微）を記録。中間版フィードバック反映済みの最終パンフレットデザイン着手。ユーザビリティテストのシナリオ5タスクを確定。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "23": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "最終デザイン案3パターン（A:写真メイン, B:イラスト入り, C:和風モダン）を作成し、チーム投票を実施。被験者3名にユーザビリティテスト第1弾を実施し、タスク完了率操作時間を計測。",
+      "challenge": "ユーザビリティテストで「ルート検索画面の操作が分かりにくい」という指摘が複数あり、UIの改善が急務。テスト結果の分析に想定以上に時間がかかっている。",
       "communications": [
-        "進捗報告"
+        "枚方：デザイン案3パターン作成",
+        "吹田：キャッチコピー候補10案作成",
+        "中百舌鳥堺：ユーザビリティテスト実施（3名）"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "12",
+        "13"
+      ],
+      "content": "最終デザイン案3パターン（A:写真メイン, B:イラスト入り, C:和風モダン）を作成し、チーム投票を実施。被験者3名にユーザビリティテスト第1弾を実施し、タスク完了率操作時間を計測。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "24": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "残り被験者2名のテスト完了。改善点12項目をリスト化し優先順位付け。ルート検索UIのリデザイン（ステップバイステップ方式）を開発チームにフィードバック。パンフレット入稿データの校正完了。最終プレゼンのストーリー構成を決定（12分15枚構成）。",
+      "challenge": "ユーザーテスト結果の改善を全て反映する時間がないため、上位5項目に絞って修正対応中。発表時間の配分（デモ3分、説明9分）の調整が必要。",
       "communications": [
-        "進捗報告"
+        "中百舌鳥：テスト結果集計改善リスト作成",
+        "堺：改善優先順位付け、プレゼン構成決定",
+        "枚方吹田：入稿データ校正",
+        "阿倍野羽曳野：ルート検索UIリデザイン対応中"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "12",
+        "13",
+        "14"
+      ],
+      "content": "残り被験者2名のテスト完了。改善点12項目をリスト化し優先順位付け。ルート検索UIのリデザイン（ステップバイステップ方式）を開発チームにフィードバック。パンフレット入稿データの校正完了。最終プレゼンのストーリー構成を決定（12分15枚構成）。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "25": {
-      "achievement": "今週のタスクを完了しました。",
-      "challenge": "新しい課題を見つけました。",
+      "achievement": "パンフレットリーフレットの印刷完了。システムデモ動画（2分30秒）を録画編集。スライド15枚のデザインアニメーション完成。技術説明パート資料を作成。発表原稿の推敲完了。リハーサル2回実施し、12分05秒に調整。",
+      "challenge": "3回目のリハーサルを最終発表前日に実施予定だが、スライドの微修正が続いており確定が遅れている。質疑応答の想定問答を充実させる必要あり。",
       "communications": [
-        "進捗報告"
+        "阿倍野羽曳野：デモ動画録画編集",
+        "枚方吹田：スライドデザイン完成",
+        "住吉：技術説明資料作成",
+        "堺中百舌鳥：発表原稿推敲、リハーサル実施"
       ],
-      "content": "今週のタスク完了。",
+      "selectedTasks": [
+        "12",
+        "14"
+      ],
+      "content": "パンフレットリーフレットの印刷完了。システムデモ動画（2分30秒）を録画編集。スライド15枚のデザインアニメーション完成。技術説明パート資料を作成。発表原稿の推敲完了。リハーサル2回実施し、12分05秒に調整。",
       "submitted": true,
-      "updatedAt": "2026-02-24T06:29:32.523Z"
+      "submittedAt": "2026-02-24T06:09:22.277Z",
+      "updatedAt": "2026-02-24T06:09:22.277Z"
     },
     "analysis": {
       "bg": "地域資源を活用できていない課題があります。",
@@ -1668,5 +3617,97 @@
         "theme": "AI自動検品ライン"
       }
     ]
-  }
+  },
+  "bookmarks": [
+    {
+      "url": "https://reactjs.org/docs/getting-started.html",
+      "title": "React 公式ドキュメント - Getting Started",
+      "description": "フロントエンド開発の基本リファレンス。コンポーネント設計やHooksの使い方を参照。",
+      "recorderName": "阿倍野三郎",
+      "role": "エンジニアリング",
+      "date": "2026-06-10",
+      "updatedAt": "2026-06-10T20:00:00.000Z"
+    },
+    {
+      "url": "https://firebase.google.com/docs/firestore",
+      "title": "Cloud Firestore ドキュメント | Firebase",
+      "description": "バックエンドのデータベース設計・クエリの公式リファレンス。",
+      "recorderName": "住吉五郎",
+      "role": "エンジニアリング",
+      "date": "2026-06-12",
+      "updatedAt": "2026-06-12T15:00:00.000Z"
+    },
+    {
+      "url": "https://docs.mapbox.com/mapbox-gl-js/guides/",
+      "title": "Mapbox GL JS | Mapbox",
+      "description": "地図表示コンポーネントの実装に使用。スタイルカスタマイズやマーカー表示の参考資料。",
+      "recorderName": "阿倍野三郎",
+      "role": "エンジニアリング",
+      "date": "2026-07-05",
+      "updatedAt": "2026-07-05T10:00:00.000Z"
+    },
+    {
+      "url": "https://www.sakai-tcb.or.jp/spot/",
+      "title": "堺観光コンベンション協会 - 観光スポット一覧",
+      "description": "堺市の観光スポット情報。施設データ収集やコンテンツ作成の公式ソース。",
+      "recorderName": "中百舌鳥次郎",
+      "role": "マーケティング",
+      "date": "2026-05-15",
+      "updatedAt": "2026-05-15T14:00:00.000Z"
+    },
+    {
+      "url": "https://www.city.sakai.lg.jp/kanko/index.html",
+      "title": "堺市公式 観光・文化ページ",
+      "description": "堺市の観光統計データ、イベント情報、文化財情報の公式ソース。市場調査に活用。",
+      "recorderName": "中百舌鳥次郎",
+      "role": "マーケティング",
+      "date": "2026-05-02",
+      "updatedAt": "2026-05-02T11:00:00.000Z"
+    },
+    {
+      "url": "https://www.figma.com/best-practices/guide-to-developer-handoff/",
+      "title": "Figma - デザインハンドオフガイド",
+      "description": "UIモックアップからフロントエンド実装へのハンドオフ手法。デザイントークンの活用法。",
+      "recorderName": "羽曳野四郎",
+      "role": "エンジニアリング",
+      "date": "2026-08-20",
+      "updatedAt": "2026-08-20T09:00:00.000Z"
+    },
+    {
+      "url": "https://www.nngroup.com/articles/usability-testing-101/",
+      "title": "Usability Testing 101 | Nielsen Norman Group",
+      "description": "ユーザビリティテストの設計・実施方法の参考資料。テストシナリオ作成に活用。",
+      "recorderName": "中百舌鳥次郎",
+      "role": "マーケティング",
+      "date": "2026-11-28",
+      "updatedAt": "2026-11-28T16:00:00.000Z"
+    },
+    {
+      "url": "https://fonts.google.com/noto/specimen/Noto+Sans+JP",
+      "title": "Noto Sans JP - Google Fonts",
+      "description": "ポスター・パンフレットで使用するフォント。ウェイト400/700を使用。",
+      "recorderName": "枚方六郎",
+      "role": "プロモーション",
+      "date": "2026-06-28",
+      "updatedAt": "2026-06-28T10:30:00.000Z"
+    },
+    {
+      "url": "https://canva.com/designschool/courses/graphic-design-basics/",
+      "title": "Canva デザイン基礎コース",
+      "description": "ポスター・リーフレットのレイアウト設計の参考にしたデザイン基礎講座。",
+      "recorderName": "吹田七郎",
+      "role": "プロモーション",
+      "date": "2026-06-25",
+      "updatedAt": "2026-06-25T20:00:00.000Z"
+    },
+    {
+      "url": "https://developer.mozilla.org/ja/docs/Web/Progressive_web_apps",
+      "title": "Progressive Web Apps (PWA) | MDN",
+      "description": "オフライン対応検討時の参考資料。Service Workerによるキャッシュ戦略。",
+      "recorderName": "住吉五郎",
+      "role": "エンジニアリング",
+      "date": "2026-09-20",
+      "updatedAt": "2026-09-20T18:00:00.000Z"
+    }
+  ]
 }

@@ -173,6 +173,12 @@
                         <div class="stat-value"><span id="dashboard-unread-count">0</span> 件</div>
                         <div style="font-size: 0.75rem; color: var(--text-dim);">伝言板で確認できます</div>
                     </div>
+                    <div class="stat-card" onclick="switchView('polls')" style="cursor: pointer;">
+                        <h3>未対応の投票</h3>
+                        <div class="stat-value"><span id="dashboard-pending-polls">0</span> 件</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);" id="dashboard-pending-polls-hint">
+                            投票・日程調整で確認</div>
+                    </div>
                 </div>
 
                 <div class="dashboard-content">
@@ -1708,6 +1714,11 @@
                                 <label for="poll-title-input">投票タイトル</label>
                                 <input type="text" id="poll-title-input" placeholder="例：次回のミーティング日程について">
                             </div>
+                            <div class="form-group">
+                                <label for="poll-desc-input">説明（任意）</label>
+                                <textarea id="poll-desc-input" rows="2" placeholder="投票の目的や補足情報を記入してください"
+                                    style="resize: vertical;"></textarea>
+                            </div>
                             <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
                                 <div class="form-group">
                                     <label>入力モード</label>
@@ -1762,6 +1773,32 @@
                                         <div id="selected-dates-items" class="selected-dates-items">
                                             <div class="empty-msg">日付を選択してください</div>
                                         </div>
+                                        <div class="poll-timeslot-hint"
+                                            style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-dim);">
+                                            <i data-lucide="info" style="width:12px; height:12px; display:inline;"></i>
+                                            日付ごとに時間帯を選択することで、<br>「5/20（火）昼休み」のように個別の選択肢が生成されます。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Member Voter Selection -->
+                            <div class="form-group">
+                                <label>投票対象メンバーの選択</label>
+                                <div class="poll-voter-selection">
+                                    <div class="poll-voter-select-actions"
+                                        style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <button class="btn btn-secondary btn-sm"
+                                            onclick="toggleAllPollVoters(true)">全選択</button>
+                                        <button class="btn btn-secondary btn-sm"
+                                            onclick="toggleAllPollVoters(false)">全解除</button>
+                                        <span
+                                            style="font-size: 0.75rem; color: var(--text-dim); align-self: center; margin-left: auto;">
+                                            選択されたメンバーのみ投票できます
+                                        </span>
+                                    </div>
+                                    <div id="poll-voter-member-grid" class="poll-voter-member-grid">
+                                        <!-- Rendered by JS -->
                                     </div>
                                 </div>
                             </div>
