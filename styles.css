@@ -4443,6 +4443,16 @@ th {
     /* Allow Teams link even when locked */
 }
 
+/* Allow self-member to edit avatar even when locked */
+.member-card-smart.locked.self-card .smart-avatar-container {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.member-card-smart.locked.self-card input[name="avatarInput"] {
+    pointer-events: auto;
+}
+
 #btn-lock-members.btn-primary {
     background: var(--warning);
     border-color: var(--warning);

@@ -1150,7 +1150,7 @@ function renderMemberList() {
 
         card.innerHTML = `
             <input type="file" id="avatar-input-${index}" name="avatarInput" aria-label="アバターアップロード" accept="image/*" style="display:none" onchange="setAvatarImage(${index}, this)">
-            <div class="member-card-smart ${isLocked ? 'locked' : ''} ${anySelf && !member.isSelf ? 'avatar-readonly' : ''}">
+            <div class="member-card-smart ${isLocked ? 'locked' : ''} ${member.isSelf ? 'self-card' : ''} ${anySelf && !member.isSelf ? 'avatar-readonly' : ''}">
                 <div class="smart-row-top">
                     <div class="smart-avatar-container" ${canEditAvatar ? `onclick="document.getElementById('avatar-input-${index}').click()" oncontextmenu="clearAvatarImage(${index}); return false;"` : ''}>
                         <div class="smart-avatar" style="background:${avatarBg};">
